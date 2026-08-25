@@ -20,7 +20,6 @@ html {
 
 body {
   margin: 0;
-  min-width: 320px;
   background: var(--bg);
   color: var(--text);
   font-family: Arial, Helvetica, sans-serif;
@@ -37,12 +36,7 @@ button {
   cursor: pointer;
 }
 
-button,
-input,
-select,
-textarea {
-  -webkit-tap-highlight-color: transparent;
-}
+/* HEADER */
 
 .header {
   min-height: 76px;
@@ -50,7 +44,6 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
   padding: 0 5%;
   position: sticky;
   top: 0;
@@ -59,7 +52,6 @@ textarea {
 }
 
 .logo {
-  padding: 0;
   font-size: 24px;
   font-weight: 900;
   background: none;
@@ -73,7 +65,6 @@ textarea {
 
 .hamburger {
   display: none;
-  padding: 8px;
   background: none;
   color: var(--text);
   border: 0;
@@ -99,8 +90,9 @@ textarea {
 .header-actions {
   display: flex;
   gap: 10px;
-  align-items: center;
 }
+
+/* BUTTONS */
 
 .actions {
   display: flex;
@@ -115,7 +107,7 @@ textarea {
   background: transparent;
   color: var(--text);
   border-radius: 5px;
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  transition: transform 0.2s, background 0.2s;
 }
 
 .btn-primary {
@@ -126,8 +118,10 @@ textarea {
 
 .btn:hover,
 .login-btn:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
+
+/* PAGES */
 
 .page {
   display: none;
@@ -139,11 +133,12 @@ textarea {
 }
 
 .container {
-  width: 100%;
   max-width: 1200px;
-  margin: 0 auto;
+  margin: auto;
   padding: 50px 25px;
 }
+
+/* HERO */
 
 .hero {
   min-height: 520px;
@@ -162,7 +157,7 @@ textarea {
 
 h1 {
   font-size: clamp(42px, 8vw, 100px);
-  line-height: 0.9;
+  line-height: 0.87;
   margin: 20px 0;
   letter-spacing: -4px;
 }
@@ -180,6 +175,8 @@ h1 em {
   color: var(--muted);
   line-height: 1.65;
 }
+
+/* CARDS */
 
 .score-box,
 .match-box,
@@ -209,6 +206,8 @@ h1 em {
   margin-bottom: 25px;
 }
 
+/* SPORTS */
+
 .sports-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -222,7 +221,7 @@ h1 em {
   border-radius: 10px;
   cursor: pointer;
   min-height: 135px;
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.2s, border-color 0.2s;
 }
 
 .sport-card:hover {
@@ -233,6 +232,8 @@ h1 em {
 .sport-card p {
   color: var(--muted);
 }
+
+/* COACHES */
 
 .coach-grid {
   display: grid;
@@ -246,7 +247,7 @@ h1 em {
   padding: 18px;
   border-radius: 10px;
   cursor: pointer;
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.2s, border-color 0.2s;
 }
 
 .coach-card:hover {
@@ -296,6 +297,8 @@ h1 em {
   color: var(--muted);
 }
 
+/* FILTERS */
+
 .filters {
   display: flex;
   gap: 12px;
@@ -315,25 +318,22 @@ h1 em {
   color: var(--text);
 }
 
-.form textarea {
-  min-height: 110px;
-  resize: vertical;
-}
+/* RANKING */
 
 .ranking-row {
   display: grid;
   grid-template-columns: 70px 1fr 1fr 70px;
   gap: 12px;
-  align-items: center;
   border-bottom: 1px solid var(--line);
   padding: 15px 8px;
   cursor: pointer;
-  transition: background 0.2s ease;
 }
 
 .ranking-row:hover {
   background: var(--panel);
 }
+
+/* MATCH */
 
 .match-box label {
   display: block;
@@ -352,7 +352,6 @@ h1 em {
   border: 1px solid var(--line);
   border-radius: 8px;
   cursor: pointer;
-  transition: border-color 0.2s ease;
 }
 
 .match-result:hover {
@@ -362,8 +361,9 @@ h1 em {
 .match-percent {
   color: var(--accent);
   font-weight: 900;
-  white-space: nowrap;
 }
+
+/* REVIEWS */
 
 .review {
   padding: 15px;
@@ -372,6 +372,8 @@ h1 em {
   border: 1px solid var(--line);
   border-radius: 8px;
 }
+
+/* MODAL */
 
 .modal {
   position: fixed;
@@ -392,13 +394,18 @@ h1 em {
   width: 100%;
   max-width: 720px;
   max-height: 90vh;
-  overflow-y: auto;
+  overflow: auto;
 }
 
 .form label {
   display: block;
   margin: 12px 0;
   color: var(--muted);
+}
+
+textarea {
+  min-height: 100px;
+  resize: vertical;
 }
 
 .success {
@@ -411,37 +418,19 @@ h1 em {
   margin-top: 15px;
 }
 
+/* FOOTER */
+
 footer {
   padding: 25px;
   text-align: center;
   color: var(--muted);
-  border-top: 1px solid var(--line);
 }
 
-@media (max-width: 900px) {
-  .sports-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .coach-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .hero {
-    grid-template-columns: 1fr;
-  }
-}
+/* MOBILE */
 
 @media (max-width: 700px) {
-  .header {
-    min-height: 70px;
-    padding: 0 12px;
-    gap: 10px;
-  }
-
   .hamburger {
     display: block;
-    order: 3;
   }
 
   .nav {
@@ -451,7 +440,7 @@ footer {
   .nav.mobile-open {
     display: flex;
     position: absolute;
-    top: 70px;
+    top: 76px;
     left: 0;
     right: 0;
     background: var(--bg);
@@ -460,37 +449,10 @@ footer {
     border-bottom: 1px solid var(--line);
   }
 
-  .nav.mobile-open button {
-    text-align: left;
-    padding: 12px;
-  }
-
-  .header-actions {
-    margin-left: auto;
-  }
-
-  .header-actions .btn,
-  .header-actions .login-btn {
-    padding: 8px 10px;
-    font-size: 12px;
-  }
-
-  .container {
-    padding: 35px 18px;
-  }
-
-  .hero {
-    min-height: auto;
-    gap: 25px;
-  }
-
+  .hero,
   .coach-grid,
   .sports-grid {
     grid-template-columns: 1fr;
-  }
-
-  .filters {
-    flex-direction: column;
   }
 
   .ranking-row {
@@ -501,21 +463,25 @@ footer {
     display: none;
   }
 
-  .match-result {
-    align-items: flex-start;
+  .header {
+    padding: 0 12px;
+  }
+
+  .container {
+    padding: 35px 18px;
+  }
+
+  .filters {
     flex-direction: column;
-    gap: 8px;
   }
 
-  .card-footer {
-    flex-direction: column;
+  .header-actions {
+    gap: 5px;
   }
 
-  h1 {
-    letter-spacing: -2px;
-  }
-
-  .page {
-    min-height: calc(100vh - 70px);
+  .header-actions .btn,
+  .header-actions .login-btn {
+    padding: 8px 10px;
+    font-size: 12px;
   }
 }
