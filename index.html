@@ -1,12 +1,8 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1"
-  >
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <title>FITMATCH — Найди своего тренера</title>
 
@@ -23,12 +19,7 @@
   <!-- HEADER -->
   <header class="header">
 
-    <button
-      class="logo"
-      id="logo"
-      type="button"
-      aria-label="На главную"
-    >
+    <button class="logo" id="logo" type="button">
       FIT<span>MATCH</span>
     </button>
 
@@ -41,25 +32,25 @@
       ☰
     </button>
 
-    <nav id="mainNav" class="nav" aria-label="Главная навигация">
+    <nav id="mainNav" class="nav">
 
-      <button type="button" data-nav="home">
+      <button data-nav="home" type="button">
         Главная
       </button>
 
-      <button type="button" data-nav="sports">
+      <button data-nav="sports" type="button">
         Виды спорта
       </button>
 
-      <button type="button" data-nav="coaches">
+      <button data-nav="coaches" type="button">
         Тренеры
       </button>
 
-      <button type="button" data-nav="ranking">
+      <button data-nav="ranking" type="button">
         Рейтинг
       </button>
 
-      <button type="button" data-nav="match">
+      <button data-nav="match" type="button">
         Подбор
       </button>
 
@@ -267,7 +258,7 @@
     </section>
 
 
-    <!-- RANKING PAGE -->
+    <!-- RANKING -->
     <section id="ranking" class="page">
 
       <div class="container">
@@ -284,7 +275,7 @@
     </section>
 
 
-    <!-- MATCH PAGE -->
+    <!-- MATCH -->
     <section id="match" class="page">
 
       <div class="container">
@@ -296,6 +287,7 @@
 
 
         <div class="match-box">
+
 
           <label>
 
@@ -368,7 +360,7 @@
     </section>
 
 
-    <!-- PROFILE PAGE -->
+    <!-- PROFILE -->
     <section id="profile" class="page">
 
       <div
@@ -382,17 +374,11 @@
 
 
   <!-- AUTH MODAL -->
-  <div
-    id="modal"
-    class="modal"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="authTitle"
-  >
+  <div id="modal" class="modal">
 
     <div class="modal-content">
 
-      <h2 id="authTitle">
+      <h2>
         Войти в FITMATCH
       </h2>
 
@@ -406,7 +392,6 @@
           <input
             id="authEmail"
             type="email"
-            autocomplete="email"
             required
           >
 
@@ -421,7 +406,6 @@
             id="authPassword"
             type="password"
             minlength="6"
-            autocomplete="current-password"
             required
           >
 
@@ -458,10 +442,7 @@
         </div>
 
 
-        <div
-          id="authMessage"
-          aria-live="polite"
-        ></div>
+        <div id="authMessage"></div>
 
       </form>
 
@@ -471,22 +452,17 @@
 
 
   <!-- CREATE COACH MODAL -->
-  <div
-    id="coachModal"
-    class="modal"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="coachTitle"
-  >
+  <div id="coachModal" class="modal">
 
     <div class="modal-content">
 
-      <h2 id="coachTitle">
+      <h2>
         Стать тренером
       </h2>
 
 
       <form id="createForm" class="form">
+
 
         <label>
 
@@ -494,7 +470,6 @@
 
           <input
             name="name"
-            autocomplete="name"
             required
           >
 
@@ -509,11 +484,7 @@
             id="coachSport"
             name="sport"
             required
-          >
-            <option value="">
-              Выбрать спорт
-            </option>
-          </select>
+          ></select>
 
         </label>
 
@@ -522,10 +493,7 @@
 
           Цель
 
-          <input
-            name="goal"
-            placeholder="Например: похудение, сила, выносливость"
-          >
+          <input name="goal">
 
         </label>
 
@@ -557,7 +525,6 @@
             name="price"
             type="number"
             min="0"
-            step="1"
             required
           >
 
@@ -591,11 +558,7 @@
 
           О себе
 
-          <textarea
-            name="bio"
-            rows="5"
-            placeholder="Расскажите о своём опыте и специализации"
-          ></textarea>
+          <textarea name="bio"></textarea>
 
         </label>
 
@@ -621,10 +584,7 @@
         </div>
 
 
-        <div
-          id="coachMessage"
-          aria-live="polite"
-        ></div>
+        <div id="coachMessage"></div>
 
       </form>
 
@@ -640,10 +600,7 @@
 
 
   <!-- JAVASCRIPT -->
-  <script
-    type="module"
-    src="fitmatch.js"
-  ></script>
+  <script type="module" src="fitmatch.js"></script>
 
 </body>
 </html>
