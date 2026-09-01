@@ -1,49 +1,46 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-// ==========================================
-// ВСТАВЬ СЮДА ДАННЫЕ ИЗ SUPABASE
-// ==========================================
+// =====================================================
+// FITMATCH — Supabase
+// =====================================================
 
 const SUPABASE_URL = "https://ypbhcgcwkpiujcakvaji.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_Lsrk07A5aXJH7YypVR8QGQ_TQPwhfOV";
-
-// ==========================================
 
 const supabase = createClient(
   SUPABASE_URL,
   SUPABASE_ANON_KEY
 );
 
+// =====================================================
+// СОСТОЯНИЕ
+// =====================================================
+
 let sports = [];
 let coaches = [];
 let currentUser = null;
 
-
-// ==========================================
-// ЗАЩИТА ОТ HTML-КОДА
-// ==========================================
+// =====================================================
+// БЕЗОПАСНЫЙ HTML
+// =====================================================
 
 function esc(value) {
-  return String(value ?? "").replace(
-    /[&<>"']/g,
-    function (char) {
-      const chars = {
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;"
-      };
+  return String(value ?? "").replace(/[&<>"']/g, function (char) {
+    const chars = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;"
+    };
 
-      return chars[char];
-    }
-  );
+    return chars[char];
+  });
 }
 
-
-// ==========================================
-// ИНИЦИАЛЫ ТРЕНЕРА
-// ==========================================
+// =====================================================
+// ИНИЦИАЛЫ
+// =====================================================
 
 function initials(name) {
   return String(name || "")
@@ -57,23 +54,21 @@ function initials(name) {
     .toUpperCase();
 }
 
-
-// ==========================================
+// =====================================================
 // НАЗВАНИЕ СПОРТА
-// ==========================================
+// =====================================================
 
 function sportName(id) {
   const sport = sports.find(function (item) {
-    return item.id === id;
+    return String(item.id) === String(id);
   });
 
   return sport ? sport.name : id || "Не указан";
 }
 
-
-// ==========================================
+// =====================================================
 // ЦЕНА
-// ==========================================
+// =====================================================
 
 function priceText(coach) {
   const price = Number(coach.price || 0);
@@ -82,17 +77,14 @@ function priceText(coach) {
   return `€${price} / ${period}`;
 }
 
-
-// ==========================================
-// ПЕРЕКЛЮЧЕНИЕ СТРАНИЦ
-// ==========================================
+// =====================================================
+// ПОКАЗ СТРАНИЦЫ
+// =====================================================
 
 function showPage(id) {
-  document
-    .querySelectorAll(".page")
-    .forEach(function (page) {
-      page.classList.remove("active");
-    });
+  document.querySelectorAll(".page").forEach(function (page) {
+    page.classList.remove("active");
+  });
 
   const page = document.getElementById(id);
 
@@ -112,10 +104,9 @@ function showPage(id) {
   });
 }
 
-
-// ==========================================
-// МОДАЛЬНЫЕ ОКНА
-// ==========================================
+// =====================================================
+// МОДАЛЬНОЕ ОКНО
+// =====================================================
 
 function toggleModal(id, show) {
   const modal = document.getElementById(id);
@@ -125,32 +116,27 @@ function toggleModal(id, show) {
   }
 }
 
-
-// ==========================================
+// =====================================================
 // СООБЩЕНИЯ
-// ==========================================
+// =====================================================
 
 function showMessage(id, text, isError = false) {
   const element = document.getElementById(id);
 
-  if (!element) return;
+  if (!element) {
+    return;
+  }
 
   element.textContent = text;
-
-  if (isError) {
-    element.className = "error";
-  } else {
-    element.className = "success";
-  }
+  element.className = isError ? "error" : "success";
 }
 
-
-// ==========================================
+// =====================================================
 // ЗАГРУЗКА ДАННЫХ
-// ==========================================
+// =====================================================
 
 async function loadData() {
-  const results = await Promise.all([
+  const [sportsResult, coachesResult] = await Promise.all([
     supabase
       .from("sports")
       .select("*")
@@ -163,9 +149,6 @@ async function loadData() {
         ascending: false
       })
   ]);
-
-  const sportsResult = results[0];
-  const coachesResult = results[1];
 
   if (sportsResult.error) {
     throw sportsResult.error;
@@ -181,10 +164,9 @@ async function loadData() {
   renderAll();
 }
 
-
-// ==========================================
+// =====================================================
 // КАРТОЧКА СПОРТА
-// ==========================================
+// =====================================================
 
 function createSportCard(sport) {
   const card = document.createElement("div");
@@ -207,7 +189,7 @@ function createSportCard(sport) {
     const filter = document.getElementById("sportFilter");
 
     if (filter) {
-      filter.value = sport.id;
+      filter.value = String(sport.id);
     }
 
     renderCoaches();
@@ -216,10 +198,9 @@ function createSportCard(sport) {
   return card;
 }
 
-
-// ==========================================
+// =====================================================
 // КАРТОЧКА ТРЕНЕРА
-// ==========================================
+// =====================================================
 
 function createCoachCard(coach) {
   const card = document.createElement("article");
@@ -244,6 +225,7 @@ function createCoachCard(coach) {
     </div>
 
     <div class="tags">
+
       ${
         coach.goal
           ? `<span class="tag">${esc(coach.goal)}</span>`
@@ -255,9 +237,11 @@ function createCoachCard(coach) {
           ? `<span class="tag">✓ Проверен</span>`
           : ""
       }
+
     </div>
 
     <div class="card-footer">
+
       <span>
         ⭐ ${Number(coach.rating || 0).toFixed(1)}
       </span>
@@ -265,6 +249,7 @@ function createCoachCard(coach) {
       <span>
         от ${priceText(coach)}
       </span>
+
     </div>
   `;
 
@@ -275,10 +260,9 @@ function createCoachCard(coach) {
   return card;
 }
 
-
-// ==========================================
-// СПОРТ
-// ==========================================
+// =====================================================
+// СПОРТЫ
+// =====================================================
 
 function renderSports() {
   const containers = [
@@ -289,13 +273,14 @@ function renderSports() {
   containers.forEach(function (id) {
     const container = document.getElementById(id);
 
-    if (!container) return;
+    if (!container) {
+      return;
+    }
 
     container.replaceChildren(
       ...sports.map(createSportCard)
     );
   });
-
 
   const selects = [
     "sportFilter",
@@ -306,7 +291,9 @@ function renderSports() {
   selects.forEach(function (id) {
     const select = document.getElementById(id);
 
-    if (!select) return;
+    if (!select) {
+      return;
+    }
 
     const previousValue = select.value;
 
@@ -343,14 +330,19 @@ function renderSports() {
       );
     });
 
-    select.value = previousValue;
+    if (
+      [...select.options].some(function (option) {
+        return option.value === previousValue;
+      })
+    ) {
+      select.value = previousValue;
+    }
   });
 }
 
-
-// ==========================================
-// СПИСОК ТРЕНЕРОВ
-// ==========================================
+// =====================================================
+// ТРЕНЕРЫ
+// =====================================================
 
 function renderCoaches() {
   const sportFilter =
@@ -372,7 +364,7 @@ function renderCoaches() {
   const filtered = coaches.filter(function (coach) {
     const sportMatches =
       !selectedSport ||
-      coach.sport === selectedSport;
+      String(coach.sport) === String(selectedSport);
 
     const formatMatches =
       !selectedFormat ||
@@ -401,16 +393,17 @@ function renderCoaches() {
   });
 }
 
-
-// ==========================================
+// =====================================================
 // ЛУЧШИЕ ТРЕНЕРЫ
-// ==========================================
+// =====================================================
 
 function renderTopCoaches() {
   const container =
     document.getElementById("topCoaches");
 
-  if (!container) return;
+  if (!container) {
+    return;
+  }
 
   const top = [...coaches]
     .sort(function (a, b) {
@@ -424,16 +417,17 @@ function renderTopCoaches() {
   );
 }
 
-
-// ==========================================
+// =====================================================
 // РЕЙТИНГ
-// ==========================================
+// =====================================================
 
 function renderRanking() {
   const container =
     document.getElementById("rankingList");
 
-  if (!container) return;
+  if (!container) {
+    return;
+  }
 
   const ranking = [...coaches].sort(
     function (a, b) {
@@ -443,6 +437,17 @@ function renderRanking() {
   );
 
   container.replaceChildren();
+
+  if (!ranking.length) {
+    const empty = document.createElement("p");
+
+    empty.className = "lead";
+    empty.textContent = "Рейтинг пока пуст.";
+
+    container.appendChild(empty);
+
+    return;
+  }
 
   ranking.forEach(function (coach, index) {
     const row = document.createElement("div");
@@ -477,16 +482,17 @@ function renderRanking() {
   });
 }
 
-
-// ==========================================
-// ЦЕЛИ ДЛЯ MATCH
-// ==========================================
+// =====================================================
+// ЦЕЛИ
+// =====================================================
 
 function populateGoals() {
   const select =
     document.getElementById("matchGoal");
 
-  if (!select) return;
+  if (!select) {
+    return;
+  }
 
   const previousValue = select.value;
 
@@ -515,10 +521,9 @@ function populateGoals() {
   select.value = previousValue;
 }
 
-
-// ==========================================
-// ОТРИСОВКА ВСЕГО САЙТА
-// ==========================================
+// =====================================================
+// ОБЩАЯ ОТРИСОВКА
+// =====================================================
 
 function renderAll() {
   renderSports();
@@ -528,17 +533,35 @@ function renderAll() {
   populateGoals();
 }
 
-
-// ==========================================
+// =====================================================
 // ПРОФИЛЬ ТРЕНЕРА
-// ==========================================
+// =====================================================
 
 async function openProfile(coachId) {
   const coach = coaches.find(function (item) {
-    return item.id === coachId;
+    return String(item.id) === String(coachId);
   });
 
-  if (!coach) return;
+  if (!coach) {
+    return;
+  }
+
+  const profileContent =
+    document.getElementById("profileContent");
+
+  if (!profileContent) {
+    return;
+  }
+
+  showPage("profile");
+
+  profileContent.innerHTML = `
+    <div class="match-box">
+      <p class="lead">
+        Загрузка профиля...
+      </p>
+    </div>
+  `;
 
   const result = await supabase
     .from("reviews")
@@ -554,17 +577,23 @@ async function openProfile(coachId) {
     });
 
   if (result.error) {
-    alert(result.error.message);
+    profileContent.innerHTML = `
+      <div class="match-box">
+        <p class="error">
+          Не удалось загрузить отзывы:
+          ${esc(result.error.message)}
+        </p>
+      </div>
+    `;
+
     return;
   }
 
   const reviews = result.data || [];
 
   const canReview =
-    currentUser &&
-    currentUser.id !== coach.user_id;
-
-  showPage("profile");
+    Boolean(currentUser) &&
+    String(currentUser.id) !== String(coach.user_id);
 
   const reviewHTML = reviews.length
     ? reviews.map(function (review) {
@@ -572,29 +601,21 @@ async function openProfile(coachId) {
           <div class="review">
 
             <b>
-              ⭐ ${review.rating}/5
+              ⭐ ${Number(review.rating || 0)}/5
             </b>
 
             <p>
-              ${esc(
-                review.text ||
-                "Без текста"
-              )}
+              ${esc(review.text || "Без текста")}
             </p>
 
           </div>
         `;
       }).join("")
     : `
-        <p class="lead">
-          Отзывов пока нет.
-        </p>
-      `;
-
-  const profileContent =
-    document.getElementById("profileContent");
-
-  if (!profileContent) return;
+      <p class="lead">
+        Отзывов пока нет.
+      </p>
+    `;
 
   profileContent.innerHTML = `
 
@@ -644,7 +665,6 @@ async function openProfile(coachId) {
 
     </div>
 
-
     <div class="match-box">
 
       <h2>
@@ -655,7 +675,6 @@ async function openProfile(coachId) {
 
     </div>
 
-
     ${
       canReview
         ? `
@@ -665,44 +684,22 @@ async function openProfile(coachId) {
               Оставить отзыв
             </h2>
 
-            <form
-              id="reviewForm"
-              class="form"
-            >
+            <form id="reviewForm" class="form">
 
               <label>
-
                 Оценка
 
                 <select name="rating">
-
-                  <option value="5">
-                    5
-                  </option>
-
-                  <option value="4">
-                    4
-                  </option>
-
-                  <option value="3">
-                    3
-                  </option>
-
-                  <option value="2">
-                    2
-                  </option>
-
-                  <option value="1">
-                    1
-                  </option>
-
+                  <option value="5">5</option>
+                  <option value="4">4</option>
+                  <option value="3">3</option>
+                  <option value="2">2</option>
+                  <option value="1">1</option>
                 </select>
 
               </label>
 
-
               <label>
-
                 Комментарий
 
                 <textarea
@@ -711,7 +708,6 @@ async function openProfile(coachId) {
                 ></textarea>
 
               </label>
-
 
               <button
                 class="btn btn-primary"
@@ -732,12 +728,20 @@ async function openProfile(coachId) {
   const reviewForm =
     document.getElementById("reviewForm");
 
-  if (!reviewForm) return;
+  if (!reviewForm) {
+    return;
+  }
 
   reviewForm.addEventListener(
     "submit",
     async function (event) {
       event.preventDefault();
+
+      if (!currentUser) {
+        alert("Сначала войди в аккаунт.");
+
+        return;
+      }
 
       const formData =
         new FormData(event.currentTarget);
@@ -750,20 +754,19 @@ async function openProfile(coachId) {
           formData.get("text") || ""
         ).trim() || null;
 
-      const response = await supabase
-        .from("reviews")
-        .insert({
-          coach_id: coachId,
-          user_id: currentUser.id,
-          rating: rating,
-          text: text
-        });
+      const response =
+        await supabase
+          .from("reviews")
+          .insert({
+            coach_id: coachId,
+            user_id: currentUser.id,
+            rating: rating,
+            text: text
+          });
 
       if (response.error) {
 
-        if (
-          response.error.code === "23505"
-        ) {
+        if (response.error.code === "23505") {
           alert(
             "Вы уже оставляли отзыв этому тренеру."
           );
@@ -782,20 +785,35 @@ async function openProfile(coachId) {
   );
 }
 
-
-// ==========================================
-// ПОИСК MATCH
-// ==========================================
+// =====================================================
+// MATCH
+// =====================================================
 
 function findMatch() {
-  const sport =
-    document.getElementById("matchSport").value;
+  const sportElement =
+    document.getElementById("matchSport");
 
-  const goal =
-    document.getElementById("matchGoal").value;
+  const goalElement =
+    document.getElementById("matchGoal");
 
-  const format =
-    document.getElementById("matchFormat").value;
+  const formatElement =
+    document.getElementById("matchFormat");
+
+  const container =
+    document.getElementById("matchResults");
+
+  if (
+    !sportElement ||
+    !goalElement ||
+    !formatElement ||
+    !container
+  ) {
+    return;
+  }
+
+  const sport = sportElement.value;
+  const goal = goalElement.value;
+  const format = formatElement.value;
 
   const matches = coaches
     .map(function (coach) {
@@ -804,7 +822,7 @@ function findMatch() {
 
       if (
         sport &&
-        coach.sport === sport
+        String(coach.sport) === String(sport)
       ) {
         match += 40;
       }
@@ -835,9 +853,6 @@ function findMatch() {
     .sort(function (a, b) {
       return b.match - a.match;
     });
-
-  const container =
-    document.getElementById("matchResults");
 
   container.innerHTML = `
     <h2>
@@ -881,7 +896,6 @@ function findMatch() {
 
         </div>
 
-
         <div class="match-percent">
           ${coach.match}% MATCH
         </div>
@@ -899,34 +913,66 @@ function findMatch() {
     });
 }
 
-
-// ==========================================
+// =====================================================
 // АВТОРИЗАЦИЯ
-// ==========================================
+// =====================================================
 
 async function refreshUser() {
   const response =
     await supabase.auth.getUser();
 
-  currentUser =
-    response.data.user || null;
+  if (response.error) {
+    console.warn(
+      "Auth:",
+      response.error.message
+    );
+
+    currentUser = null;
+  } else {
+    currentUser =
+      response.data.user || null;
+  }
 
   const button =
     document.getElementById("authBtn");
 
-  if (!button) return;
+  if (!button) {
+    return;
+  }
 
   if (currentUser) {
+
+    const email =
+      currentUser.email || "";
+
+    const name =
+      email.split("@")[0] || "Пользователь";
+
     button.textContent =
-      `Выйти (${currentUser.email.split("@")[0]})`;
+      `Выйти (${name})`;
+
   } else {
-    button.textContent = "Войти";
+
+    button.textContent =
+      "Войти";
   }
 
   button.onclick = async function () {
 
     if (currentUser) {
-      await supabase.auth.signOut();
+
+      const response =
+        await supabase.auth.signOut();
+
+      if (response.error) {
+        alert(response.error.message);
+        return;
+      }
+
+      currentUser = null;
+
+      button.textContent = "Войти";
+
       return;
     }
 
@@ -937,14 +983,19 @@ async function refreshUser() {
   };
 }
 
-
-// ==========================================
+// =====================================================
 // ВХОД
-// ==========================================
+// =====================================================
 
-document
-  .getElementById("authForm")
-  .addEventListener(
+function initAuthForm() {
+  const form =
+    document.getElementById("authForm");
+
+  if (!form) {
+    return;
+  }
+
+  form.addEventListener(
     "submit",
     async function (event) {
 
@@ -968,6 +1019,7 @@ document
         });
 
       if (response.error) {
+
         showMessage(
           "authMessage",
           response.error.message,
@@ -976,6 +1028,9 @@ document
 
         return;
       }
+
+      currentUser =
+        response.data.user || null;
 
       await refreshUser();
 
@@ -992,15 +1047,21 @@ document
       }, 500);
     }
   );
+}
 
-
-// ==========================================
+// =====================================================
 // РЕГИСТРАЦИЯ
-// ==========================================
+// =====================================================
 
-document
-  .getElementById("signupBtn")
-  .addEventListener(
+function initSignup() {
+  const button =
+    document.getElementById("signupBtn");
+
+  if (!button) {
+    return;
+  }
+
+  button.addEventListener(
     "click",
     async function () {
 
@@ -1014,6 +1075,17 @@ document
         document
           .getElementById("authPassword")
           .value;
+
+      if (!email || !password) {
+
+        showMessage(
+          "authMessage",
+          "Введи email и пароль.",
+          true
+        );
+
+        return;
+      }
 
       const response =
         await supabase.auth.signUp({
@@ -1032,15 +1104,21 @@ document
       );
     }
   );
+}
 
-
-// ==========================================
+// =====================================================
 // СОЗДАТЬ ТРЕНЕРА
-// ==========================================
+// =====================================================
 
-document
-  .getElementById("createBtn")
-  .addEventListener(
+function initCreateCoach() {
+  const button =
+    document.getElementById("createBtn");
+
+  if (!button) {
+    return;
+  }
+
+  button.addEventListener(
     "click",
     async function () {
 
@@ -1068,21 +1146,28 @@ document
       );
     }
   );
+}
 
+// =====================================================
+// ФОРМА ТРЕНЕРА
+// =====================================================
 
-// ==========================================
-// СОЗДАНИЕ ПРОФИЛЯ ТРЕНЕРА
-// ==========================================
+function initCoachForm() {
+  const form =
+    document.getElementById("createForm");
 
-document
-  .getElementById("createForm")
-  .addEventListener(
+  if (!form) {
+    return;
+  }
+
+  form.addEventListener(
     "submit",
     async function (event) {
 
       event.preventDefault();
 
       if (!currentUser) {
+
         showMessage(
           "coachMessage",
           "Необходимо войти в аккаунт.",
@@ -1095,6 +1180,57 @@ document
       const formData =
         new FormData(event.currentTarget);
 
+      const name =
+        String(
+          formData.get("name") || ""
+        ).trim();
+
+      const sport =
+        formData.get("sport");
+
+      const goal =
+        String(
+          formData.get("goal") || ""
+        ).trim() || null;
+
+      const format =
+        formData.get("format");
+
+      const price =
+        Number(
+          formData.get("price")
+        );
+
+      const period =
+        formData.get("period");
+
+      const bio =
+        String(
+          formData.get("bio") || ""
+        ).trim() || null;
+
+      if (!name || !sport || !period) {
+
+        showMessage(
+          "coachMessage",
+          "Заполни обязательные поля.",
+          true
+        );
+
+        return;
+      }
+
+      if (!Number.isFinite(price) || price < 0) {
+
+        showMessage(
+          "coachMessage",
+          "Укажи корректную цену.",
+          true
+        );
+
+        return;
+      }
+
       const response =
         await supabase
           .from("coaches")
@@ -1102,33 +1238,19 @@ document
 
             user_id: currentUser.id,
 
-            name: String(
-              formData.get("name")
-            ).trim(),
+            name: name,
 
-            sport:
-              formData.get("sport"),
+            sport: sport,
 
-            goal:
-              String(
-                formData.get("goal") || ""
-              ).trim() || null,
+            goal: goal,
 
-            format:
-              formData.get("format"),
+            format: format,
 
-            price:
-              Number(
-                formData.get("price")
-              ),
+            price: price,
 
-            period:
-              formData.get("period"),
+            period: period,
 
-            bio:
-              String(
-                formData.get("bio") || ""
-              ).trim() || null
+            bio: bio
           });
 
       if (response.error) {
@@ -1136,12 +1258,15 @@ document
         if (
           response.error.code === "23505"
         ) {
+
           showMessage(
             "coachMessage",
             "У тебя уже есть профиль тренера.",
             true
           );
+
         } else {
+
           showMessage(
             "coachMessage",
             response.error.message,
@@ -1160,194 +1285,276 @@ document
       await loadData();
 
       setTimeout(function () {
+
         toggleModal(
           "coachModal",
           false
         );
+
+        form.reset();
+
       }, 600);
     }
   );
+}
 
-
-// ==========================================
+// =====================================================
 // НАВИГАЦИЯ
-// ==========================================
+// =====================================================
 
-document
-  .getElementById("logo")
-  .addEventListener(
-    "click",
-    function () {
-      showPage("home");
-    }
-  );
+function initNavigation() {
 
-document
-  .querySelectorAll("[data-nav]")
-  .forEach(function (button) {
+  const logo =
+    document.getElementById("logo");
 
-    button.addEventListener(
+  if (logo) {
+    logo.addEventListener(
       "click",
       function () {
-        showPage(
-          button.dataset.nav
-        );
+        showPage("home");
       }
     );
-  });
-
-document
-  .getElementById("matchBtn")
-  .addEventListener(
-    "click",
-    function () {
-      showPage("match");
-    }
-  );
-
-document
-  .getElementById("chooseSportBtn")
-  .addEventListener(
-    "click",
-    function () {
-      showPage("sports");
-    }
-  );
-
-document
-  .getElementById("sportFilter")
-  .addEventListener(
-    "change",
-    renderCoaches
-  );
-
-document
-  .getElementById("formatFilter")
-  .addEventListener(
-    "change",
-    renderCoaches
-  );
-
-document
-  .getElementById("findMatchBtn")
-  .addEventListener(
-    "click",
-    findMatch
-  );
-
-document
-  .getElementById("modalCancel")
-  .addEventListener(
-    "click",
-    function () {
-      toggleModal(
-        "modal",
-        false
-      );
-    }
-  );
-
-document
-  .getElementById("coachCancel")
-  .addEventListener(
-    "click",
-    function () {
-      toggleModal(
-        "coachModal",
-        false
-      );
-    }
-  );
-
-
-// ==========================================
-// МОБИЛЬНОЕ МЕНЮ
-// ==========================================
-
-document
-  .getElementById("hamburger")
-  .addEventListener(
-    "click",
-    function () {
-
-      document
-        .getElementById("mainNav")
-        .classList.toggle(
-          "mobile-open"
-        );
-    }
-  );
-
-
-// ==========================================
-// ЗАКРЫТИЕ МОДАЛЬНЫХ ОКОН
-// ==========================================
-
-document
-  .querySelectorAll(".modal")
-  .forEach(function (modal) {
-
-    modal.addEventListener(
-      "click",
-      function (event) {
-
-        if (event.target === modal) {
-          toggleModal(
-            modal.id,
-            false
-          );
-        }
-      }
-    );
-  });
-
-
-// ==========================================
-// ИЗМЕНЕНИЕ СОСТОЯНИЯ АВТОРИЗАЦИИ
-// ==========================================
-
-supabase.auth.onAuthStateChange(
-  function (event, session) {
-
-    currentUser =
-      session
-        ? session.user
-        : null;
-
-    refreshUser();
   }
-);
 
+  document
+    .querySelectorAll("[data-nav]")
+    .forEach(function (button) {
 
-// ==========================================
-// ЗАПУСК FITMATCH
-// ==========================================
+      button.addEventListener(
+        "click",
+        function () {
 
-try {
+          showPage(
+            button.dataset.nav
+          );
 
-  await refreshUser();
+        }
+      );
 
-  await loadData();
+    });
 
-} catch (error) {
+  const matchBtn =
+    document.getElementById("matchBtn");
 
-  console.error(
-    "FITMATCH ERROR:",
-    error
-  );
+  if (matchBtn) {
+    matchBtn.addEventListener(
+      "click",
+      function () {
+        showPage("match");
+      }
+    );
+  }
 
-  const container =
-    document.getElementById("coachesList");
+  const chooseSportBtn =
+    document.getElementById("chooseSportBtn");
 
-  if (container) {
-
-    container.innerHTML = `
-      <p class="error">
-        Ошибка подключения к Supabase.
-        Проверь SUPABASE_URL,
-        SUPABASE_ANON_KEY
-        и настройки базы данных.
-      </p>
-    `;
+  if (chooseSportBtn) {
+    chooseSportBtn.addEventListener(
+      "click",
+      function () {
+        showPage("sports");
+      }
+    );
   }
 }
+
+// =====================================================
+// ФИЛЬТРЫ
+// =====================================================
+
+function initFilters() {
+
+  const sportFilter =
+    document.getElementById("sportFilter");
+
+  if (sportFilter) {
+    sportFilter.addEventListener(
+      "change",
+      renderCoaches
+    );
+  }
+
+  const formatFilter =
+    document.getElementById("formatFilter");
+
+  if (formatFilter) {
+    formatFilter.addEventListener(
+      "change",
+      renderCoaches
+    );
+  }
+
+  const findMatchBtn =
+    document.getElementById("findMatchBtn");
+
+  if (findMatchBtn) {
+    findMatchBtn.addEventListener(
+      "click",
+      findMatch
+    );
+  }
+}
+
+// =====================================================
+// МОДАЛЬНЫЕ ОКНА
+// =====================================================
+
+function initModals() {
+
+  const modalCancel =
+    document.getElementById("modalCancel");
+
+  if (modalCancel) {
+    modalCancel.addEventListener(
+      "click",
+      function () {
+        toggleModal(
+          "modal",
+          false
+        );
+      }
+    );
+  }
+
+  const coachCancel =
+    document.getElementById("coachCancel");
+
+  if (coachCancel) {
+    coachCancel.addEventListener(
+      "click",
+      function () {
+        toggleModal(
+          "coachModal",
+          false
+        );
+      }
+    );
+  }
+
+  document
+    .querySelectorAll(".modal")
+    .forEach(function (modal) {
+
+      modal.addEventListener(
+        "click",
+        function (event) {
+
+          if (
+            event.target === modal
+          ) {
+
+            toggleModal(
+              modal.id,
+              false
+            );
+
+          }
+
+        }
+      );
+
+    });
+}
+
+// =====================================================
+// МОБИЛЬНОЕ МЕНЮ
+// =====================================================
+
+function initMobileMenu() {
+
+  const hamburger =
+    document.getElementById("hamburger");
+
+  const nav =
+    document.getElementById("mainNav");
+
+  if (!hamburger || !nav) {
+    return;
+  }
+
+  hamburger.addEventListener(
+    "click",
+    function () {
+
+      nav.classList.toggle(
+        "mobile-open"
+      );
+
+    }
+  );
+}
+
+// =====================================================
+// AUTH STATE
+// =====================================================
+
+function initAuthState() {
+
+  supabase.auth.onAuthStateChange(
+    function (event, session) {
+
+      currentUser =
+        session
+          ? session.user
+          : null;
+
+      refreshUser();
+
+    }
+  );
+}
+
+// =====================================================
+// ЗАПУСК
+// =====================================================
+
+async function init() {
+
+  initNavigation();
+
+  initFilters();
+
+  initModals();
+
+  initMobileMenu();
+
+  initAuthForm();
+
+  initSignup();
+
+  initCreateCoach();
+
+  initCoachForm();
+
+  initAuthState();
+
+  try {
+
+    await refreshUser();
+
+    await loadData();
+
+  } catch (error) {
+
+    console.error(
+      "FITMATCH ERROR:",
+      error
+    );
+
+    const container =
+      document.getElementById("coachesList");
+
+    if (container) {
+
+      container.innerHTML = `
+        <p class="error">
+          Ошибка подключения к Supabase.
+          ${esc(error.message || error)}
+        </p>
+      `;
+
+    }
+  }
+}
+
+init();
