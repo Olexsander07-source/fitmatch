@@ -4,8 +4,8 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 // ВСТАВЬ СЮДА ДАННЫЕ ИЗ SUPABASE
 // ==========================================
 
-const SUPABASE_URL = https://ypbhcgcwkpiujcakvaji.supabase.co;
-const SUPABASE_ANON_KEY = sb_publishable_Lsrk07A5aXJH7YypVR8QGQ_TQPwhfOV;
+const SUPABASE_URL = "https://ypbhcgcwkpiujcakvaji.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_Lsrk07A5aXJH7YypVR8QGQ_TQPwhfOV";
 
 // ==========================================
 
