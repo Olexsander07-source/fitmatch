@@ -136,32 +136,76 @@ function showMessage(id, text, isError = false) {
 // =====================================================
 
 async function loadData() {
-  const [sportsResult, coachesResult] = await Promise.all([
-    supabase
-      .from("sports")
-      .select("*")
-      .order("name"),
 
-    supabase
-      .from("coaches")
-      .select("*")
-      .order("score", {
-        ascending: false
-      })
-  ]);
+  // -----------------------------
+  // ЗАГРУЖАЕМ ВИДЫ СПОРТА
+  // -----------------------------
+
+  const sportsResult = await supabase
+    .from("sports")
+    .select("*")
+    .order("name");
 
   if (sportsResult.error) {
+
+    console.error(
+      "Ошибка загрузки видов спорта:",
+      sportsResult.error
+    );
+
     throw sportsResult.error;
   }
 
+  sports = sportsResult.data || [];
+
+  console.log(
+    "SPORTS LOADED:",
+    sports
+  );
+
+  // СРАЗУ заполняем все списки спорта
+  renderSports();
+
+
+  // -----------------------------
+  // ЗАГРУЖАЕМ ТРЕНЕРОВ
+  // -----------------------------
+
+  const coachesResult = await supabase
+    .from("coaches")
+    .select("*")
+    .order("score", {
+      ascending: false
+    });
+
   if (coachesResult.error) {
-    throw coachesResult.error;
+
+    console.error(
+      "Ошибка загрузки тренеров:",
+      coachesResult.error
+    );
+
+    coaches = [];
+
+  } else {
+
+    coaches =
+      coachesResult.data || [];
+
   }
 
-  sports = sportsResult.data || [];
-  coaches = coachesResult.data || [];
 
-  renderAll();
+  // -----------------------------
+  // ОБНОВЛЯЕМ ОСТАЛЬНОЙ ИНТЕРФЕЙС
+  // -----------------------------
+
+  renderCoaches();
+
+  renderTopCoaches();
+
+  renderRanking();
+
+  populateGoals();
 }
 
 // =====================================================
