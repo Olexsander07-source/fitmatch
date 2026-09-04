@@ -1,1 +1,804 @@
+<!doctype html>
+<html lang="ru">
 
+<head>
+  <meta charset="utf-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
+
+  <title>FITMATCH — Найди своего тренера</title>
+
+  <meta
+    name="description"
+    content="FITMATCH — платформа для поиска спортивных тренеров."
+  >
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+
+<body>
+
+  <!-- HEADER -->
+
+  <header class="header">
+
+    <button
+      class="logo"
+      id="logo"
+      type="button"
+    >
+      FIT<span>MATCH</span>
+    </button>
+
+
+    <button
+      id="hamburger"
+      class="hamburger"
+      type="button"
+      aria-label="Открыть меню"
+    >
+      ☰
+    </button>
+
+
+    <nav
+      id="mainNav"
+      class="nav"
+    >
+
+      <button
+        data-nav="home"
+        type="button"
+      >
+        Главная
+      </button>
+
+      <button
+        data-nav="sports"
+        type="button"
+      >
+        Виды спорта
+      </button>
+
+      <button
+        data-nav="coaches"
+        type="button"
+      >
+        Тренеры
+      </button>
+
+      <button
+        data-nav="ranking"
+        type="button"
+      >
+        Рейтинг
+      </button>
+
+      <button
+        data-nav="match"
+        type="button"
+      >
+        Подбор
+      </button>
+
+    </nav>
+
+
+    <div class="header-actions">
+
+      <button
+        id="authBtn"
+        class="btn"
+        type="button"
+      >
+        Войти
+      </button>
+
+
+      <button
+        id="createBtn"
+        class="login-btn"
+        type="button"
+      >
+        Стать тренером
+      </button>
+
+    </div>
+
+  </header>
+
+
+
+  <!-- MAIN -->
+
+  <main>
+
+
+    <!-- HOME -->
+
+    <section
+      id="home"
+      class="page active"
+    >
+
+      <div class="container hero">
+
+        <div>
+
+          <p class="eyebrow">
+            GLOBAL COACHING PLATFORM
+          </p>
+
+
+          <h1>
+            НАЙДИ<br>
+            <em>СВОЕГО</em><br>
+            ТРЕНЕРА.
+          </h1>
+
+
+          <p class="lead">
+            FITMATCH помогает найти тренера
+            по виду спорта, цели и формату тренировок.
+          </p>
+
+
+          <button
+            class="btn btn-primary"
+            id="matchBtn"
+            type="button"
+          >
+            ПОДОБРАТЬ ТРЕНЕРА →
+          </button>
+
+
+          <button
+            class="btn"
+            id="chooseSportBtn"
+            type="button"
+          >
+            ВЫБРАТЬ СПОРТ
+          </button>
+
+        </div>
+
+
+        <div class="score-box">
+
+          <p class="eyebrow">
+            FITMATCH SCORE
+          </p>
+
+
+          <div class="score">
+            96
+          </div>
+
+
+          <p class="lead">
+            Индекс тренера на основе рейтинга,
+            опыта и активности.
+          </p>
+
+        </div>
+
+      </div>
+
+
+
+      <!-- SPORTS -->
+
+      <div class="section dark">
+
+        <div class="container">
+
+          <h2 class="section-title">
+            ВИДЫ СПОРТА
+          </h2>
+
+
+          <div
+            class="sports-grid"
+            id="homeSports"
+          ></div>
+
+        </div>
+
+      </div>
+
+
+
+      <!-- TOP COACHES -->
+
+      <div class="section">
+
+        <div class="container">
+
+          <h2 class="section-title">
+            ЛУЧШИЕ ТРЕНЕРЫ
+          </h2>
+
+
+          <div
+            class="coach-grid"
+            id="topCoaches"
+          ></div>
+
+        </div>
+
+      </div>
+
+
+    </section>
+
+
+
+    <!-- SPORTS PAGE -->
+
+    <section
+      id="sports"
+      class="page"
+    >
+
+      <div class="container">
+
+        <h1 class="page-title">
+          ВЫБЕРИ<br>
+          <em>СВОЙ СПОРТ.</em>
+        </h1>
+
+
+        <div
+          class="sports-grid"
+          id="sportsList"
+        ></div>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- COACHES PAGE -->
+
+    <section
+      id="coaches"
+      class="page"
+    >
+
+      <div class="container">
+
+        <h1 class="page-title">
+          НАЙДИ<br>
+          <em>ТРЕНЕРА.</em>
+        </h1>
+
+
+        <div class="filters">
+
+          <select id="sportFilter">
+
+            <option value="">
+              Все виды спорта
+            </option>
+
+          </select>
+
+
+          <select id="formatFilter">
+
+            <option value="">
+              Любой формат
+            </option>
+
+            <option value="Онлайн">
+              Онлайн
+            </option>
+
+            <option value="Офлайн">
+              Офлайн
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <div
+          class="coach-grid"
+          id="coachesList"
+        ></div>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- RANKING -->
+
+    <section
+      id="ranking"
+      class="page"
+    >
+
+      <div class="container">
+
+        <h1 class="page-title">
+          РЕЙТИНГ<br>
+          <em>ТРЕНЕРОВ.</em>
+        </h1>
+
+
+        <div id="rankingList"></div>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- MATCH -->
+
+    <section
+      id="match"
+      class="page"
+    >
+
+      <div class="container">
+
+        <h1 class="page-title">
+          НАЙДЁМ<br>
+          <em>ТВОЙ MATCH.</em>
+        </h1>
+
+
+        <div class="match-box">
+
+          <label>
+
+            Какой спорт?
+
+            <select id="matchSport">
+
+              <option value="">
+                Не выбрано
+              </option>
+
+            </select>
+
+          </label>
+
+
+          <label>
+
+            Какая цель?
+
+            <select id="matchGoal">
+
+              <option value="">
+                Не выбрано
+              </option>
+
+            </select>
+
+          </label>
+
+
+          <label>
+
+            Формат?
+
+            <select id="matchFormat">
+
+              <option value="">
+                Не важно
+              </option>
+
+              <option value="Онлайн">
+                Онлайн
+              </option>
+
+              <option value="Офлайн">
+                Офлайн
+              </option>
+
+            </select>
+
+          </label>
+
+
+          <button
+            class="btn btn-primary"
+            id="findMatchBtn"
+            type="button"
+          >
+            НАЙТИ МОЕГО ТРЕНЕРА →
+          </button>
+
+
+          <div id="matchResults"></div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- PROFILE -->
+
+    <section
+      id="profile"
+      class="page"
+    >
+
+      <div
+        class="container"
+        id="profileContent"
+      ></div>
+
+    </section>
+
+
+  </main>
+
+
+
+  <!-- AUTH MODAL -->
+
+  <div
+    id="modal"
+    class="modal"
+  >
+
+    <div class="modal-content">
+
+      <h2>
+        Войти в FITMATCH
+      </h2>
+
+
+      <form
+        id="authForm"
+        class="form"
+      >
+
+        <label>
+
+          Email
+
+          <input
+            id="authEmail"
+            type="email"
+            autocomplete="email"
+            required
+          >
+
+        </label>
+
+
+        <label>
+
+          Пароль
+
+          <input
+            id="authPassword"
+            type="password"
+            minlength="6"
+            autocomplete="current-password"
+            required
+          >
+
+        </label>
+
+
+        <div class="actions">
+
+          <button
+            class="btn btn-primary"
+            type="submit"
+          >
+            ВОЙТИ
+          </button>
+
+
+          <button
+            id="signupBtn"
+            class="btn"
+            type="button"
+          >
+            РЕГИСТРАЦИЯ
+          </button>
+
+
+          <button
+            id="modalCancel"
+            class="btn"
+            type="button"
+          >
+            ОТМЕНА
+          </button>
+
+        </div>
+
+
+        <button
+          id="forgotPasswordBtn"
+          class="forgot-password"
+          type="button"
+        >
+          Забыли пароль?
+        </button>
+
+
+        <div id="authMessage"></div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- RESET PASSWORD MODAL -->
+
+  <div
+    id="resetPasswordModal"
+    class="modal"
+  >
+
+    <div class="modal-content">
+
+      <h2>
+        Создать новый пароль
+      </h2>
+
+
+      <p class="lead">
+        Введите и подтвердите новый пароль.
+      </p>
+
+
+      <form
+        id="resetPasswordForm"
+        class="form"
+      >
+
+        <label>
+
+          Новый пароль
+
+          <input
+            id="newPassword"
+            type="password"
+            minlength="6"
+            autocomplete="new-password"
+            required
+          >
+
+        </label>
+
+
+        <label>
+
+          Повторите пароль
+
+          <input
+            id="confirmPassword"
+            type="password"
+            minlength="6"
+            autocomplete="new-password"
+            required
+          >
+
+        </label>
+
+
+        <div class="actions">
+
+          <button
+            class="btn btn-primary"
+            type="submit"
+          >
+            СОХРАНИТЬ ПАРОЛЬ
+          </button>
+
+
+          <button
+            id="resetCancel"
+            class="btn"
+            type="button"
+          >
+            ОТМЕНА
+          </button>
+
+        </div>
+
+
+        <div id="resetMessage"></div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- CREATE COACH MODAL -->
+
+  <div
+    id="coachModal"
+    class="modal"
+  >
+
+    <div class="modal-content">
+
+      <h2>
+        Стать тренером
+      </h2>
+
+
+      <form
+        id="createForm"
+        class="form"
+      >
+
+        <label>
+
+          Имя
+
+          <input
+            name="name"
+            required
+          >
+
+        </label>
+
+
+        <label>
+
+          Вид спорта
+
+          <select
+            id="coachSport"
+            name="sport"
+            required
+          ></select>
+
+        </label>
+
+
+        <label>
+
+          Цель
+
+          <input name="goal">
+
+        </label>
+
+
+        <label>
+
+          Формат
+
+          <select name="format">
+
+            <option value="Онлайн">
+              Онлайн
+            </option>
+
+            <option value="Офлайн">
+              Офлайн
+            </option>
+
+          </select>
+
+        </label>
+
+
+        <label>
+
+          Цена €
+
+          <input
+            name="price"
+            type="number"
+            min="0"
+            required
+          >
+
+        </label>
+
+
+        <label>
+
+          Период
+
+          <select name="period">
+
+            <option value="месяц">
+              В месяц
+            </option>
+
+            <option value="занятие">
+              За занятие
+            </option>
+
+            <option value="программа">
+              За программу
+            </option>
+
+          </select>
+
+        </label>
+
+
+        <label>
+
+          О себе
+
+          <textarea name="bio"></textarea>
+
+        </label>
+
+
+        <div class="actions">
+
+          <button
+            class="btn btn-primary"
+            type="submit"
+          >
+            СОЗДАТЬ
+          </button>
+
+
+          <button
+            id="coachCancel"
+            class="btn"
+            type="button"
+          >
+            ОТМЕНА
+          </button>
+
+        </div>
+
+
+        <div id="coachMessage"></div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- FOOTER -->
+
+  <footer>
+
+    © 2026 FITMATCH
+
+  </footer>
+
+
+
+  <!-- JAVASCRIPT -->
+
+  <script
+    type="module"
+    src="fitmatch.js"
+  ></script>
+
+
+</body>
+
+</html>
