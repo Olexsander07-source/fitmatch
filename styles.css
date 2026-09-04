@@ -36,26 +36,35 @@ button {
   cursor: pointer;
 }
 
-/* HEADER */
+/* =========================
+   HEADER
+========================= */
 
 .header {
   min-height: 76px;
   border-bottom: 1px solid var(--line);
+
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   padding: 0 5%;
+
   position: sticky;
   top: 0;
+
   background: var(--bg);
+
   z-index: 10;
 }
 
 .logo {
   font-size: 24px;
   font-weight: 900;
+
   background: none;
   border: 0;
+
   color: var(--text);
 }
 
@@ -65,9 +74,12 @@ button {
 
 .hamburger {
   display: none;
+
   background: none;
   color: var(--text);
+
   border: 0;
+
   font-size: 24px;
 }
 
@@ -79,7 +91,9 @@ button {
 .nav button {
   background: none;
   border: 0;
+
   color: var(--muted);
+
   padding: 8px 10px;
 }
 
@@ -90,29 +104,43 @@ button {
 .header-actions {
   display: flex;
   gap: 10px;
+  align-items: center;
 }
 
-/* BUTTONS */
+/* =========================
+   BUTTONS
+========================= */
 
 .actions {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+
+  margin-top: 20px;
 }
 
 .login-btn,
 .btn {
   padding: 11px 15px;
+
   border: 1px solid var(--accent);
+
   background: transparent;
+
   color: var(--text);
+
   border-radius: 5px;
-  transition: transform 0.2s, background 0.2s;
+
+  transition:
+    transform 0.2s,
+    background 0.2s;
 }
 
 .btn-primary {
   background: var(--accent);
+
   color: #050605;
+
   font-weight: 800;
 }
 
@@ -121,10 +149,13 @@ button {
   transform: translateY(-2px);
 }
 
-/* PAGES */
+/* =========================
+   PAGES
+========================= */
 
 .page {
   display: none;
+
   min-height: calc(100vh - 76px);
 }
 
@@ -134,62 +165,97 @@ button {
 
 .container {
   max-width: 1200px;
+
   margin: auto;
+
   padding: 50px 25px;
 }
 
-/* HERO */
+/* =========================
+   HERO
+========================= */
 
 .hero {
   min-height: 520px;
+
   display: grid;
-  grid-template-columns: 1.4fr 0.6fr;
+
+  grid-template-columns:
+    1.4fr 0.6fr;
+
   align-items: center;
+
   gap: 40px;
 }
 
 .eyebrow {
   color: var(--accent);
+
   font-size: 11px;
+
   letter-spacing: 2px;
+
   font-weight: 700;
 }
 
 h1 {
-  font-size: clamp(42px, 8vw, 100px);
+  font-size:
+    clamp(
+      42px,
+      8vw,
+      100px
+    );
+
   line-height: 0.87;
+
   margin: 20px 0;
+
   letter-spacing: -4px;
 }
 
 h1 em {
   color: var(--accent);
+
   font-style: normal;
 }
 
 .page-title {
-  font-size: clamp(48px, 8vw, 90px);
+  font-size:
+    clamp(
+      48px,
+      8vw,
+      90px
+    );
 }
 
 .lead {
   color: var(--muted);
+
   line-height: 1.65;
 }
 
-/* CARDS */
+/* =========================
+   CARDS
+========================= */
 
 .score-box,
 .match-box,
 .modal-content {
   background: var(--panel);
-  border: 1px solid var(--line);
+
+  border:
+    1px solid var(--line);
+
   padding: 28px;
+
   border-radius: 10px;
 }
 
 .score {
   font-size: 80px;
+
   color: var(--accent);
+
   font-weight: 900;
 }
 
@@ -203,29 +269,45 @@ h1 em {
 
 .section-title {
   font-size: 32px;
+
   margin-bottom: 25px;
 }
 
-/* SPORTS */
+/* =========================
+   SPORTS
+========================= */
 
 .sports-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+
+  grid-template-columns:
+    repeat(5, 1fr);
+
   gap: 12px;
 }
 
 .sport-card {
   background: var(--panel);
-  border: 1px solid var(--line);
+
+  border:
+    1px solid var(--line);
+
   padding: 18px;
+
   border-radius: 10px;
+
   cursor: pointer;
+
   min-height: 135px;
-  transition: transform 0.2s, border-color 0.2s;
+
+  transition:
+    transform 0.2s,
+    border-color 0.2s;
 }
 
 .sport-card:hover {
   border-color: var(--accent);
+
   transform: translateY(-2px);
 }
 
@@ -233,43 +315,66 @@ h1 em {
   color: var(--muted);
 }
 
-/* COACHES */
+/* =========================
+   COACHES
+========================= */
 
 .coach-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+
+  grid-template-columns:
+    repeat(3, 1fr);
+
   gap: 16px;
 }
 
 .coach-card {
   background: var(--panel);
-  border: 1px solid var(--line);
+
+  border:
+    1px solid var(--line);
+
   padding: 18px;
+
   border-radius: 10px;
+
   cursor: pointer;
-  transition: transform 0.2s, border-color 0.2s;
+
+  transition:
+    transform 0.2s,
+    border-color 0.2s;
 }
 
 .coach-card:hover {
   border-color: var(--accent);
+
   transform: translateY(-2px);
 }
 
 .coach-avatar {
   width: 58px;
   height: 58px;
+
   background: var(--panel2);
+
   border-radius: 50%;
+
   display: grid;
+
   place-items: center;
+
   color: var(--accent);
+
   font-weight: 900;
+
   margin-bottom: 12px;
 }
 
 .coach-score {
   float: right;
+
   color: var(--accent);
+
   font-weight: 900;
 }
 
@@ -279,29 +384,47 @@ h1 em {
 
 .tag {
   display: inline-block;
-  border: 1px solid var(--line);
+
+  border:
+    1px solid var(--line);
+
   padding: 5px 8px;
+
   color: var(--muted);
+
   font-size: 12px;
+
   border-radius: 6px;
+
   margin-right: 5px;
+
   margin-bottom: 5px;
 }
 
 .card-footer {
-  border-top: 1px solid var(--line);
+  border-top:
+    1px solid var(--line);
+
   padding-top: 12px;
+
   display: flex;
+
   justify-content: space-between;
+
   gap: 10px;
+
   color: var(--muted);
 }
 
-/* FILTERS */
+/* =========================
+   FILTERS
+========================= */
 
 .filters {
   display: flex;
+
   gap: 12px;
+
   margin-bottom: 25px;
 }
 
@@ -311,21 +434,39 @@ h1 em {
 .form select,
 .form textarea {
   width: 100%;
+
   padding: 11px;
+
   border-radius: 7px;
-  border: 1px solid var(--line);
+
+  border:
+    1px solid var(--line);
+
   background: var(--panel2);
+
   color: var(--text);
 }
 
-/* RANKING */
+/* =========================
+   RANKING
+========================= */
 
 .ranking-row {
   display: grid;
-  grid-template-columns: 70px 1fr 1fr 70px;
+
+  grid-template-columns:
+    70px
+    1fr
+    1fr
+    70px;
+
   gap: 12px;
-  border-bottom: 1px solid var(--line);
+
+  border-bottom:
+    1px solid var(--line);
+
   padding: 15px 8px;
+
   cursor: pointer;
 }
 
@@ -333,24 +474,38 @@ h1 em {
   background: var(--panel);
 }
 
-/* MATCH */
+/* =========================
+   MATCH
+========================= */
 
 .match-box label {
   display: block;
+
   margin-bottom: 15px;
+
   color: var(--muted);
 }
 
 .match-result {
   display: flex;
+
   justify-content: space-between;
+
   align-items: center;
+
   gap: 20px;
+
   padding: 15px;
+
   margin-top: 10px;
+
   background: var(--panel2);
-  border: 1px solid var(--line);
+
+  border:
+    1px solid var(--line);
+
   border-radius: 8px;
+
   cursor: pointer;
 }
 
@@ -360,29 +515,47 @@ h1 em {
 
 .match-percent {
   color: var(--accent);
+
   font-weight: 900;
 }
 
-/* REVIEWS */
+/* =========================
+   REVIEWS
+========================= */
 
 .review {
   padding: 15px;
+
   margin-top: 10px;
+
   background: var(--panel2);
-  border: 1px solid var(--line);
+
+  border:
+    1px solid var(--line);
+
   border-radius: 8px;
 }
 
-/* MODAL */
+/* =========================
+   MODALS
+========================= */
 
 .modal {
   position: fixed;
+
   inset: 0;
+
   display: none;
+
   align-items: center;
+
   justify-content: center;
-  background: rgba(0, 0, 0, 0.73);
+
+  background:
+    rgba(0, 0, 0, 0.73);
+
   padding: 20px;
+
   z-index: 100;
 }
 
@@ -392,43 +565,86 @@ h1 em {
 
 .modal-content {
   width: 100%;
+
   max-width: 720px;
+
   max-height: 90vh;
+
   overflow: auto;
+
+  position: relative;
 }
+
+/* =========================
+   FORMS
+========================= */
 
 .form label {
   display: block;
+
   margin: 12px 0;
+
   color: var(--muted);
 }
 
 textarea {
   min-height: 100px;
+
   resize: vertical;
 }
 
 .success {
   color: var(--success);
+
   margin-top: 15px;
 }
 
 .error {
   color: var(--danger);
+
   margin-top: 15px;
 }
 
-/* FOOTER */
+/* =========================
+   AUTH LINKS
+========================= */
+
+.auth-link {
+  background: none;
+
+  border: 0;
+
+  padding: 8px 0;
+
+  color: var(--accent);
+
+  text-decoration: underline;
+
+  font-size: 14px;
+}
+
+.auth-link:hover {
+  opacity: 0.8;
+}
+
+/* =========================
+   FOOTER
+========================= */
 
 footer {
   padding: 25px;
+
   text-align: center;
+
   color: var(--muted);
 }
 
-/* MOBILE */
+/* =========================
+   MOBILE
+========================= */
 
 @media (max-width: 700px) {
+
   .hamburger {
     display: block;
   }
@@ -438,25 +654,41 @@ footer {
   }
 
   .nav.mobile-open {
+
     display: flex;
+
     position: absolute;
+
     top: 76px;
+
     left: 0;
+
     right: 0;
+
     background: var(--bg);
+
     flex-direction: column;
+
     padding: 15px;
-    border-bottom: 1px solid var(--line);
+
+    border-bottom:
+      1px solid var(--line);
   }
 
   .hero,
   .coach-grid,
   .sports-grid {
-    grid-template-columns: 1fr;
+
+    grid-template-columns:
+      1fr;
   }
 
   .ranking-row {
-    grid-template-columns: 45px 1fr 70px;
+
+    grid-template-columns:
+      45px
+      1fr
+      70px;
   }
 
   .ranking-row .sport {
@@ -481,7 +713,18 @@ footer {
 
   .header-actions .btn,
   .header-actions .login-btn {
+
     padding: 8px 10px;
+
     font-size: 12px;
   }
+
+  .modal {
+    padding: 12px;
+  }
+
+  .modal-content {
+    padding: 20px;
+  }
+
 }
