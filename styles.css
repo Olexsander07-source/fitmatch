@@ -11,6 +11,7 @@
   --success: #7ff07f;
   --font-heading: "Space Grotesk", Arial, sans-serif;
   --font-body: "Inter", Arial, Helvetica, sans-serif;
+  --cycling-banner-image: url('images/cycling-banner.jpg');
 }
 
 * {
@@ -48,6 +49,7 @@ button {
   color: #050605;
 }
 
+/* thin, on-brand scrollbars */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--line) transparent;
@@ -408,6 +410,96 @@ h1 em {
   justify-content: space-between;
   gap: 10px;
   color: var(--muted);
+}
+
+/* =========================
+   CATEGORY BANNER
+========================= */
+
+.category-banner {
+  position: relative;
+  min-height: 420px;
+  border-radius: 18px;
+  overflow: hidden;
+  margin-bottom: 30px;
+  background-image: var(--cycling-banner-image, none);
+  background-size: cover;
+  background-position: center;
+  border: 1px solid var(--line);
+}
+
+.category-banner-overlay {
+  position: relative;
+  height: 100%;
+  min-height: 420px;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  max-width: 560px;
+  background: linear-gradient(90deg, rgba(9, 11, 10, 0.94) 45%, rgba(9, 11, 10, 0.55) 75%, transparent 100%);
+}
+
+.category-banner-title {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: clamp(38px, 6vw, 64px);
+  line-height: 0.9;
+  letter-spacing: -2px;
+  margin: 10px 0;
+  color: var(--text);
+}
+
+.category-banner-title em {
+  color: var(--accent);
+  font-style: normal;
+  text-shadow: 0 0 40px rgba(216, 255, 62, 0.35);
+}
+
+.category-banner-stats {
+  display: flex;
+  gap: 24px;
+  margin: 20px 0 8px;
+  flex-wrap: wrap;
+}
+
+.category-banner-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.category-banner-stat svg {
+  width: 34px;
+  height: 34px;
+  color: var(--accent);
+}
+
+.category-banner-cta {
+  align-self: flex-start;
+  border-radius: 999px;
+  margin-top: 20px;
+  padding: 14px 24px;
+}
+
+@media (max-width: 700px) {
+  .category-banner {
+    min-height: 340px;
+  }
+
+  .category-banner-overlay {
+    min-height: 340px;
+    padding: 24px;
+    background: linear-gradient(180deg, rgba(9, 11, 10, 0.55) 20%, rgba(9, 11, 10, 0.95) 70%);
+    max-width: none;
+    justify-content: flex-end;
+  }
 }
 
 /* =========================
