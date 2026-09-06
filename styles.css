@@ -11,7 +11,6 @@
   --success: #7ff07f;
   --font-heading: "Space Grotesk", Arial, sans-serif;
   --font-body: "Inter", Arial, Helvetica, sans-serif;
-  --cycling-banner-image: url('images/cycling-banner.jpg');
 }
 
 * {
@@ -49,7 +48,6 @@ button {
   color: #050605;
 }
 
-/* thin, on-brand scrollbars */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--line) transparent;
@@ -213,6 +211,54 @@ button {
   max-width: 1200px;
   margin: auto;
   padding: 50px 25px;
+}
+
+/* =========================
+   HERO SLIDESHOW (homepage)
+========================= */
+
+#home {
+  position: relative;
+}
+
+.hero-slideshow {
+  position: absolute;
+  inset: 0;
+  height: 600px;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.hero-slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  animation: heroFade 72s ease-in-out infinite;
+}
+
+.hero-slide svg {
+  width: 65%;
+  height: 65%;
+  max-width: 620px;
+  color: var(--accent);
+  opacity: 0.1;
+}
+
+@keyframes heroFade {
+  0% { opacity: 0; }
+  3% { opacity: 1; }
+  9% { opacity: 1; }
+  13% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+.hero {
+  position: relative;
+  z-index: 1;
 }
 
 /* =========================
@@ -422,10 +468,22 @@ h1 em {
   border-radius: 18px;
   overflow: hidden;
   margin-bottom: 30px;
-  background-image: var(--cycling-banner-image, none);
-  background-size: cover;
-  background-position: center;
   border: 1px solid var(--line);
+  background:
+    radial-gradient(700px 400px at 80% 30%, rgba(216, 255, 62, 0.14), transparent 60%),
+    repeating-linear-gradient(115deg, rgba(255,255,255,0.03) 0 2px, transparent 2px 26px),
+    linear-gradient(160deg, var(--panel), var(--panel2));
+}
+
+.category-banner-graphic {
+  position: absolute;
+  right: -20px;
+  bottom: -20px;
+  width: 340px;
+  height: 260px;
+  color: var(--accent);
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 .category-banner-overlay {
@@ -438,7 +496,6 @@ h1 em {
   justify-content: center;
   gap: 4px;
   max-width: 560px;
-  background: linear-gradient(90deg, rgba(9, 11, 10, 0.94) 45%, rgba(9, 11, 10, 0.55) 75%, transparent 100%);
 }
 
 .category-banner-title {
@@ -496,9 +553,14 @@ h1 em {
   .category-banner-overlay {
     min-height: 340px;
     padding: 24px;
-    background: linear-gradient(180deg, rgba(9, 11, 10, 0.55) 20%, rgba(9, 11, 10, 0.95) 70%);
     max-width: none;
     justify-content: flex-end;
+  }
+
+  .category-banner-graphic {
+    width: 220px;
+    height: 170px;
+    opacity: 0.3;
   }
 }
 
