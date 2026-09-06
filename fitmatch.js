@@ -62,6 +62,126 @@ function sportName(id) {
 }
 
 // =====================================================
+// ВИЗУАЛЫ КАТЕГОРИЙ (иконка, заголовок, статы для баннера и слайд-шоу)
+// =====================================================
+
+const CATEGORY_ALIASES = {
+  boxing: "combat",
+  mma: "combat"
+};
+
+function resolveCategoryKey(sportId) {
+  return CATEGORY_ALIASES[sportId] || sportId;
+}
+
+const CATEGORY_VISUALS = {
+  running: {
+    word1: "",
+    word2: "БЕГ",
+    subtitle: "Тренировки на скорость, дыхание и технику бега",
+    stats: ["Выносливость", "Скорость", "Прогресс"],
+    icon: `
+      <circle cx="150" cy="55" r="18" stroke="currentColor" stroke-width="6"/>
+      <path d="M150 74 L165 140 L110 200 M165 140 L235 175 M165 140 L135 95 L225 85" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M100 230 H150" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+    `
+  },
+  bodybuilding: {
+    word1: "",
+    word2: "БОДИБИЛДИНГ",
+    subtitle: "Мышечная масса, сила и рельеф под руководством профи",
+    stats: ["Сила", "Масса", "Рельеф"],
+    icon: `
+      <circle cx="90" cy="170" r="45" stroke="currentColor" stroke-width="6"/>
+      <circle cx="310" cy="170" r="45" stroke="currentColor" stroke-width="6"/>
+      <line x1="132" y1="170" x2="268" y2="170" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
+    `
+  },
+  swimming: {
+    word1: "",
+    word2: "ПЛАВАНИЕ",
+    subtitle: "Техника плавания, дыхание и выносливость в воде",
+    stats: ["Техника", "Дыхание", "Выносливость"],
+    icon: `
+      <circle cx="130" cy="90" r="18" stroke="currentColor" stroke-width="6"/>
+      <path d="M130 108 L175 160" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+      <path d="M40 210 Q80 190 120 210 T200 210 T280 210 T360 210" stroke="currentColor" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <path d="M40 250 Q80 230 120 250 T200 250 T280 250 T360 250" stroke="currentColor" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.6"/>
+    `
+  },
+  cycling: {
+    word1: "ВЕЛО",
+    word2: "СПОРТ",
+    subtitle: "Тренировки на выносливость, скорость и силу",
+    stats: ["Выносливость", "Скорость", "Прогресс"],
+    icon: `
+      <circle cx="110" cy="210" r="70" stroke="currentColor" stroke-width="6" opacity="0.9"/>
+      <circle cx="290" cy="210" r="70" stroke="currentColor" stroke-width="6" opacity="0.9"/>
+      <circle cx="110" cy="210" r="6" fill="currentColor"/>
+      <circle cx="290" cy="210" r="6" fill="currentColor"/>
+      <path d="M110 210L170 110H220M170 110L140 210M220 110L290 210M220 110L245 70H270" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M140 210H170" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+      <circle cx="245" cy="70" r="10" stroke="currentColor" stroke-width="6"/>
+    `
+  },
+  combat: {
+    word1: "",
+    word2: "ЕДИНОБОРСТВА",
+    subtitle: "Техника, реакция и физическая готовность в единоборствах",
+    stats: ["Реакция", "Техника", "Сила"],
+    icon: `
+      <circle cx="200" cy="150" r="75" stroke="currentColor" stroke-width="6"/>
+      <rect x="165" y="215" width="70" height="60" rx="14" stroke="currentColor" stroke-width="6"/>
+    `
+  },
+  yoga: {
+    word1: "",
+    word2: "ЙОГА",
+    subtitle: "Гибкость, баланс и осознанность тела",
+    stats: ["Гибкость", "Баланс", "Спокойствие"],
+    icon: `
+      <circle cx="200" cy="70" r="22" stroke="currentColor" stroke-width="6"/>
+      <path d="M200 92 L150 190 H250 Z" stroke="currentColor" stroke-width="6" stroke-linejoin="round"/>
+      <path d="M110 215 Q200 260 290 215" stroke="currentColor" stroke-width="6" fill="none" stroke-linecap="round"/>
+    `
+  },
+  crossfit: {
+    word1: "",
+    word2: "КРОССФИТ",
+    subtitle: "Сила, выносливость и интенсивные функциональные тренировки",
+    stats: ["Сила", "Интенсивность", "Прогресс"],
+    icon: `
+      <circle cx="200" cy="190" r="65" stroke="currentColor" stroke-width="6"/>
+      <path d="M165 140 Q165 95 200 95 Q235 95 235 140" stroke="currentColor" stroke-width="6" fill="none" stroke-linecap="round"/>
+    `
+  },
+  tennis: {
+    word1: "",
+    word2: "ТЕННИС",
+    subtitle: "Техника удара, тактика и физическая форма на корте",
+    stats: ["Точность", "Тактика", "Форма"],
+    icon: `
+      <ellipse cx="170" cy="120" rx="75" ry="95" stroke="currentColor" stroke-width="6"/>
+      <line x1="170" y1="215" x2="170" y2="280" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+      <circle cx="310" cy="230" r="20" stroke="currentColor" stroke-width="6"/>
+    `
+  },
+  fitness: {
+    word1: "",
+    word2: "ФИТНЕС",
+    subtitle: "Форма, здоровье и уверенность в своём теле",
+    stats: ["Форма", "Энергия", "Уверенность"],
+    icon: `
+      <path d="M30 190 H130 L150 120 L185 260 L215 150 L245 190 H370" stroke="currentColor" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    `
+  }
+};
+
+function getCategoryVisual(sportId) {
+  return CATEGORY_VISUALS[resolveCategoryKey(sportId)] || null;
+}
+
+// =====================================================
 // ЦЕНА
 // =====================================================
 
@@ -249,12 +369,66 @@ function renderSports() {
 // ТРЕНЕРЫ
 // =====================================================
 
+function updateCategoryBanner() {
+  const sportFilter = document.getElementById("sportFilter");
+  const banner = document.getElementById("categoryBanner");
+  if (!sportFilter || !banner) return;
+
+  const visual = getCategoryVisual(sportFilter.value);
+
+  if (!visual) {
+    banner.style.display = "none";
+    return;
+  }
+
+  document.getElementById("categoryBannerGraphic").innerHTML = visual.icon;
+
+  document.getElementById("categoryBannerTitle").innerHTML =
+    (visual.word1 ? esc(visual.word1) + "<br>" : "") + `<em>${esc(visual.word2)}</em>`;
+
+  document.getElementById("categoryBannerSubtitle").textContent = visual.subtitle;
+
+  document.getElementById("categoryBannerStats").innerHTML = visual.stats.map(function (label) {
+    return `
+      <div class="category-banner-stat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+        <span>${esc(label.toUpperCase())}</span>
+      </div>
+    `;
+  }).join("");
+
+  banner.style.display = "block";
+}
+
+// =====================================================
+// СЛАЙД-ШОУ НА ГЛАВНОЙ
+// =====================================================
+
+function initHeroSlideshow() {
+  const container = document.getElementById("heroSlideshow");
+  if (!container) return;
+
+  const keys = Object.keys(CATEGORY_VISUALS);
+  const slideDuration = 72 / keys.length;
+
+  container.innerHTML = keys.map(function (key, index) {
+    const visual = CATEGORY_VISUALS[key];
+    return `
+      <div class="hero-slide" style="animation-delay:${(index * slideDuration).toFixed(2)}s">
+        <svg viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${visual.icon}</svg>
+      </div>
+    `;
+  }).join("");
+}
+
 function renderCoaches() {
   const sportFilter = document.getElementById("sportFilter");
   const formatFilter = document.getElementById("formatFilter");
   const container = document.getElementById("coachesList");
 
   if (!sportFilter || !formatFilter || !container) return;
+
+  updateCategoryBanner();
 
   const selectedSport = sportFilter.value;
   const selectedFormat = formatFilter.value;
@@ -874,6 +1048,13 @@ function initFilters() {
   if (findMatchBtn) {
     findMatchBtn.addEventListener("click", findMatch);
   }
+
+  const categoryBannerCta = document.getElementById("cyclingBannerCta");
+  if (categoryBannerCta) {
+    categoryBannerCta.addEventListener("click", function () {
+      document.getElementById("coachesList")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
 }
 
 // =====================================================
@@ -951,6 +1132,7 @@ async function init() {
   initCoachForm();
   initAuthState();
   checkRecoveryMode();
+  initHeroSlideshow();
 
   try {
     await refreshUser();
