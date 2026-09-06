@@ -12,19 +12,45 @@
 </head>
 <body>
 
+  <aside id="sideNav" class="side-nav">
+    <button class="logo" data-nav="home" type="button">FIT<span>MATCH</span></button>
+    <nav class="side-nav-links">
+      <button data-nav="home" type="button" data-i18n="nav.home">Главная</button>
+      <button data-nav="sports" type="button" data-i18n="nav.sports">Виды спорта</button>
+      <button data-nav="coaches" type="button" data-i18n="nav.coaches">Тренеры</button>
+      <button data-nav="ranking" type="button" data-i18n="nav.ranking">Рейтинг</button>
+      <button data-nav="match" type="button" data-i18n="nav.match">Подбор</button>
+    </nav>
+    <select class="lang-select" aria-label="Язык / Language">
+      <option value="ru">Русский</option>
+      <option value="en">English</option>
+      <option value="fr">Français</option>
+      <option value="de">Deutsch</option>
+      <option value="uk">Українська</option>
+    </select>
+  </aside>
+
   <header class="header">
     <button class="logo" id="logo" type="button">FIT<span>MATCH</span></button>
     <button id="hamburger" class="hamburger" type="button" aria-label="Открыть меню">☰</button>
     <nav id="mainNav" class="nav" aria-label="Главная навигация">
-      <button data-nav="home" type="button">Главная</button>
-      <button data-nav="sports" type="button">Виды спорта</button>
-      <button data-nav="coaches" type="button">Тренеры</button>
-      <button data-nav="ranking" type="button">Рейтинг</button>
-      <button data-nav="match" type="button">Подбор</button>
+      <button type="button" class="nav-close" id="navClose" aria-label="Закрыть меню">✕</button>
+      <button data-nav="home" type="button" data-i18n="nav.home">Главная</button>
+      <button data-nav="sports" type="button" data-i18n="nav.sports">Виды спорта</button>
+      <button data-nav="coaches" type="button" data-i18n="nav.coaches">Тренеры</button>
+      <button data-nav="ranking" type="button" data-i18n="nav.ranking">Рейтинг</button>
+      <button data-nav="match" type="button" data-i18n="nav.match">Подбор</button>
+      <select class="lang-select lang-select-mobile" aria-label="Язык / Language">
+        <option value="ru">Русский</option>
+        <option value="en">English</option>
+        <option value="fr">Français</option>
+        <option value="de">Deutsch</option>
+        <option value="uk">Українська</option>
+      </select>
     </nav>
     <div class="header-actions">
-      <button id="authBtn" class="btn" type="button">Войти</button>
-      <button id="createBtn" class="login-btn" type="button">Стать тренером</button>
+      <button id="authBtn" class="btn" type="button" data-i18n="auth.login">Войти</button>
+      <button id="createBtn" class="login-btn" type="button" data-i18n="becomeCoach">Стать тренером</button>
     </div>
   </header>
 
@@ -32,33 +58,31 @@
 
     <section id="home" class="page active">
       <div id="heroSlideshow" class="hero-slideshow" aria-hidden="true"></div>
-      <div class="container hero">
-        <div>
-          <p class="eyebrow">GLOBAL COACHING PLATFORM</p>
-          <h1>НАЙДИ<br><em>СВОЕГО</em><br>ТРЕНЕРА.</h1>
-          <p class="lead">FITMATCH помогает найти тренера по виду спорта, цели и формату тренировок.</p>
-          <div class="actions">
-            <button class="btn btn-primary" id="matchBtn" type="button">ПОДОБРАТЬ ТРЕНЕРА →</button>
-            <button class="btn" id="chooseSportBtn" type="button">ВЫБРАТЬ СПОРТ</button>
+      <div class="container landing">
+        <div class="landing-panel">
+          <p class="eyebrow" data-i18n="landing.eyebrow">GLOBAL COACHING PLATFORM</p>
+          <h1 class="landing-title">FIT<em>MATCH</em></h1>
+          <p class="lead" data-i18n="landing.subtitle">Войдите, зарегистрируйтесь или станьте тренером — весь каталог тренеров открыт для просмотра без регистрации.</p>
+          <div class="landing-actions">
+            <button id="landingLoginBtn" class="btn btn-primary" type="button" data-i18n="auth.login">Войти</button>
+            <button id="landingRegisterBtn" class="btn" type="button" data-i18n="auth.register">Регистрация</button>
+            <button id="landingForgotBtn" class="btn" type="button" data-i18n="auth.forgot">Забыли пароль?</button>
+            <button id="landingCreateBtn" class="btn btn-primary" type="button" data-i18n="becomeCoach">Стать тренером</button>
           </div>
-        </div>
-        <div class="score-box">
-          <p class="eyebrow">FITMATCH SCORE</p>
-          <div class="score">96</div>
-          <p class="lead">Индекс тренера на основе рейтинга, опыта и активности.</p>
+          <button id="landingBrowseBtn" class="forgot-password landing-browse" type="button" data-nav="coaches" data-i18n="landing.browse">Смотреть тренеров без регистрации →</button>
         </div>
       </div>
 
       <div class="section dark">
         <div class="container">
-          <h2 class="section-title">ВИДЫ СПОРТА</h2>
+          <h2 class="section-title" data-i18n="nav.sports">ВИДЫ СПОРТА</h2>
           <div class="sports-grid" id="homeSports"></div>
         </div>
       </div>
 
       <div class="section">
         <div class="container">
-          <h2 class="section-title">ЛУЧШИЕ ТРЕНЕРЫ</h2>
+          <h2 class="section-title" data-i18n="pages.topCoaches">ЛУЧШИЕ ТРЕНЕРЫ</h2>
           <div class="coach-grid" id="topCoaches"></div>
         </div>
       </div>
@@ -66,36 +90,34 @@
 
     <section id="sports" class="page">
       <div class="container">
-        <h1 class="page-title">ВЫБЕРИ<br><em>СВОЙ СПОРТ.</em></h1>
+        <h1 class="page-title" data-i18n-html="pages.sportsTitle">ВЫБЕРИ<br><em>СВОЙ СПОРТ.</em></h1>
         <div class="sports-grid" id="sportsList"></div>
       </div>
     </section>
 
     <section id="coaches" class="page">
       <div class="container">
-        <h1 class="page-title">НАЙДИ<br><em>ТРЕНЕРА.</em></h1>
+        <h1 class="page-title" data-i18n-html="pages.coachesTitle">НАЙДИ<br><em>ТРЕНЕРА.</em></h1>
 
         <div id="categoryBanner" class="category-banner" style="display:none">
           <svg id="categoryBannerGraphic" class="category-banner-graphic" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
           <div class="category-banner-overlay">
-            <p class="eyebrow">GLOBAL COACHING PLATFORM</p>
+            <p class="eyebrow" data-i18n="landing.eyebrow">GLOBAL COACHING PLATFORM</p>
             <h2 id="categoryBannerTitle" class="category-banner-title"></h2>
             <p id="categoryBannerSubtitle" class="lead"></p>
             <div id="categoryBannerStats" class="category-banner-stats"></div>
-            <button id="cyclingBannerCta" class="btn btn-primary category-banner-cta" type="button">
-              НАЙТИ ТРЕНЕРА →
-            </button>
+            <button id="categoryBannerCta" class="btn btn-primary category-banner-cta" type="button" data-i18n="category.cta">НАЙТИ ТРЕНЕРА →</button>
           </div>
         </div>
 
         <div class="filters">
           <select id="sportFilter">
-            <option value="">Все виды спорта</option>
+            <option value="" data-i18n="filters.allSports">Все виды спорта</option>
           </select>
           <select id="formatFilter">
-            <option value="">Любой формат</option>
-            <option value="Онлайн">Онлайн</option>
-            <option value="Офлайн">Офлайн</option>
+            <option value="" data-i18n="filters.anyFormat">Любой формат</option>
+            <option value="Онлайн" data-i18n="filters.online">Онлайн</option>
+            <option value="Офлайн" data-i18n="filters.offline">Офлайн</option>
           </select>
         </div>
         <div class="coach-grid" id="coachesList"></div>
@@ -104,36 +126,36 @@
 
     <section id="ranking" class="page">
       <div class="container">
-        <h1 class="page-title">РЕЙТИНГ<br><em>ТРЕНЕРОВ.</em></h1>
+        <h1 class="page-title" data-i18n-html="pages.rankingTitle">РЕЙТИНГ<br><em>ТРЕНЕРОВ.</em></h1>
         <div id="rankingList"></div>
       </div>
     </section>
 
     <section id="match" class="page">
       <div class="container">
-        <h1 class="page-title">НАЙДЁМ<br><em>ТВОЙ MATCH.</em></h1>
+        <h1 class="page-title" data-i18n-html="pages.matchTitle">НАЙДЁМ<br><em>ТВОЙ MATCH.</em></h1>
         <div class="match-box">
           <label>
-            Какой спорт?
+            <span data-i18n="match.sportLabel">Какой спорт?</span>
             <select id="matchSport">
-              <option value="">Не выбрано</option>
+              <option value="" data-i18n="match.notSelected">Не выбрано</option>
             </select>
           </label>
           <label>
-            Какая цель?
+            <span data-i18n="match.goalLabel">Какая цель?</span>
             <select id="matchGoal">
-              <option value="">Не выбрано</option>
+              <option value="" data-i18n="match.notSelected">Не выбрано</option>
             </select>
           </label>
           <label>
-            Формат?
+            <span data-i18n="match.formatLabel">Формат?</span>
             <select id="matchFormat">
-              <option value="">Не важно</option>
-              <option value="Онлайн">Онлайн</option>
-              <option value="Офлайн">Офлайн</option>
+              <option value="" data-i18n="match.notImportant">Не важно</option>
+              <option value="Онлайн" data-i18n="filters.online">Онлайн</option>
+              <option value="Офлайн" data-i18n="filters.offline">Офлайн</option>
             </select>
           </label>
-          <button class="btn btn-primary" id="findMatchBtn" type="button">НАЙТИ МОЕГО ТРЕНЕРА →</button>
+          <button class="btn btn-primary" id="findMatchBtn" type="button" data-i18n="match.submit">НАЙТИ МОЕГО ТРЕНЕРА →</button>
           <div id="matchResults"></div>
         </div>
       </div>
@@ -148,22 +170,22 @@
   <!-- AUTH MODAL -->
   <div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
     <div class="modal-content">
-      <h2 id="authTitle">Войти в FITMATCH</h2>
+      <h2 id="authTitle" data-i18n="auth.modalTitle">Войти в FITMATCH</h2>
       <form id="authForm" class="form">
         <label>
-          Email
+          <span data-i18n="auth.email">Email</span>
           <input id="authEmail" type="email" autocomplete="email" required>
         </label>
         <label>
-          Пароль
+          <span data-i18n="auth.password">Пароль</span>
           <input id="authPassword" type="password" minlength="6" autocomplete="current-password" required>
         </label>
         <div class="actions">
-          <button class="btn btn-primary" type="submit">ВОЙТИ</button>
-          <button id="signupBtn" class="btn" type="button">РЕГИСТРАЦИЯ</button>
-          <button id="modalCancel" class="btn" type="button">ОТМЕНА</button>
+          <button class="btn btn-primary" type="submit" data-i18n="auth.login">ВОЙТИ</button>
+          <button id="signupBtn" class="btn" type="button" data-i18n="auth.register">РЕГИСТРАЦИЯ</button>
+          <button id="modalCancel" class="btn" type="button" data-i18n="auth.cancel">ОТМЕНА</button>
         </div>
-        <button id="forgotPasswordBtn" class="forgot-password" type="button">Забыли пароль?</button>
+        <button id="forgotPasswordBtn" class="forgot-password" type="button" data-i18n="auth.forgot">Забыли пароль?</button>
         <div id="authMessage" aria-live="polite"></div>
       </form>
     </div>
@@ -172,20 +194,20 @@
   <!-- RESET PASSWORD MODAL -->
   <div id="resetPasswordModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="resetTitle">
     <div class="modal-content">
-      <h2 id="resetTitle">Создать новый пароль</h2>
-      <p class="lead">Введите и подтвердите новый пароль.</p>
+      <h2 id="resetTitle" data-i18n="reset.title">Создать новый пароль</h2>
+      <p class="lead" data-i18n="reset.desc">Введите и подтвердите новый пароль.</p>
       <form id="resetPasswordForm" class="form">
         <label>
-          Новый пароль
+          <span data-i18n="reset.newPass">Новый пароль</span>
           <input id="newPassword" type="password" minlength="6" autocomplete="new-password" required>
         </label>
         <label>
-          Повторите пароль
+          <span data-i18n="reset.confirmPass">Повторите пароль</span>
           <input id="confirmPassword" type="password" minlength="6" autocomplete="new-password" required>
         </label>
         <div class="actions">
-          <button class="btn btn-primary" type="submit">СОХРАНИТЬ ПАРОЛЬ</button>
-          <button id="resetCancel" class="btn" type="button">ОТМЕНА</button>
+          <button class="btn btn-primary" type="submit" data-i18n="reset.save">СОХРАНИТЬ ПАРОЛЬ</button>
+          <button id="resetCancel" class="btn" type="button" data-i18n="reset.cancel">ОТМЕНА</button>
         </div>
         <div id="resetMessage" aria-live="polite"></div>
       </form>
@@ -195,53 +217,53 @@
   <!-- CREATE COACH MODAL -->
   <div id="coachModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="coachTitle">
     <div class="modal-content">
-      <h2 id="coachTitle">Стать тренером</h2>
+      <h2 id="coachTitle" data-i18n="coachForm.title">Стать тренером</h2>
       <form id="createForm" class="form">
         <label>
-          Имя
+          <span data-i18n="coachForm.name">Имя</span>
           <input name="name" autocomplete="name" required>
         </label>
         <label>
-          Вид спорта
+          <span data-i18n="coachForm.sport">Вид спорта</span>
           <select id="coachSport" name="sport" required></select>
         </label>
         <label>
-          Цель
-          <input name="goal" placeholder="Например: похудение, сила, выносливость">
+          <span data-i18n="coachForm.goal">Цель</span>
+          <input name="goal" data-i18n-placeholder="coachForm.goalPh" placeholder="Например: похудение, сила, выносливость">
         </label>
         <label>
-          Формат
+          <span data-i18n="coachForm.format">Формат</span>
           <select name="format">
-            <option value="Онлайн">Онлайн</option>
-            <option value="Офлайн">Офлайн</option>
+            <option value="Онлайн" data-i18n="filters.online">Онлайн</option>
+            <option value="Офлайн" data-i18n="filters.offline">Офлайн</option>
           </select>
         </label>
         <label>
-          Цена €
+          <span data-i18n="coachForm.price">Цена €</span>
           <input name="price" type="number" min="0" step="1" required>
         </label>
         <label>
-          Период
+          <span data-i18n="coachForm.period">Период</span>
           <select name="period">
-            <option value="месяц">В месяц</option>
-            <option value="занятие">За занятие</option>
-            <option value="программа">За программу</option>
+            <option value="месяц" data-i18n="coachForm.periodMonth">В месяц</option>
+            <option value="занятие" data-i18n="coachForm.periodSession">За занятие</option>
+            <option value="программа" data-i18n="coachForm.periodProgram">За программу</option>
           </select>
         </label>
         <label>
-          О себе
-          <textarea name="bio" rows="5" placeholder="Расскажите о своём опыте и специализации"></textarea>
+          <span data-i18n="coachForm.bio">О себе</span>
+          <textarea name="bio" rows="5" data-i18n-placeholder="coachForm.bioPh" placeholder="Расскажите о своём опыте и специализации"></textarea>
         </label>
         <div class="actions">
-          <button class="btn btn-primary" type="submit">СОЗДАТЬ</button>
-          <button id="coachCancel" class="btn" type="button">ОТМЕНА</button>
+          <button class="btn btn-primary" type="submit" data-i18n="coachForm.submit">СОЗДАТЬ</button>
+          <button id="coachCancel" class="btn" type="button" data-i18n="coachForm.cancel">ОТМЕНА</button>
         </div>
         <div id="coachMessage" aria-live="polite"></div>
       </form>
     </div>
   </div>
 
-  <footer>© 2026 FITMATCH</footer>
+  <footer data-i18n="footer">© 2026 FITMATCH</footer>
 
   <script type="module" src="fitmatch.js"></script>
 </body>
