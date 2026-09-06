@@ -31,6 +31,7 @@
   <main>
 
     <section id="home" class="page active">
+      <div id="heroSlideshow" class="hero-slideshow" aria-hidden="true"></div>
       <div class="container hero">
         <div>
           <p class="eyebrow">GLOBAL COACHING PLATFORM</p>
@@ -73,6 +74,20 @@
     <section id="coaches" class="page">
       <div class="container">
         <h1 class="page-title">НАЙДИ<br><em>ТРЕНЕРА.</em></h1>
+
+        <div id="categoryBanner" class="category-banner" style="display:none">
+          <svg id="categoryBannerGraphic" class="category-banner-graphic" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
+          <div class="category-banner-overlay">
+            <p class="eyebrow">GLOBAL COACHING PLATFORM</p>
+            <h2 id="categoryBannerTitle" class="category-banner-title"></h2>
+            <p id="categoryBannerSubtitle" class="lead"></p>
+            <div id="categoryBannerStats" class="category-banner-stats"></div>
+            <button id="cyclingBannerCta" class="btn btn-primary category-banner-cta" type="button">
+              НАЙТИ ТРЕНЕРА →
+            </button>
+          </div>
+        </div>
+
         <div class="filters">
           <select id="sportFilter">
             <option value="">Все виды спорта</option>
