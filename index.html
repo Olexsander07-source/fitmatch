@@ -12,10 +12,11 @@
 
   <meta
     name="description"
-    content="FITMATCH — платформа для поиска спортивных тренеров."
+    content="FITMATCH — современная платформа для поиска спортивных тренеров."
   >
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
+
   <link
     rel="preconnect"
     href="https://fonts.gstatic.com"
@@ -23,7 +24,7 @@
   >
 
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap"
     rel="stylesheet"
   >
 
@@ -42,10 +43,10 @@
       class="logo"
       id="logo"
       type="button"
-      aria-label="FITMATCH — Главная"
     >
       FIT<span>MATCH</span>
     </button>
+
 
     <button
       id="hamburger"
@@ -56,6 +57,7 @@
     >
       ☰
     </button>
+
 
     <nav
       id="mainNav"
@@ -111,6 +113,7 @@
         Войти
       </button>
 
+
       <button
         id="createBtn"
         class="login-btn"
@@ -122,6 +125,7 @@
     </div>
 
   </header>
+
 
 
   <!-- =========================
@@ -155,15 +159,17 @@
             GLOBAL COACHING PLATFORM
           </p>
 
+
           <h1>
             НАЙДИ<br>
             <em>СВОЕГО</em><br>
             ТРЕНЕРА.
           </h1>
 
+
           <p class="lead">
-            FITMATCH помогает найти тренера
-            по виду спорта, цели и формату тренировок.
+            FITMATCH помогает найти подходящего тренера
+            по виду спорта, вашей цели и формату тренировок.
           </p>
 
 
@@ -191,7 +197,6 @@
         </div>
 
 
-        <!-- FITMATCH SCORE -->
 
         <div class="score-box">
 
@@ -199,9 +204,11 @@
             FITMATCH SCORE
           </p>
 
+
           <div class="score">
             96
           </div>
+
 
           <p class="lead">
             Индекс тренера на основе рейтинга,
@@ -211,6 +218,7 @@
         </div>
 
       </div>
+
 
 
       <!-- SPORTS -->
@@ -223,6 +231,7 @@
             ВИДЫ СПОРТА
           </h2>
 
+
           <div
             class="sports-grid"
             id="homeSports"
@@ -231,6 +240,7 @@
         </div>
 
       </div>
+
 
 
       <!-- TOP COACHES -->
@@ -242,6 +252,7 @@
           <h2 class="section-title">
             ЛУЧШИЕ ТРЕНЕРЫ
           </h2>
+
 
           <div
             class="coach-grid"
@@ -268,13 +279,8 @@
       <div class="container">
 
         <h1 class="page-title">
-
           ВЫБЕРИ<br>
-
-          <em>
-            СВОЙ СПОРТ.
-          </em>
-
+          <em>СВОЙ СПОРТ.</em>
         </h1>
 
 
@@ -301,13 +307,8 @@
       <div class="container">
 
         <h1 class="page-title">
-
           НАЙДИ<br>
-
-          <em>
-            ТРЕНЕРА.
-          </em>
-
+          <em>ТРЕНЕРА.</em>
         </h1>
 
 
@@ -373,10 +374,7 @@
 
         <div class="filters">
 
-          <select
-            id="sportFilter"
-            aria-label="Фильтр по виду спорта"
-          >
+          <select id="sportFilter">
 
             <option value="">
               Все виды спорта
@@ -385,10 +383,7 @@
           </select>
 
 
-          <select
-            id="formatFilter"
-            aria-label="Фильтр по формату"
-          >
+          <select id="formatFilter">
 
             <option value="">
               Любой формат
@@ -408,12 +403,19 @@
 
 
 
-        <!-- COACH LIST -->
-
         <div
           class="coach-grid"
           id="coachesList"
         ></div>
+
+
+        <div
+          id="coachesEmpty"
+          class="empty-state"
+          style="display:none"
+        >
+          Тренеры по выбранным параметрам пока не найдены.
+        </div>
 
       </div>
 
@@ -433,17 +435,24 @@
       <div class="container">
 
         <h1 class="page-title">
-
           РЕЙТИНГ<br>
-
-          <em>
-            ТРЕНЕРОВ.
-          </em>
-
+          <em>ТРЕНЕРОВ.</em>
         </h1>
 
 
-        <div id="rankingList"></div>
+        <div
+          id="rankingList"
+          class="ranking-list"
+        ></div>
+
+
+        <div
+          id="rankingEmpty"
+          class="empty-state"
+          style="display:none"
+        >
+          Пока нет тренеров для формирования рейтинга.
+        </div>
 
       </div>
 
@@ -463,13 +472,8 @@
       <div class="container">
 
         <h1 class="page-title">
-
           НАЙДЁМ<br>
-
-          <em>
-            ТВОЙ MATCH.
-          </em>
-
+          <em>ТВОЙ MATCH.</em>
         </h1>
 
 
@@ -541,8 +545,10 @@
           </button>
 
 
-
-          <div id="matchResults"></div>
+          <div
+            id="matchResults"
+            aria-live="polite"
+          ></div>
 
         </div>
 
@@ -586,6 +592,16 @@
   >
 
     <div class="modal-content">
+
+
+      <button
+        id="authClose"
+        class="modal-close"
+        type="button"
+        aria-label="Закрыть"
+      >
+        ×
+      </button>
 
 
       <h2 id="authTitle">
@@ -700,6 +716,16 @@
     <div class="modal-content">
 
 
+      <button
+        id="resetClose"
+        class="modal-close"
+        type="button"
+        aria-label="Закрыть"
+      >
+        ×
+      </button>
+
+
       <h2 id="resetTitle">
         Создать новый пароль
       </h2>
@@ -769,6 +795,7 @@
         </div>
 
 
+
         <div
           id="resetMessage"
           aria-live="polite"
@@ -798,9 +825,26 @@
     <div class="modal-content">
 
 
+      <button
+        id="coachClose"
+        class="modal-close"
+        type="button"
+        aria-label="Закрыть"
+      >
+        ×
+      </button>
+
+
       <h2 id="coachTitle">
         Стать тренером
       </h2>
+
+
+      <p class="lead">
+        Создайте свой профиль и станьте доступным
+        для пользователей FITMATCH.
+      </p>
+
 
 
       <form
@@ -831,7 +875,13 @@
             id="coachSport"
             name="sport"
             required
-          ></select>
+          >
+
+            <option value="">
+              Выберите вид спорта
+            </option>
+
+          </select>
 
         </label>
 
@@ -839,7 +889,7 @@
 
         <label>
 
-          Цель
+          Цель / специализация
 
           <input
             name="goal"
@@ -852,7 +902,7 @@
 
         <label>
 
-          Формат
+          Формат тренировок
 
           <select name="format">
 
@@ -888,7 +938,7 @@
 
         <label>
 
-          Период
+          Период оплаты
 
           <select name="period">
 
@@ -917,7 +967,7 @@
           <textarea
             name="bio"
             rows="5"
-            placeholder="Расскажите о своём опыте и специализации"
+            placeholder="Расскажите о своём опыте, достижениях и специализации"
           ></textarea>
 
         </label>
@@ -930,7 +980,7 @@
             class="btn btn-primary"
             type="submit"
           >
-            СОЗДАТЬ
+            СОЗДАТЬ ПРОФИЛЬ
           </button>
 
 
@@ -965,9 +1015,7 @@
   ========================== -->
 
   <footer>
-
     © 2026 FITMATCH
-
   </footer>
 
 
