@@ -2,7 +2,11 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
 
   <title>FITMATCH — Найди своего тренера</title>
 
@@ -12,10 +16,14 @@
   >
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+  >
 
   <link
-    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
     rel="stylesheet"
   >
 
@@ -24,862 +32,955 @@
 
 <body>
 
-<header class="header">
+  <!-- =========================
+       HEADER
+  ========================== -->
 
-  <button class="logo" id="logo" type="button">
-    FIT<span>MATCH</span>
-  </button>
-
-  <button
-    id="hamburger"
-    class="hamburger"
-    type="button"
-    aria-label="Открыть меню"
-  >
-    ☰
-  </button>
-
-  <nav
-    id="mainNav"
-    class="nav"
-    aria-label="Главная навигация"
-  >
-
-    <button data-nav="home" type="button">
-      Главная
-    </button>
-
-    <button data-nav="sports" type="button">
-      Виды спорта
-    </button>
-
-    <button data-nav="coaches" type="button">
-      Тренеры
-    </button>
-
-    <button data-nav="ranking" type="button">
-      Рейтинг
-    </button>
-
-    <button data-nav="match" type="button">
-      Подбор
-    </button>
-
-  </nav>
-
-  <div class="header-actions">
+  <header class="header">
 
     <button
-      id="authBtn"
-      class="btn"
+      class="logo"
+      id="logo"
       type="button"
+      aria-label="FITMATCH — Главная"
     >
-      Войти
+      FIT<span>MATCH</span>
     </button>
 
     <button
-      id="createBtn"
-      class="login-btn"
+      id="hamburger"
+      class="hamburger"
       type="button"
+      aria-label="Открыть меню"
+      aria-expanded="false"
     >
-      Стать тренером
+      ☰
     </button>
 
-  </div>
-
-</header>
-
-
-<main>
-
-
-<!-- =====================================================
-HOME
-===================================================== -->
-
-<section id="home" class="page active">
-
-  <div
-    id="heroSlideshow"
-    class="hero-slideshow"
-    aria-hidden="true"
-  ></div>
-
-
-  <div class="container hero">
-
-    <div>
-
-      <p class="eyebrow">
-        GLOBAL COACHING PLATFORM
-      </p>
-
-      <h1>
-        НАЙДИ<br>
-        <em>СВОЕГО</em><br>
-        ТРЕНЕРА.
-      </h1>
-
-      <p class="lead">
-        FITMATCH помогает найти тренера
-        по виду спорта, цели и формату тренировок.
-      </p>
-
-
-      <div class="actions">
-
-        <button
-          class="btn btn-primary"
-          id="matchBtn"
-          type="button"
-        >
-          ПОДОБРАТЬ ТРЕНЕРА →
-        </button>
-
-
-        <button
-          class="btn"
-          id="chooseSportBtn"
-          type="button"
-        >
-          ВЫБРАТЬ СПОРТ
-        </button>
-
-      </div>
-
-    </div>
-
-
-    <div class="score-box">
-
-      <p class="eyebrow">
-        FITMATCH SCORE
-      </p>
-
-      <div class="score">
-        96
-      </div>
-
-      <p class="lead">
-        Индекс тренера на основе рейтинга,
-        опыта и активности.
-      </p>
-
-    </div>
-
-  </div>
-
-
-
-  <div class="section dark">
-
-    <div class="container">
-
-      <h2 class="section-title">
-        ВИДЫ СПОРТА
-      </h2>
-
-      <div
-        class="sports-grid"
-        id="homeSports"
-      ></div>
-
-    </div>
-
-  </div>
-
-
-
-  <div class="section">
-
-    <div class="container">
-
-      <h2 class="section-title">
-        ЛУЧШИЕ ТРЕНЕРЫ
-      </h2>
-
-      <div
-        class="coach-grid"
-        id="topCoaches"
-      ></div>
-
-    </div>
-
-  </div>
-
-
-</section>
-
-
-
-<!-- =====================================================
-SPORTS
-===================================================== -->
-
-<section id="sports" class="page">
-
-  <div class="container">
-
-    <h1 class="page-title">
-      ВЫБЕРИ<br>
-      <em>СВОЙ СПОРТ.</em>
-    </h1>
-
-
-    <div
-      class="sports-grid"
-      id="sportsList"
-    ></div>
-
-  </div>
-
-</section>
-
-
-
-<!-- =====================================================
-COACHES
-===================================================== -->
-
-<section id="coaches" class="page">
-
-  <div class="container">
-
-    <h1 class="page-title">
-      НАЙДИ<br>
-      <em>ТРЕНЕРА.</em>
-    </h1>
-
-
-
-    <div
-      id="categoryBanner"
-      class="category-banner"
-      style="display:none"
+    <nav
+      id="mainNav"
+      class="nav"
+      aria-label="Главная навигация"
     >
 
-      <div class="category-banner-overlay">
+      <button
+        data-nav="home"
+        type="button"
+      >
+        Главная
+      </button>
 
-        <p class="eyebrow">
-          GLOBAL COACHING PLATFORM
-        </p>
+      <button
+        data-nav="sports"
+        type="button"
+      >
+        Виды спорта
+      </button>
+
+      <button
+        data-nav="coaches"
+        type="button"
+      >
+        Тренеры
+      </button>
+
+      <button
+        data-nav="ranking"
+        type="button"
+      >
+        Рейтинг
+      </button>
+
+      <button
+        data-nav="match"
+        type="button"
+      >
+        Подбор
+      </button>
+
+    </nav>
 
 
-        <h2
-          id="categoryBannerTitle"
-          class="category-banner-title"
-        ></h2>
+    <div class="header-actions">
+
+      <button
+        id="authBtn"
+        class="btn"
+        type="button"
+      >
+        Войти
+      </button>
+
+      <button
+        id="createBtn"
+        class="login-btn"
+        type="button"
+      >
+        Стать тренером
+      </button>
+
+    </div>
+
+  </header>
 
 
-        <p
-          id="categoryBannerSubtitle"
-          class="lead"
-        ></p>
+  <!-- =========================
+       MAIN
+  ========================== -->
+
+  <main>
+
+
+    <!-- =========================
+         HOME
+    ========================== -->
+
+    <section
+      id="home"
+      class="page active"
+    >
+
+      <div
+        id="heroSlideshow"
+        class="hero-slideshow"
+        aria-hidden="true"
+      ></div>
+
+
+      <div class="container hero">
+
+        <div>
+
+          <p class="eyebrow">
+            GLOBAL COACHING PLATFORM
+          </p>
+
+          <h1>
+            НАЙДИ<br>
+            <em>СВОЕГО</em><br>
+            ТРЕНЕРА.
+          </h1>
+
+          <p class="lead">
+            FITMATCH помогает найти тренера
+            по виду спорта, цели и формату тренировок.
+          </p>
+
+
+          <div class="actions">
+
+            <button
+              class="btn btn-primary"
+              id="matchBtn"
+              type="button"
+            >
+              ПОДОБРАТЬ ТРЕНЕРА →
+            </button>
+
+
+            <button
+              class="btn"
+              id="chooseSportBtn"
+              type="button"
+            >
+              ВЫБРАТЬ СПОРТ
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <!-- FITMATCH SCORE -->
+
+        <div class="score-box">
+
+          <p class="eyebrow">
+            FITMATCH SCORE
+          </p>
+
+          <div class="score">
+            96
+          </div>
+
+          <p class="lead">
+            Индекс тренера на основе рейтинга,
+            опыта и активности.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <!-- SPORTS -->
+
+      <div class="section dark">
+
+        <div class="container">
+
+          <h2 class="section-title">
+            ВИДЫ СПОРТА
+          </h2>
+
+          <div
+            class="sports-grid"
+            id="homeSports"
+          ></div>
+
+        </div>
+
+      </div>
+
+
+      <!-- TOP COACHES -->
+
+      <div class="section">
+
+        <div class="container">
+
+          <h2 class="section-title">
+            ЛУЧШИЕ ТРЕНЕРЫ
+          </h2>
+
+          <div
+            class="coach-grid"
+            id="topCoaches"
+          ></div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- =========================
+         SPORTS
+    ========================== -->
+
+    <section
+      id="sports"
+      class="page"
+    >
+
+      <div class="container">
+
+        <h1 class="page-title">
+
+          ВЫБЕРИ<br>
+
+          <em>
+            СВОЙ СПОРТ.
+          </em>
+
+        </h1>
 
 
         <div
-          id="categoryBannerStats"
-          class="category-banner-stats"
+          class="sports-grid"
+          id="sportsList"
+        ></div>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- =========================
+         COACHES
+    ========================== -->
+
+    <section
+      id="coaches"
+      class="page"
+    >
+
+      <div class="container">
+
+        <h1 class="page-title">
+
+          НАЙДИ<br>
+
+          <em>
+            ТРЕНЕРА.
+          </em>
+
+        </h1>
+
+
+
+        <!-- CATEGORY BANNER -->
+
+        <div
+          id="categoryBanner"
+          class="category-banner"
+          style="display:none"
+        >
+
+          <svg
+            id="categoryBannerGraphic"
+            class="category-banner-graphic"
+            viewBox="0 0 400 300"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+          ></svg>
+
+
+          <div class="category-banner-overlay">
+
+            <p class="eyebrow">
+              GLOBAL COACHING PLATFORM
+            </p>
+
+
+            <h2
+              id="categoryBannerTitle"
+              class="category-banner-title"
+            ></h2>
+
+
+            <p
+              id="categoryBannerSubtitle"
+              class="lead"
+            ></p>
+
+
+            <div
+              id="categoryBannerStats"
+              class="category-banner-stats"
+            ></div>
+
+
+            <button
+              id="cyclingBannerCta"
+              class="btn btn-primary category-banner-cta"
+              type="button"
+            >
+              НАЙТИ ТРЕНЕРА →
+            </button>
+
+          </div>
+
+        </div>
+
+
+
+        <!-- FILTERS -->
+
+        <div class="filters">
+
+          <select
+            id="sportFilter"
+            aria-label="Фильтр по виду спорта"
+          >
+
+            <option value="">
+              Все виды спорта
+            </option>
+
+          </select>
+
+
+          <select
+            id="formatFilter"
+            aria-label="Фильтр по формату"
+          >
+
+            <option value="">
+              Любой формат
+            </option>
+
+            <option value="Онлайн">
+              Онлайн
+            </option>
+
+            <option value="Офлайн">
+              Офлайн
+            </option>
+
+          </select>
+
+        </div>
+
+
+
+        <!-- COACH LIST -->
+
+        <div
+          class="coach-grid"
+          id="coachesList"
+        ></div>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- =========================
+         RANKING
+    ========================== -->
+
+    <section
+      id="ranking"
+      class="page"
+    >
+
+      <div class="container">
+
+        <h1 class="page-title">
+
+          РЕЙТИНГ<br>
+
+          <em>
+            ТРЕНЕРОВ.
+          </em>
+
+        </h1>
+
+
+        <div id="rankingList"></div>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- =========================
+         MATCH
+    ========================== -->
+
+    <section
+      id="match"
+      class="page"
+    >
+
+      <div class="container">
+
+        <h1 class="page-title">
+
+          НАЙДЁМ<br>
+
+          <em>
+            ТВОЙ MATCH.
+          </em>
+
+        </h1>
+
+
+        <div class="match-box">
+
+
+          <label>
+
+            Какой спорт?
+
+            <select id="matchSport">
+
+              <option value="">
+                Не выбрано
+              </option>
+
+            </select>
+
+          </label>
+
+
+
+          <label>
+
+            Какая цель?
+
+            <select id="matchGoal">
+
+              <option value="">
+                Не выбрано
+              </option>
+
+            </select>
+
+          </label>
+
+
+
+          <label>
+
+            Формат?
+
+            <select id="matchFormat">
+
+              <option value="">
+                Не важно
+              </option>
+
+              <option value="Онлайн">
+                Онлайн
+              </option>
+
+              <option value="Офлайн">
+                Офлайн
+              </option>
+
+            </select>
+
+          </label>
+
+
+
+          <button
+            class="btn btn-primary"
+            id="findMatchBtn"
+            type="button"
+          >
+            НАЙТИ МОЕГО ТРЕНЕРА →
+          </button>
+
+
+
+          <div id="matchResults"></div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- =========================
+         PROFILE
+    ========================== -->
+
+    <section
+      id="profile"
+      class="page"
+    >
+
+      <div
+        class="container"
+        id="profileContent"
+      ></div>
+
+    </section>
+
+
+  </main>
+
+
+
+  <!-- =========================
+       AUTH MODAL
+  ========================== -->
+
+  <div
+    id="modal"
+    class="modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="authTitle"
+  >
+
+    <div class="modal-content">
+
+
+      <h2 id="authTitle">
+        Войти в FITMATCH
+      </h2>
+
+
+      <form
+        id="authForm"
+        class="form"
+      >
+
+
+        <label>
+
+          Email
+
+          <input
+            id="authEmail"
+            type="email"
+            autocomplete="email"
+            required
+          >
+
+        </label>
+
+
+
+        <label>
+
+          Пароль
+
+          <input
+            id="authPassword"
+            type="password"
+            minlength="6"
+            autocomplete="current-password"
+            required
+          >
+
+        </label>
+
+
+
+        <div class="actions">
+
+          <button
+            class="btn btn-primary"
+            type="submit"
+          >
+            ВОЙТИ
+          </button>
+
+
+          <button
+            id="signupBtn"
+            class="btn"
+            type="button"
+          >
+            РЕГИСТРАЦИЯ
+          </button>
+
+
+          <button
+            id="modalCancel"
+            class="btn"
+            type="button"
+          >
+            ОТМЕНА
+          </button>
+
+        </div>
+
+
+
+        <button
+          id="forgotPasswordBtn"
+          class="forgot-password"
+          type="button"
+        >
+          Забыли пароль?
+        </button>
+
+
+
+        <div
+          id="authMessage"
+          aria-live="polite"
         ></div>
 
 
-        <button
-          id="cyclingBannerCta"
-          class="btn btn-primary category-banner-cta"
-          type="button"
-        >
-          НАЙТИ ТРЕНЕРА →
-        </button>
-
-      </div>
-
-
-      <svg
-        id="categoryBannerGraphic"
-        class="category-banner-graphic"
-        viewBox="0 0 400 300"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        aria-hidden="true"
-      ></svg>
-
-    </div>
-
-
-
-    <div class="filters">
-
-      <select id="sportFilter">
-
-        <option value="">
-          Все виды спорта
-        </option>
-
-      </select>
-
-
-
-      <select id="formatFilter">
-
-        <option value="">
-          Любой формат
-        </option>
-
-        <option value="Онлайн">
-          Онлайн
-        </option>
-
-        <option value="Офлайн">
-          Офлайн
-        </option>
-
-      </select>
-
-    </div>
-
-
-
-    <div
-      class="coach-grid"
-      id="coachesList"
-    ></div>
-
-
-  </div>
-
-</section>
-
-
-
-<!-- =====================================================
-RANKING
-===================================================== -->
-
-<section id="ranking" class="page">
-
-  <div class="container">
-
-    <h1 class="page-title">
-      РЕЙТИНГ<br>
-      <em>ТРЕНЕРОВ.</em>
-    </h1>
-
-
-    <div id="rankingList"></div>
-
-  </div>
-
-</section>
-
-
-
-<!-- =====================================================
-MATCH
-===================================================== -->
-
-<section id="match" class="page">
-
-  <div class="container">
-
-    <h1 class="page-title">
-      НАЙДЁМ<br>
-      <em>ТВОЙ MATCH.</em>
-    </h1>
-
-
-    <div class="match-box">
-
-
-      <label>
-
-        Какой спорт?
-
-        <select id="matchSport">
-
-          <option value="">
-            Не выбрано
-          </option>
-
-        </select>
-
-      </label>
-
-
-
-      <label>
-
-        Какая цель?
-
-        <select id="matchGoal">
-
-          <option value="">
-            Не выбрано
-          </option>
-
-        </select>
-
-      </label>
-
-
-
-      <label>
-
-        Формат?
-
-        <select id="matchFormat">
-
-          <option value="">
-            Не важно
-          </option>
-
-          <option value="Онлайн">
-            Онлайн
-          </option>
-
-          <option value="Офлайн">
-            Офлайн
-          </option>
-
-        </select>
-
-      </label>
-
-
-
-      <button
-        class="btn btn-primary"
-        id="findMatchBtn"
-        type="button"
-      >
-        НАЙТИ МОЕГО ТРЕНЕРА →
-      </button>
-
-
-      <div id="matchResults"></div>
-
+      </form>
 
     </div>
 
   </div>
 
-</section>
 
 
-
-<!-- =====================================================
-PROFILE
-===================================================== -->
-
-<section id="profile" class="page">
+  <!-- =========================
+       RESET PASSWORD MODAL
+  ========================== -->
 
   <div
-    class="container"
-    id="profileContent"
-  ></div>
+    id="resetPasswordModal"
+    class="modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="resetTitle"
+  >
 
-</section>
-
-
-</main>
-
-
-
-<!-- =====================================================
-AUTH MODAL
-===================================================== -->
-
-<div
-  id="modal"
-  class="modal"
-  role="dialog"
-  aria-modal="true"
-  aria-labelledby="authTitle"
->
-
-  <div class="modal-content">
-
-    <h2 id="authTitle">
-      Войти в FITMATCH
-    </h2>
+    <div class="modal-content">
 
 
-    <form id="authForm" class="form">
+      <h2 id="resetTitle">
+        Создать новый пароль
+      </h2>
 
 
-      <label>
-
-        Email
-
-        <input
-          id="authEmail"
-          type="email"
-          autocomplete="email"
-          required
-        >
-
-      </label>
+      <p class="lead">
+        Введите и подтвердите новый пароль.
+      </p>
 
 
-
-      <label>
-
-        Пароль
-
-        <input
-          id="authPassword"
-          type="password"
-          minlength="6"
-          autocomplete="current-password"
-          required
-        >
-
-      </label>
-
-
-
-      <div class="actions">
-
-        <button
-          class="btn btn-primary"
-          type="submit"
-        >
-          ВОЙТИ
-        </button>
-
-
-        <button
-          id="signupBtn"
-          class="btn"
-          type="button"
-        >
-          РЕГИСТРАЦИЯ
-        </button>
-
-
-        <button
-          id="modalCancel"
-          class="btn"
-          type="button"
-        >
-          ОТМЕНА
-        </button>
-
-      </div>
-
-
-
-      <button
-        id="forgotPasswordBtn"
-        class="forgot-password"
-        type="button"
+      <form
+        id="resetPasswordForm"
+        class="form"
       >
-        Забыли пароль?
-      </button>
 
 
-      <div
-        id="authMessage"
-        aria-live="polite"
-      ></div>
+        <label>
 
+          Новый пароль
 
-    </form>
+          <input
+            id="newPassword"
+            type="password"
+            minlength="6"
+            autocomplete="new-password"
+            required
+          >
 
-  </div>
-
-</div>
-
-
-
-<!-- =====================================================
-RESET PASSWORD
-===================================================== -->
-
-<div
-  id="resetPasswordModal"
-  class="modal"
-  role="dialog"
-  aria-modal="true"
-  aria-labelledby="resetTitle"
->
-
-  <div class="modal-content">
-
-    <h2 id="resetTitle">
-      Создать новый пароль
-    </h2>
-
-
-    <p class="lead">
-      Введите и подтвердите новый пароль.
-    </p>
-
-
-    <form
-      id="resetPasswordForm"
-      class="form"
-    >
-
-
-      <label>
-
-        Новый пароль
-
-        <input
-          id="newPassword"
-          type="password"
-          minlength="6"
-          autocomplete="new-password"
-          required
-        >
-
-      </label>
+        </label>
 
 
 
-      <label>
+        <label>
 
-        Повторите пароль
+          Повторите пароль
 
-        <input
-          id="confirmPassword"
-          type="password"
-          minlength="6"
-          autocomplete="new-password"
-          required
-        >
+          <input
+            id="confirmPassword"
+            type="password"
+            minlength="6"
+            autocomplete="new-password"
+            required
+          >
 
-      </label>
-
-
-
-      <div class="actions">
-
-        <button
-          class="btn btn-primary"
-          type="submit"
-        >
-          СОХРАНИТЬ ПАРОЛЬ
-        </button>
-
-
-        <button
-          id="resetCancel"
-          class="btn"
-          type="button"
-        >
-          ОТМЕНА
-        </button>
-
-      </div>
+        </label>
 
 
 
-      <div
-        id="resetMessage"
-        aria-live="polite"
-      ></div>
+        <div class="actions">
+
+          <button
+            class="btn btn-primary"
+            type="submit"
+          >
+            СОХРАНИТЬ ПАРОЛЬ
+          </button>
 
 
-    </form>
+          <button
+            id="resetCancel"
+            class="btn"
+            type="button"
+          >
+            ОТМЕНА
+          </button>
+
+        </div>
+
+
+        <div
+          id="resetMessage"
+          aria-live="polite"
+        ></div>
+
+
+      </form>
+
+    </div>
 
   </div>
 
-</div>
 
 
+  <!-- =========================
+       CREATE COACH MODAL
+  ========================== -->
 
-<!-- =====================================================
-CREATE COACH
-===================================================== -->
+  <div
+    id="coachModal"
+    class="modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="coachTitle"
+  >
 
-<div
-  id="coachModal"
-  class="modal"
-  role="dialog"
-  aria-modal="true"
-  aria-labelledby="coachTitle"
->
+    <div class="modal-content">
 
-  <div class="modal-content">
 
-    <h2 id="coachTitle">
-      Стать тренером
-    </h2>
+      <h2 id="coachTitle">
+        Стать тренером
+      </h2>
 
 
-    <form
-      id="createForm"
-      class="form"
-    >
+      <form
+        id="createForm"
+        class="form"
+      >
 
 
-      <label>
+        <label>
 
-        Имя
+          Имя
 
-        <input
-          name="name"
-          autocomplete="name"
-          required
-        >
+          <input
+            name="name"
+            autocomplete="name"
+            required
+          >
 
-      </label>
+        </label>
 
 
 
-      <label>
+        <label>
 
-        Вид спорта
+          Вид спорта
 
-        <select
-          id="coachSport"
-          name="sport"
-          required
-        >
+          <select
+            id="coachSport"
+            name="sport"
+            required
+          ></select>
 
-          <option value="">
-            Выбрать спорт
-          </option>
+        </label>
 
-        </select>
 
-      </label>
 
+        <label>
 
+          Цель
 
-      <label>
+          <input
+            name="goal"
+            placeholder="Например: похудение, сила, выносливость"
+          >
 
-        Цель
+        </label>
 
-        <input
-          name="goal"
-          placeholder="Например: похудение, сила, выносливость"
-        >
 
-      </label>
 
+        <label>
 
+          Формат
 
-      <label>
+          <select name="format">
 
-        Формат
+            <option value="Онлайн">
+              Онлайн
+            </option>
 
-        <select name="format">
+            <option value="Офлайн">
+              Офлайн
+            </option>
 
-          <option value="Онлайн">
-            Онлайн
-          </option>
+          </select>
 
-          <option value="Офлайн">
-            Офлайн
-          </option>
+        </label>
 
-        </select>
 
-      </label>
 
+        <label>
 
+          Цена €
 
-      <label>
+          <input
+            name="price"
+            type="number"
+            min="0"
+            step="1"
+            required
+          >
 
-        Цена €
+        </label>
 
-        <input
-          name="price"
-          type="number"
-          min="0"
-          step="1"
-          required
-        >
 
-      </label>
 
+        <label>
 
+          Период
 
-      <label>
+          <select name="period">
 
-        Период
+            <option value="месяц">
+              В месяц
+            </option>
 
-        <select name="period">
+            <option value="занятие">
+              За занятие
+            </option>
 
-          <option value="месяц">
-            В месяц
-          </option>
+            <option value="программа">
+              За программу
+            </option>
 
-          <option value="занятие">
-            За занятие
-          </option>
+          </select>
 
-          <option value="программа">
-            За программу
-          </option>
+        </label>
 
-        </select>
 
-      </label>
 
+        <label>
 
+          О себе
 
-      <label>
+          <textarea
+            name="bio"
+            rows="5"
+            placeholder="Расскажите о своём опыте и специализации"
+          ></textarea>
 
-        О себе
+        </label>
 
-        <textarea
-          name="bio"
-          rows="5"
-          placeholder="Расскажите о своём опыте и специализации"
-        ></textarea>
 
-      </label>
 
+        <div class="actions">
 
+          <button
+            class="btn btn-primary"
+            type="submit"
+          >
+            СОЗДАТЬ
+          </button>
 
-      <div class="actions">
 
-        <button
-          class="btn btn-primary"
-          type="submit"
-        >
-          СОЗДАТЬ
-        </button>
+          <button
+            id="coachCancel"
+            class="btn"
+            type="button"
+          >
+            ОТМЕНА
+          </button>
 
+        </div>
 
-        <button
-          id="coachCancel"
-          class="btn"
-          type="button"
-        >
-          ОТМЕНА
-        </button>
 
-      </div>
 
+        <div
+          id="coachMessage"
+          aria-live="polite"
+        ></div>
 
-      <div
-        id="coachMessage"
-        aria-live="polite"
-      ></div>
 
+      </form>
 
-    </form>
+    </div>
 
   </div>
 
-</div>
+
+
+  <!-- =========================
+       FOOTER
+  ========================== -->
+
+  <footer>
+
+    © 2026 FITMATCH
+
+  </footer>
 
 
 
-<footer>
-  © 2026 FITMATCH
-</footer>
+  <!-- =========================
+       JAVASCRIPT
+  ========================== -->
 
+  <script
+    type="module"
+    src="fitmatch.js"
+  ></script>
 
-
-<script
-  type="module"
-  src="fitmatch.js"
-></script>
 
 </body>
 </html>
