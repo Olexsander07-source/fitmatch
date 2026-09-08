@@ -1,14 +1,22 @@
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+/* =========================================================
+   APLEX — Find your level.
+   fitmatch.js
+   ========================================================= */
 
-// =====================================================
-// APLEX — FIND YOUR LEVEL.
-// =====================================================
+import {
+  createClient
+} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-const SUPABASE_URL =
-  "https://ypbhcgcwkpiujcakvaji.supabase.co";
+
+/* =========================================================
+   SUPABASE
+========================================================= */
+
+const SUPABASE_URL = "https://ypbhcgcwkpiujcakvaji.supabase.co";
 
 const SUPABASE_ANON_KEY =
-  "sb_publishable_Lsrk07A5aXJH7YypVR8QGQ_TQPwhfOV";
+  "PASTE_YOUR_SUPABASE_ANON_KEY_HERE";
+
 
 const supabase = createClient(
   SUPABASE_URL,
@@ -16,466 +24,155 @@ const supabase = createClient(
 );
 
 
-// =====================================================
-// STATE
-// =====================================================
+/* =========================================================
+   STATE
+========================================================= */
 
-let sports = [];
-let coaches = [];
 let currentUser = null;
 
+let coaches = [];
 
-// =====================================================
-// SPORT IMAGES
-// =====================================================
+let sports = [];
 
-const SPORT_IMAGES = {
-
-  bodybuilding:
-    "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=1600&q=85",
-
-  fitness:
-    "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1600&q=85",
-
-  crossfit:
-    "https://images.unsplash.com/photo-1517963879433-6ad2b056d712?auto=format&fit=crop&w=1600&q=85",
-
-  running:
-    "https://images.unsplash.com/photo-1552674605-db6ffd4facb5?auto=format&fit=crop&w=1600&q=85",
-
-  yoga:
-    "https://images.unsplash.com/photo-1545389336-cf090694435e?auto=format&fit=crop&w=1600&q=85",
-
-  swimming:
-    "https://images.unsplash.com/photo-1530549387789-4c1017266635?auto=format&fit=crop&w=1600&q=85",
-
-  cycling:
-    "https://images.unsplash.com/photo-1532298229144-0ec0c57515c7?auto=format&fit=crop&w=1600&q=85",
-
-  tennis:
-    "https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?auto=format&fit=crop&w=1600&q=85",
-
-  combat:
-    "https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?auto=format&fit=crop&w=1600&q=85"
-
-};
+let currentSport = null;
 
 
-const COACH_IMAGES = [
+/* =========================================================
+   DOM
+========================================================= */
 
-  "https://images.unsplash.com/photo-1538805060514-97d9cc17730c?auto=format&fit=crop&w=900&q=85",
-
-  "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=900&q=85",
-
-  "https://images.unsplash.com/photo-1550345332-09e3ac987658?auto=format&fit=crop&w=900&q=85",
-
-  "https://images.unsplash.com/photo-1594381898411-846e7d193883?auto=format&fit=crop&w=900&q=85"
-
-];
+const $ = (selector) =>
+  document.querySelector(selector);
 
 
-// =====================================================
-// SAFE HTML
-// =====================================================
+const $$ = (selector) =>
+  document.querySelectorAll(selector);
 
-function esc(value) {
 
-  return String(value ?? "").replace(
-    /[&<>"']/g,
-    function (char) {
+/* =========================================================
+   INIT
+========================================================= */
 
-      const map = {
+document.addEventListener(
+  "DOMContentLoaded",
+  init
+);
 
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;"
 
-      };
+async function init() {
 
-      return map[char];
+  setupNavigation();
 
-    }
-  );
+  setupAuth();
+
+  setupForms();
+
+  setupFilters();
+
+  setupModals();
+
+  await loadSession();
+
+  await loadSports();
+
+  await loadCoaches();
+
+  renderHomeSports();
+
+  renderSports();
+
+  renderTopCoaches();
+
+  renderCoaches();
+
+  renderRanking();
+
+  fillSportSelects();
+
+  startHeroSlideshow();
 
 }
 
 
-// =====================================================
-// INITIALS
-// =====================================================
+/* =========================================================
+   NAVIGATION
+========================================================= */
 
-function initials(name) {
+function setupNavigation() {
 
-  return String(name || "")
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .map(function (word) {
+  $$("#mainNav button").forEach(
+    button => {
 
-      return word[0] || "";
+      button.addEventListener(
+        "click",
+        () => {
 
-    })
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+          showPage(
+            button.dataset.nav
+          );
 
-}
-
-
-// =====================================================
-// SPORT NAME
-// =====================================================
-
-function sportName(id) {
-
-  const sport = sports.find(
-    function (item) {
-
-      return String(item.id) === String(id);
-
-    }
-  );
-
-  return sport
-    ? sport.name
-    : String(id || "Не указан");
-
-}
-
-
-// =====================================================
-// SPORT IMAGE
-// =====================================================
-
-function getSportImage(sport) {
-
-  if (
-    sport &&
-    sport.image_url
-  ) {
-
-    return sport.image_url;
-
-  }
-
-
-  const raw =
-    String(
-      sport?.slug ||
-      sport?.key ||
-      sport?.name ||
-      sport?.id ||
-      ""
-    )
-      .toLowerCase();
-
-
-  if (
-    raw.includes("body") ||
-    raw.includes("бодиб")
-  ) {
-
-    return SPORT_IMAGES.bodybuilding;
-
-  }
-
-
-  if (
-    raw.includes("cross") ||
-    raw.includes("кросс")
-  ) {
-
-    return SPORT_IMAGES.crossfit;
-
-  }
-
-
-  if (
-    raw.includes("run") ||
-    raw.includes("бег")
-  ) {
-
-    return SPORT_IMAGES.running;
-
-  }
-
-
-  if (
-    raw.includes("yoga") ||
-    raw.includes("йога")
-  ) {
-
-    return SPORT_IMAGES.yoga;
-
-  }
-
-
-  if (
-    raw.includes("swim") ||
-    raw.includes("плав")
-  ) {
-
-    return SPORT_IMAGES.swimming;
-
-  }
-
-
-  if (
-    raw.includes("cycl") ||
-    raw.includes("вел")
-  ) {
-
-    return SPORT_IMAGES.cycling;
-
-  }
-
-
-  if (
-    raw.includes("tennis") ||
-    raw.includes("теннис")
-  ) {
-
-    return SPORT_IMAGES.tennis;
-
-  }
-
-
-  if (
-    raw.includes("combat") ||
-    raw.includes("fight") ||
-    raw.includes("единобор")
-  ) {
-
-    return SPORT_IMAGES.combat;
-
-  }
-
-
-  return SPORT_IMAGES.fitness;
-
-}
-
-
-// =====================================================
-// COACH IMAGE
-// =====================================================
-
-function getCoachImage(coach) {
-
-  if (
-    coach?.avatar_url
-  ) {
-
-    return coach.avatar_url;
-
-  }
-
-
-  if (
-    coach?.image_url
-  ) {
-
-    return coach.image_url;
-
-  }
-
-
-  const id =
-    String(
-      coach?.id ||
-      coach?.name ||
-      "0"
-    );
-
-
-  let hash = 0;
-
-
-  for (
-    let index = 0;
-    index < id.length;
-    index += 1
-  ) {
-
-    hash =
-      (
-        (
-          hash << 5
-        )
-        -
-        hash
-      )
-      +
-      id.charCodeAt(index);
-
-    hash |= 0;
-
-  }
-
-
-  return COACH_IMAGES[
-    Math.abs(hash) %
-    COACH_IMAGES.length
-  ];
-
-}
-
-
-// =====================================================
-// PRICE
-// =====================================================
-
-function priceText(coach) {
-
-  const price =
-    Number(
-      coach?.price || 0
-    );
-
-
-  const period =
-    coach?.period ||
-    "месяц";
-
-
-  return `€${price} / ${period}`;
-
-}
-
-
-// =====================================================
-// SCORE
-// =====================================================
-
-function calculateScore(coach) {
-
-  if (
-    coach?.score !== null &&
-    coach?.score !== undefined &&
-    Number(coach.score) > 0
-  ) {
-
-    return Math.min(
-      100,
-      Math.round(
-        Number(coach.score)
-      )
-    );
-
-  }
-
-
-  let score = 40;
-
-
-  const rating =
-    Number(
-      coach?.rating || 0
-    );
-
-
-  const experience =
-    Number(
-      coach?.experience_years ||
-      coach?.experience ||
-      0
-    );
-
-
-  if (rating > 0) {
-
-    score +=
-      Math.min(
-        25,
-        rating * 5
+        }
       );
 
-  }
+    }
+  );
 
 
-  score +=
-    Math.min(
-      15,
-      experience * 1.5
-    );
+  $("#logo")?.addEventListener(
+    "click",
+    () => showPage("home")
+  );
 
 
-  if (
-    coach?.image_url ||
-    coach?.avatar_url
-  ) {
-
-    score += 5;
-
-  }
+  $("#matchBtn")?.addEventListener(
+    "click",
+    () => showPage("match")
+  );
 
 
-  if (
-    coach?.goal ||
-    coach?.specialization
-  ) {
-
-    score += 5;
-
-  }
+  $("#chooseSportBtn")?.addEventListener(
+    "click",
+    () => showPage("sports")
+  );
 
 
-  if (
-    coach?.bio
-  ) {
-
-    score += 5;
-
-  }
-
-
-  return Math.min(
-    100,
-    Math.round(score)
+  $("#hamburger")?.addEventListener(
+    "click",
+    toggleMobileMenu
   );
 
 }
 
 
-// =====================================================
-// PAGE
-// =====================================================
+function showPage(pageId) {
 
-function showPage(id) {
+  $$(".page").forEach(
+    page => {
 
-  document
-    .querySelectorAll(".page")
-    .forEach(function (page) {
+      page.classList.remove(
+        "active"
+      );
 
-      page.classList.remove("active");
-
-    });
+    }
+  );
 
 
   const page =
-    document.getElementById(id);
+    document.getElementById(pageId);
 
 
   if (page) {
 
-    page.classList.add("active");
-
-  }
-
-
-  const nav =
-    document.getElementById("mainNav");
-
-
-  if (nav) {
-
-    nav.classList.remove(
-      "mobile-open"
+    page.classList.add(
+      "active"
     );
 
   }
+
+
+  $("#mainNav")?.classList.remove(
+    "mobile-open"
+  );
 
 
   window.scrollTo({
@@ -483,623 +180,795 @@ function showPage(id) {
     behavior: "smooth"
   });
 
-}
 
+  if (pageId === "coaches") {
 
-// =====================================================
-// MODAL
-// =====================================================
-
-function toggleModal(
-  id,
-  show
-) {
-
-  const modal =
-    document.getElementById(id);
-
-
-  if (!modal) return;
-
-
-  modal.classList.toggle(
-    "show",
-    Boolean(show)
-  );
-
-
-  document.body.classList.toggle(
-    "modal-open",
-    Boolean(
-      document.querySelector(
-        ".modal.show"
-      )
-    )
-  );
-
-}
-
-
-// =====================================================
-// MESSAGE
-// =====================================================
-
-function showMessage(
-  id,
-  text,
-  isError = false
-) {
-
-  const element =
-    document.getElementById(id);
-
-
-  if (!element) return;
-
-
-  element.textContent =
-    text;
-
-
-  element.className =
-    isError
-      ? "error"
-      : "success";
-
-}
-
-
-// =====================================================
-// LOAD DATA
-// =====================================================
-
-async function loadData() {
-
-  const sportsResult =
-    await supabase
-      .from("sports")
-      .select("*")
-      .order(
-        "name",
-        {
-          ascending: true
-        }
-      );
-
-
-  if (sportsResult.error) {
-
-    console.error(
-      "SPORTS ERROR:",
-      sportsResult.error
-    );
-
-    throw sportsResult.error;
+    renderCoaches();
 
   }
 
 
-  sports =
-    sportsResult.data || [];
+  if (pageId === "ranking") {
+
+    renderRanking();
+
+  }
 
 
-  renderSports();
+  if (pageId === "sports") {
+
+    renderSports();
+
+  }
 
 
-  const coachesResult =
-    await supabase
-      .from("coaches")
-      .select("*");
+  if (pageId === "dashboard") {
+
+    renderDashboard();
+
+  }
+
+}
 
 
-  if (coachesResult.error) {
+window.showPage = showPage;
+
+
+/* =========================================================
+   MOBILE MENU
+========================================================= */
+
+function toggleMobileMenu() {
+
+  const nav =
+    $("#mainNav");
+
+  const hamburger =
+    $("#hamburger");
+
+
+  if (!nav) return;
+
+
+  const isOpen =
+    nav.classList.toggle(
+      "mobile-open"
+    );
+
+
+  hamburger?.setAttribute(
+    "aria-expanded",
+    String(isOpen)
+  );
+
+}
+
+
+/* =========================================================
+   SESSION
+========================================================= */
+
+async function loadSession() {
+
+  try {
+
+    const {
+      data,
+      error
+    } = await supabase.auth.getSession();
+
+
+    if (error) {
+
+      console.error(error);
+
+      return;
+
+    }
+
+
+    currentUser =
+      data.session?.user || null;
+
+
+    updateAuthUI();
+
+  } catch (error) {
 
     console.error(
-      "COACHES ERROR:",
-      coachesResult.error
+      "Session error:",
+      error
     );
+
+  }
+
+}
+
+
+/* =========================================================
+   AUTH UI
+========================================================= */
+
+function updateAuthUI() {
+
+  const authBtn =
+    $("#authBtn");
+
+  const createBtn =
+    $("#createBtn");
+
+
+  if (!authBtn) return;
+
+
+  if (currentUser) {
+
+    authBtn.textContent =
+      "Мой аккаунт";
+
+
+    authBtn.onclick = () =>
+      showPage("dashboard");
+
+
+    if (createBtn) {
+
+      createBtn.textContent =
+        "Выйти";
+
+
+      createBtn.onclick =
+        signOut;
+
+    }
+
+  } else {
+
+    authBtn.textContent =
+      "Войти";
+
+
+    authBtn.onclick =
+      openLoginModal;
+
+
+    if (createBtn) {
+
+      createBtn.textContent =
+        "Стать тренером";
+
+
+      createBtn.onclick =
+        openCoachModal;
+
+    }
+
+  }
+
+}
+
+
+/* =========================================================
+   AUTH EVENTS
+========================================================= */
+
+function setupAuth() {
+
+  $("#authBtn")?.addEventListener(
+    "click",
+    () => {
+
+      if (!currentUser) {
+
+        openLoginModal();
+
+      }
+
+    }
+  );
+
+
+  $("#createBtn")?.addEventListener(
+    "click",
+    () => {
+
+      if (!currentUser) {
+
+        openCoachModal();
+
+      }
+
+    }
+  );
+
+
+  $("#authForm")?.addEventListener(
+    "submit",
+    login
+  );
+
+
+  $("#signupForm")?.addEventListener(
+    "submit",
+    signup
+  );
+
+
+  $("#forgotPasswordBtn")?.addEventListener(
+    "click",
+    resetPassword
+  );
+
+
+  $("#signupBtn")?.addEventListener(
+    "click",
+    () => {
+
+      closeLoginModal();
+
+      $("#signupSection")?.scrollIntoView({
+        behavior: "smooth"
+      });
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   LOGIN
+========================================================= */
+
+async function login(event) {
+
+  event.preventDefault();
+
+
+  const email =
+    $("#authEmail")?.value.trim();
+
+  const password =
+    $("#authPassword")?.value;
+
+
+  const message =
+    $("#authMessage");
+
+
+  if (!email || !password) {
+
+    showMessage(
+      message,
+      "Введите email и пароль.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  try {
+
+    showMessage(
+      message,
+      "Выполняется вход..."
+    );
+
+
+    const {
+      data,
+      error
+    } = await supabase.auth.signInWithPassword({
+
+      email,
+      password
+
+    });
+
+
+    if (error) {
+
+      throw error;
+
+    }
+
+
+    currentUser =
+      data.user;
+
+
+    showMessage(
+      message,
+      "Вход выполнен.",
+      "success"
+    );
+
+
+    updateAuthUI();
+
+
+    setTimeout(
+      () => {
+
+        closeLoginModal();
+
+        showPage(
+          "dashboard"
+        );
+
+      },
+      500
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+
+    showMessage(
+      message,
+      error.message ||
+      "Ошибка входа.",
+      "error"
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   SIGNUP
+========================================================= */
+
+async function signup(event) {
+
+  event.preventDefault();
+
+
+  const form =
+    event.currentTarget;
+
+
+  const email =
+    form.email.value.trim();
+
+  const password =
+    form.password.value;
+
+
+  const message =
+    $("#signupMessage");
+
+
+  try {
+
+    showMessage(
+      message,
+      "Создаём аккаунт..."
+    );
+
+
+    const {
+      data,
+      error
+    } = await supabase.auth.signUp({
+
+      email,
+
+      password,
+
+      options: {
+
+        emailRedirectTo:
+          window.location.origin
+
+      }
+
+    });
+
+
+    if (error) {
+
+      throw error;
+
+    }
+
+
+    currentUser =
+      data.user;
+
+
+    if (data.user?.identities?.length === 0) {
+
+      showMessage(
+        message,
+        "Этот email уже зарегистрирован.",
+        "error"
+      );
+
+      return;
+
+    }
+
+
+    showMessage(
+      message,
+      "Аккаунт создан. Проверьте email для подтверждения.",
+      "success"
+    );
+
+
+    form.reset();
+
+  } catch (error) {
+
+    console.error(error);
+
+
+    showMessage(
+      message,
+      error.message ||
+      "Не удалось создать аккаунт.",
+      "error"
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   SIGN OUT
+========================================================= */
+
+async function signOut() {
+
+  try {
+
+    await supabase.auth.signOut();
+
+
+    currentUser = null;
+
+
+    updateAuthUI();
+
+
+    showPage(
+      "home"
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+  }
+
+}
+
+
+/* =========================================================
+   RESET PASSWORD EMAIL
+========================================================= */
+
+async function resetPassword() {
+
+  const email =
+    $("#authEmail")?.value.trim();
+
+
+  const message =
+    $("#authMessage");
+
+
+  if (!email) {
+
+    showMessage(
+      message,
+      "Введите ваш email.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  try {
+
+    const {
+      error
+    } = await supabase.auth.resetPasswordForEmail(
+
+      email,
+
+      {
+        redirectTo:
+          window.location.origin
+      }
+
+    );
+
+
+    if (error) {
+
+      throw error;
+
+    }
+
+
+    showMessage(
+      message,
+      "Письмо для восстановления пароля отправлено.",
+      "success"
+    );
+
+  } catch (error) {
+
+    showMessage(
+      message,
+      error.message ||
+      "Ошибка восстановления пароля.",
+      "error"
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   SPORTS
+========================================================= */
+
+async function loadSports() {
+
+  try {
+
+    const {
+      data,
+      error
+    } = await supabase
+      .from("sports")
+      .select("*")
+      .order("name");
+
+
+    if (error) {
+
+      throw error;
+
+    }
+
+
+    sports =
+      data || [];
+
+  } catch (error) {
+
+    console.error(
+      "Sports error:",
+      error
+    );
+
+
+    sports = [];
+
+  }
+
+}
+
+
+/* =========================================================
+   COACHES
+========================================================= */
+
+async function loadCoaches() {
+
+  try {
+
+    const {
+      data,
+      error
+    } = await supabase
+      .from("coaches")
+      .select(`
+        *,
+        sports (
+          id,
+          name,
+          slug
+        )
+      `)
+      .order(
+        "created_at",
+        {
+          ascending: false
+        }
+      );
+
+
+    if (error) {
+
+      throw error;
+
+    }
+
+
+    coaches =
+      data || [];
+
+  } catch (error) {
+
+    console.error(
+      "Coaches error:",
+      error
+    );
+
 
     coaches = [];
 
   }
 
-  else {
-
-    coaches =
-      coachesResult.data || [];
-
-
-    coaches.sort(
-      function (a, b) {
-
-        return (
-          calculateScore(b) -
-          calculateScore(a)
-        );
-
-      }
-    );
-
-  }
-
-
-  renderCoaches();
-
-  renderTopCoaches();
-
-  renderRanking();
-
-  populateGoals();
-
 }
 
 
-// =====================================================
-// SPORT CARD
-// =====================================================
-
-function createSportCard(sport) {
-
-  const card =
-    document.createElement("article");
-
-
-  card.className =
-    "sport-card";
-
-
-  const image =
-    getSportImage(sport);
-
-
-  card.style.backgroundImage =
-    `url("${image}")`;
-
-
-  card.innerHTML = `
-
-    <div class="sport-card-content">
-
-      <div class="sport-icon">
-
-        ${esc(
-          sport.icon || "🏅"
-        )}
-
-      </div>
-
-      <h3>
-
-        ${esc(
-          sport.name ||
-          "Спорт"
-        )}
-
-      </h3>
-
-      <p>
-
-        Найти тренера →
-
-      </p>
-
-    </div>
-
-  `;
-
-
-  card.addEventListener(
-    "click",
-    function () {
-
-      showPage("coaches");
-
-
-      const filter =
-        document.getElementById(
-          "sportFilter"
-        );
-
-
-      if (filter) {
-
-        filter.value =
-          String(sport.id);
-
-      }
-
-
-      renderCoaches();
-
-    }
-  );
-
-
-  return card;
-
-}
-
-
-// =====================================================
-// SPORTS
-// =====================================================
-
-function renderSports() {
-
-  [
-    "homeSports",
-    "sportsList"
-  ]
-    .forEach(function (id) {
-
-      const container =
-        document.getElementById(id);
-
-
-      if (!container) return;
-
-
-      container.replaceChildren(
-        ...sports.map(
-          createSportCard
-        )
-      );
-
-    });
-
-
-  populateSportSelects();
-
-}
-
-
-// =====================================================
-// SPORT SELECTS
-// =====================================================
-
-function populateSportSelects() {
-
-  const ids = [
-
-    "sportFilter",
-
-    "matchSport",
-
-    "coachSport"
-
-  ];
-
-
-  ids.forEach(
-    function (id) {
-
-      const select =
-        document.getElementById(id);
-
-
-      if (!select) return;
-
-
-      const previous =
-        select.value;
-
-
-      if (
-        id === "sportFilter"
-      ) {
-
-        select.innerHTML =
-          `<option value="">
-            Все виды спорта
-          </option>`;
-
-      }
-
-      else if (
-        id === "matchSport"
-      ) {
-
-        select.innerHTML =
-          `<option value="">
-            Не выбрано
-          </option>`;
-
-      }
-
-      else {
-
-        select.innerHTML =
-          `<option value="">
-            Выберите вид спорта
-          </option>`;
-
-      }
-
-
-      sports.forEach(
-        function (sport) {
-
-          const option =
-            document.createElement(
-              "option"
-            );
-
-
-          option.value =
-            String(sport.id);
-
-
-          option.textContent =
-            `${sport.icon || ""} ${sport.name}`.trim();
-
-
-          select.appendChild(option);
-
-        }
-      );
-
-
-      if (previous) {
-
-        select.value =
-          previous;
-
-      }
-
-    }
-  );
-
-}
-
-
-// =====================================================
-// COACH CARD
-// =====================================================
-
-function createCoachCard(coach) {
-
-  const article =
-    document.createElement("article");
-
-
-  article.className =
-    "coach-card";
-
-
-  const image =
-    getCoachImage(coach);
-
-
-  const score =
-    calculateScore(coach);
-
-
-  article.innerHTML = `
-
-    <div class="coach-image">
-
-      <img
-        src="${esc(image)}"
-        alt="${esc(
-          coach.name ||
-          "Тренер"
-        )}"
-        loading="lazy"
-      >
-
-    </div>
-
-
-    <div class="coach-content">
-
-      <div class="coach-score">
-
-        ${score}
-
-      </div>
-
-
-      <h3>
-
-        ${esc(
-          coach.name ||
-          "Тренер"
-        )}
-
-      </h3>
-
-
-      <p class="coach-sport">
-
-        ${esc(
-          sportName(
-            coach.sport
-          )
-        )}
-
-      </p>
-
-
-      <div class="tags">
-
-        ${
-          coach.goal
-            ? `
-              <span class="tag">
-
-                ${esc(
-                  coach.goal
-                )}
-
-              </span>
-            `
-            : ""
-        }
-
-        ${
-          coach.format
-            ? `
-              <span class="tag">
-
-                ${esc(
-                  coach.format
-                )}
-
-              </span>
-            `
-            : ""
-        }
-
-      </div>
-
-
-      <div class="card-footer">
-
-        <span>
-
-          ⭐ ${Number(
-            coach.rating || 0
-          ).toFixed(1)}
-
-        </span>
-
-
-        <span>
-
-          ${esc(
-            priceText(coach)
-          )}
-
-        </span>
-
-      </div>
-
-    </div>
-
-  `;
-
-
-  article.addEventListener(
-    "click",
-    function () {
-
-      openProfile(coach.id);
-
-    }
-  );
-
-
-  return article;
-
-}
-
-
-// =====================================================
-// COACHES
-// =====================================================
-
-function renderCoaches() {
+/* =========================================================
+   RENDER HOME SPORTS
+========================================================= */
+
+function renderHomeSports() {
 
   const container =
-    document.getElementById(
-      "coachesList"
-    );
+    $("#homeSports");
 
 
   if (!container) return;
 
 
-  const sport =
-    document.getElementById(
-      "sportFilter"
-    )?.value || "";
+  const selectedSports =
+    sports.slice(0, 4);
 
 
-  const query =
-    String(
-      document.getElementById(
-        "coachSearch"
-      )?.value || ""
-    )
-      .trim()
-      .toLowerCase();
-
-
-  let result =
-    [...coaches];
-
-
-  if (sport) {
-
-    result =
-      result.filter(
-        function (coach) {
-
-          return (
-            String(coach.sport) ===
-            String(sport)
-          );
-
-        }
-      );
-
-  }
-
-
-  if (query) {
-
-    result =
-      result.filter(
-        function (coach) {
-
-          const text =
-            [
-
-              coach.name,
-
-              coach.goal,
-
-              coach.specialization,
-
-              coach.bio,
-
-              sportName(
-                coach.sport
-              )
-
-            ]
-              .join(" ")
-              .toLowerCase();
-
-
-          return text.includes(query);
-
-        }
-      );
-
-  }
-
-
-  container.replaceChildren();
-
-
-  if (!result.length) {
+  if (!selectedSports.length) {
 
     container.innerHTML =
-      `<p class="empty">
-        Тренеры пока не найдены.
-      </p>`;
+      emptyHTML(
+        "Виды спорта пока не добавлены."
+      );
 
     return;
 
   }
 
 
-  result.forEach(
-    function (coach) {
+  container.innerHTML =
+    selectedSports
+      .map(
+        sport =>
+          sportCardHTML(sport)
+      )
+      .join("");
 
-      container.appendChild(
-        createCoachCard(coach)
+
+  addSportCardEvents();
+
+}
+
+
+/* =========================================================
+   RENDER SPORTS
+========================================================= */
+
+function renderSports() {
+
+  const container =
+    $("#sportsList");
+
+
+  if (!container) return;
+
+
+  if (!sports.length) {
+
+    container.innerHTML =
+      emptyHTML(
+        "Виды спорта пока не добавлены."
+      );
+
+    return;
+
+  }
+
+
+  container.innerHTML =
+    sports
+      .map(
+        sport =>
+          sportCardHTML(sport)
+      )
+      .join("");
+
+
+  addSportCardEvents();
+
+}
+
+
+/* =========================================================
+   SPORT CARD
+========================================================= */
+
+function sportCardHTML(sport) {
+
+  const image =
+    sport.image_url ||
+    sport.image ||
+    "";
+
+
+  const backgroundStyle =
+    image
+      ? `style="background-image:url('${escapeHTML(image)}')"`
+      : "";
+
+
+  return `
+
+    <article
+      class="sport-card"
+      data-sport-id="${sport.id}"
+      ${backgroundStyle}
+    >
+
+      <div class="sport-card-content">
+
+        <div class="sport-icon">
+          ${sport.icon || "💪"}
+        </div>
+
+        <h3>
+          ${escapeHTML(sport.name)}
+        </h3>
+
+        <p>
+          Найти тренера →
+        </p>
+
+      </div>
+
+    </article>
+
+  `;
+
+}
+
+
+/* =========================================================
+   SPORT EVENTS
+========================================================= */
+
+function addSportCardEvents() {
+
+  $$(".sport-card").forEach(
+    card => {
+
+      card.addEventListener(
+        "click",
+        () => {
+
+          const sportId =
+            card.dataset.sportId;
+
+
+          openSport(
+            sportId
+          );
+
+        }
       );
 
     }
@@ -1108,534 +977,442 @@ function renderCoaches() {
 }
 
 
-// =====================================================
-// TOP COACHES
-// =====================================================
+/* =========================================================
+   OPEN SPORT
+========================================================= */
+
+function openSport(sportId) {
+
+  currentSport =
+    sports.find(
+      sport =>
+        String(sport.id) ===
+        String(sportId)
+    );
+
+
+  if (!currentSport) return;
+
+
+  showPage(
+    "coaches"
+  );
+
+
+  $("#categoryBanner").style.display =
+    "block";
+
+
+  $("#categoryBannerTitle").textContent =
+    currentSport.name;
+
+
+  $("#categoryBannerSubtitle").textContent =
+    currentSport.description ||
+    `Найдите тренера по ${currentSport.name}.`;
+
+
+  $("#sportFilter").value =
+    String(currentSport.id);
+
+
+  renderCategoryBanner();
+
+  renderCoaches();
+
+}
+
+
+/* =========================================================
+   CATEGORY BANNER
+========================================================= */
+
+function renderCategoryBanner() {
+
+  if (!currentSport) return;
+
+
+  const coachesCount =
+    coaches.filter(
+      coach =>
+        String(
+          getCoachSportId(coach)
+        ) === String(currentSport.id)
+    ).length;
+
+
+  const stats =
+    $("#categoryBannerStats");
+
+
+  if (stats) {
+
+    stats.innerHTML = `
+
+      <span>
+        ${coachesCount} тренеров
+      </span>
+
+      <span>
+        ${escapeHTML(currentSport.name)}
+      </span>
+
+    `;
+
+  }
+
+
+  const graphic =
+    $("#categoryBannerGraphic");
+
+
+  if (graphic) {
+
+    graphic.innerHTML =
+      getSportGraphic(
+        currentSport.name
+      );
+
+  }
+
+
+  $("#cyclingBannerCta")?.addEventListener(
+    "click",
+    () => {
+
+      $("#searchInput")?.scrollIntoView({
+        behavior: "smooth"
+      });
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   SPORT GRAPHICS
+========================================================= */
+
+function getSportGraphic(name) {
+
+  const sport =
+    String(name).toLowerCase();
+
+
+  if (
+    sport.includes("cycl") ||
+    sport.includes("velo") ||
+    sport.includes("bike")
+  ) {
+
+    return `
+      <circle cx="100" cy="220" r="55" stroke="currentColor" stroke-width="12"/>
+      <circle cx="300" cy="220" r="55" stroke="currentColor" stroke-width="12"/>
+      <path d="M100 220L165 110L235 220H100ZM165 110L210 110L255 165M165 110L135 75M210 110L245 70"
+        stroke="currentColor"
+        stroke-width="12"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+    `;
+
+  }
+
+
+  return `
+    <path
+      d="M110 230C110 150 170 90 250 90C300 90 335 115 350 150"
+      stroke="currentColor"
+      stroke-width="18"
+      stroke-linecap="round"
+    />
+
+    <circle
+      cx="150"
+      cy="90"
+      r="35"
+      stroke="currentColor"
+      stroke-width="18"
+    />
+
+    <path
+      d="M150 125L220 170L285 135"
+      stroke="currentColor"
+      stroke-width="18"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+
+    <path
+      d="M220 170L195 245M220 170L285 245"
+      stroke="currentColor"
+      stroke-width="18"
+      stroke-linecap="round"
+    />
+  `;
+
+}
+
+
+/* =========================================================
+   TOP COACHES
+========================================================= */
 
 function renderTopCoaches() {
 
   const container =
-    document.getElementById(
-      "topCoaches"
-    );
+    $("#topCoaches");
 
 
   if (!container) return;
 
 
-  container.replaceChildren();
+  const top =
+    [...coaches]
+      .slice(0, 3);
 
 
-  coaches
-    .slice(0, 3)
-    .forEach(
-      function (coach) {
-
-        container.appendChild(
-          createCoachCard(coach)
-        );
-
-      }
-    );
-
-}
-
-
-// =====================================================
-// RANKING
-// =====================================================
-
-function renderRanking() {
-
-  const container =
-    document.getElementById(
-      "rankingList"
-    );
-
-
-  if (!container) return;
-
-
-  container.innerHTML = "";
-
-
-  if (!coaches.length) {
+  if (!top.length) {
 
     container.innerHTML =
-      `<p class="empty">
-        Рейтинг пока пуст.
-      </p>`;
+      emptyHTML(
+        "Тренеры пока не добавлены."
+      );
 
     return;
 
   }
 
 
-  coaches.forEach(
-    function (
-      coach,
-      index
-    ) {
-
-      const item =
-        document.createElement("article");
-
-
-      item.className =
-        "ranking-item";
-
-
-      item.innerHTML = `
-
-        <div class="ranking-position">
-
-          ${index + 1}
-
-        </div>
-
-
-        <div>
-
-          <strong>
-
-            ${esc(
-              coach.name ||
-              "Тренер"
-            )}
-
-          </strong>
-
-
-          <p>
-
-            ${esc(
-              sportName(
-                coach.sport
-              )
-            )}
-
-          </p>
-
-        </div>
-
-
-        <strong>
-
-          ${calculateScore(coach)}
-
-        </strong>
-
-      `;
-
-
-      item.addEventListener(
-        "click",
-        function () {
-
-          openProfile(coach.id);
-
-        }
-      );
-
-
-      container.appendChild(item);
-
-    }
-  );
-
-}
-
-
-// =====================================================
-// MATCH GOALS
-// =====================================================
-
-function populateGoals() {
-
-  const select =
-    document.getElementById(
-      "matchGoal"
-    );
-
-
-  if (!select) return;
-
-
-  const current =
-    select.value;
-
-
-  const goals =
-    [
-      ...new Set(
-
-        coaches
-          .map(
-            function (coach) {
-
-              return String(
-                coach.goal || ""
-              ).trim();
-
-            }
-          )
-          .filter(Boolean)
-
+  container.innerHTML =
+    top
+      .map(
+        coach =>
+          coachCardHTML(coach)
       )
-
-    ];
-
-
-  select.innerHTML =
-    `<option value="">
-      Любая цель
-    </option>`;
+      .join("");
 
 
-  goals.forEach(
-    function (goal) {
-
-      const option =
-        document.createElement("option");
-
-
-      option.value =
-        goal;
-
-
-      option.textContent =
-        goal;
-
-
-      select.appendChild(option);
-
-    }
-  );
-
-
-  if (current) {
-
-    select.value =
-      current;
-
-  }
+  addCoachCardEvents();
 
 }
 
 
-// =====================================================
-// MATCH
-// =====================================================
+/* =========================================================
+   RENDER COACHES
+========================================================= */
 
-function initMatch() {
-
-  const button =
-    document.getElementById(
-      "findMatchBtn"
-    );
-
-
-  if (!button) return;
-
-
-  button.addEventListener(
-    "click",
-    function () {
-
-      const sport =
-        document.getElementById(
-          "matchSport"
-        )?.value || "";
-
-
-      const goal =
-        String(
-          document.getElementById(
-            "matchGoal"
-          )?.value || ""
-        )
-          .trim()
-          .toLowerCase();
-
-
-      const format =
-        document.getElementById(
-          "matchFormat"
-        )?.value || "";
-
-
-      let result =
-        [...coaches];
-
-
-      if (sport) {
-
-        result =
-          result.filter(
-            function (coach) {
-
-              return (
-                String(coach.sport) ===
-                String(sport)
-              );
-
-            }
-          );
-
-      }
-
-
-      if (goal) {
-
-        result =
-          result.filter(
-            function (coach) {
-
-              return String(
-                coach.goal || ""
-              )
-                .toLowerCase()
-                .includes(goal);
-
-            }
-          );
-
-      }
-
-
-      if (format) {
-
-        result =
-          result.filter(
-            function (coach) {
-
-              return (
-                coach.format ===
-                format
-              );
-
-            }
-          );
-
-      }
-
-
-      const container =
-        document.getElementById(
-          "matchResults"
-        );
-
-
-      if (!container) return;
-
-
-      container.replaceChildren();
-
-
-      if (!result.length) {
-
-        container.innerHTML =
-          `<p class="empty">
-            Подходящих тренеров пока не найдено.
-          </p>`;
-
-        return;
-
-      }
-
-
-      result
-        .slice(0, 6)
-        .forEach(
-          function (coach) {
-
-            container.appendChild(
-              createCoachCard(coach)
-            );
-
-          }
-        );
-
-    }
-  );
-
-}
-
-
-// =====================================================
-// PROFILE
-// =====================================================
-
-function openProfile(id) {
-
-  const coach =
-    coaches.find(
-      function (item) {
-
-        return (
-          String(item.id) ===
-          String(id)
-        );
-
-      }
-    );
-
-
-  if (!coach) return;
-
+function renderCoaches() {
 
   const container =
-    document.getElementById(
-      "profileContent"
-    );
+    $("#coachesList");
 
 
   if (!container) return;
 
 
+  const search =
+    ($("#searchInput")?.value || "")
+      .trim()
+      .toLowerCase();
+
+
+  const sportId =
+    $("#sportFilter")?.value || "";
+
+
+  const format =
+    $("#formatFilter")?.value || "";
+
+
+  let filtered =
+    [...coaches];
+
+
+  if (sportId) {
+
+    filtered =
+      filtered.filter(
+        coach =>
+          String(
+            getCoachSportId(coach)
+          ) === String(sportId)
+      );
+
+  }
+
+
+  if (format) {
+
+    filtered =
+      filtered.filter(
+        coach =>
+          coach.format === format
+      );
+
+  }
+
+
+  if (search) {
+
+    filtered =
+      filtered.filter(
+        coach => {
+
+          const text = [
+
+            coach.name,
+
+            coach.bio,
+
+            coach.goal,
+
+            getCoachSportName(coach)
+
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+
+
+          return text.includes(
+            search
+          );
+
+        }
+      );
+
+  }
+
+
+  if (!filtered.length) {
+
+    container.innerHTML =
+      emptyHTML(
+        "Тренеры не найдены."
+      );
+
+    return;
+
+  }
+
+
+  container.innerHTML =
+    filtered
+      .map(
+        coach =>
+          coachCardHTML(coach)
+      )
+      .join("");
+
+
+  addCoachCardEvents();
+
+}
+
+
+/* =========================================================
+   COACH CARD
+========================================================= */
+
+function coachCardHTML(coach) {
+
   const image =
-    getCoachImage(coach);
+    coach.image_url ||
+    coach.avatar_url ||
+    "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=900&q=80";
 
 
-  const isOwner =
-    currentUser &&
-    coach.user_id &&
-    String(currentUser.id) ===
-    String(coach.user_id);
+  const rating =
+    Number(
+      coach.rating || 0
+    ).toFixed(1);
 
 
-  container.innerHTML = `
+  const sport =
+    getCoachSportName(coach);
 
-    <article class="coach-profile">
 
-      <div class="coach-profile-image">
+  const price =
+    coach.price
+      ? `${escapeHTML(coach.price)} €`
+      : "Цена не указана";
+
+
+  const format =
+    coach.format ||
+    "Онлайн / Офлайн";
+
+
+  const goal =
+    coach.goal ||
+    "Персональные тренировки";
+
+
+  return `
+
+    <article
+      class="coach-card"
+      data-coach-id="${coach.id}"
+    >
+
+      <div class="coach-image">
 
         <img
-          src="${esc(image)}"
-          alt="${esc(
-            coach.name ||
-            "Тренер"
-          )}"
+          src="${escapeHTML(image)}"
+          alt="${escapeHTML(coach.name || "Тренер")}"
+          loading="lazy"
+          onerror="this.src='https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=900&q=80'"
         >
 
       </div>
 
 
-      <div class="coach-profile-info">
+      <div class="coach-content">
 
-        <p class="eyebrow">
-
-          APLEX
-
-        </p>
+        <div class="coach-score">
+          ${rating}
+        </div>
 
 
-        <h1>
-
-          ${esc(
+        <h3>
+          ${escapeHTML(
             coach.name ||
             "Тренер"
           )}
+        </h3>
 
-        </h1>
 
-
-        <p>
-
-          ${esc(
-            sportName(
-              coach.sport
-            )
+        <p class="coach-sport">
+          ${escapeHTML(
+            sport || "Спорт"
           )}
-
         </p>
 
 
-        ${
-          coach.goal
-            ? `
-              <p>
+        <div class="tags">
 
-                ${esc(
-                  coach.goal
-                )}
+          <span class="tag">
+            ${escapeHTML(goal)}
+          </span>
 
-              </p>
-            `
-            : ""
-        }
+          <span class="tag">
+            ${escapeHTML(format)}
+          </span>
+
+        </div>
 
 
-        ${
-          coach.format
-            ? `
-              <p>
+        <div class="card-footer">
 
-                Формат:
-                ${esc(
-                  coach.format
-                )}
-
-              </p>
-            `
-            : ""
-        }
+          <span>
+            ${price}
+          </span>
 
 
-        <p>
-
-          ⭐ ${Number(
-            coach.rating || 0
-          ).toFixed(1)}
-
-          · SCORE ${calculateScore(coach)}
-
-        </p>
-
-
-        <p>
-
-          ${esc(
-            priceText(coach)
-          )}
-
-        </p>
-
-
-        <p>
-
-          ${esc(
-            coach.bio ||
-            "Описание пока не добавлено."
-          )}
-
-        </p>
-
-
-        <div class="actions">
-
-          ${
-            isOwner
-              ? `
-                <button
-                  id="editMyCoachBtn"
-                  class="btn btn-primary"
-                  type="button"
-                >
-                  РЕДАКТИРОВАТЬ ПРОФИЛЬ
-                </button>
-              `
-              : ""
-          }
-
-
-          <button
-            id="backToCoaches"
-            class="btn"
-            type="button"
-          >
-            ← К ТРЕНЕРАМ
-          </button>
+          <span>
+            Подробнее →
+          </span>
 
         </div>
 
@@ -1645,256 +1422,27 @@ function openProfile(id) {
 
   `;
 
-
-  document
-    .getElementById(
-      "backToCoaches"
-    )
-    ?.addEventListener(
-      "click",
-      function () {
-
-        showPage("coaches");
-
-      }
-    );
-
-
-  document
-    .getElementById(
-      "editMyCoachBtn"
-    )
-    ?.addEventListener(
-      "click",
-      async function () {
-
-        await openCoachEditor();
-
-      }
-    );
-
-
-  showPage("profile");
-
 }
 
 
-// =====================================================
-// NAVIGATION
-// =====================================================
+/* =========================================================
+   COACH EVENTS
+========================================================= */
 
-function initNavigation() {
+function addCoachCardEvents() {
 
-  document
-    .getElementById("logo")
-    ?.addEventListener(
-      "click",
-      function () {
+  $$(".coach-card").forEach(
+    card => {
 
-        showPage("home");
+      card.addEventListener(
+        "click",
+        () => {
 
-      }
-    );
-
-
-  document
-    .querySelectorAll("[data-nav]")
-    .forEach(
-      function (button) {
-
-        button.addEventListener(
-          "click",
-          function () {
-
-            showPage(
-              button.dataset.nav
-            );
-
-          }
-        );
-
-      }
-    );
-
-
-  document
-    .getElementById("matchBtn")
-    ?.addEventListener(
-      "click",
-      function () {
-
-        showPage("match");
-
-      }
-    );
-
-
-  document
-    .getElementById("chooseSportBtn")
-    ?.addEventListener(
-      "click",
-      function () {
-
-        showPage("sports");
-
-      }
-    );
-
-}
-
-
-// =====================================================
-// FILTERS
-// =====================================================
-
-function initFilters() {
-
-  document
-    .getElementById("sportFilter")
-    ?.addEventListener(
-      "change",
-      renderCoaches
-    );
-
-
-  document
-    .getElementById("coachSearch")
-    ?.addEventListener(
-      "input",
-      renderCoaches
-    );
-
-}
-
-
-// =====================================================
-// AUTH UI
-// =====================================================
-
-function updateAuthUI() {
-
-  const authButton =
-    document.getElementById(
-      "authBtn"
-    );
-
-
-  const createButton =
-    document.getElementById(
-      "createBtn"
-    );
-
-
-  if (authButton) {
-
-    if (currentUser) {
-
-      authButton.textContent =
-        "Выйти";
-
-    }
-
-    else {
-
-      authButton.textContent =
-        "Войти";
-
-    }
-
-  }
-
-
-  if (createButton) {
-
-    if (currentUser) {
-
-      createButton.textContent =
-        "Мой профиль";
-
-    }
-
-    else {
-
-      createButton.textContent =
-        "Стать тренером";
-
-    }
-
-  }
-
-}
-
-
-// =====================================================
-// REFRESH USER
-// =====================================================
-
-async function refreshUser() {
-
-  const result =
-    await supabase.auth.getUser();
-
-
-  currentUser =
-    result.data?.user ||
-    null;
-
-
-  updateAuthUI();
-
-}
-
-
-// =====================================================
-// AUTH BUTTON
-// =====================================================
-
-function initAuthButton() {
-
-  const authButton =
-    document.getElementById(
-      "authBtn"
-    );
-
-
-  if (!authButton) return;
-
-
-  authButton.addEventListener(
-    "click",
-    async function () {
-
-      if (currentUser) {
-
-        const result =
-          await supabase.auth.signOut();
-
-
-        if (result.error) {
-
-          alert(
-            result.error.message
+          openCoachProfile(
+            card.dataset.coachId
           );
-
-          return;
 
         }
-
-
-        currentUser = null;
-
-        updateAuthUI();
-
-        showPage("home");
-
-        return;
-
-      }
-
-
-      toggleModal(
-        "modal",
-        true
       );
 
     }
@@ -1903,592 +1451,280 @@ function initAuthButton() {
 }
 
 
-// =====================================================
-// AUTH LOGIN
-// =====================================================
+/* =========================================================
+   COACH PROFILE
+========================================================= */
 
-function initAuthForm() {
+function openCoachProfile(coachId) {
 
-  const form =
-    document.getElementById(
-      "authForm"
+  const coach =
+    coaches.find(
+      item =>
+        String(item.id) ===
+        String(coachId)
     );
 
 
-  if (!form) return;
+  if (!coach) return;
 
 
-  form.addEventListener(
-    "submit",
-    async function (event) {
+  const container =
+    $("#profileContent");
 
-      event.preventDefault();
 
+  if (!container) return;
 
-      const email =
-        document.getElementById(
-          "authEmail"
-        )?.value
-          .trim();
 
+  const image =
+    coach.image_url ||
+    coach.avatar_url ||
+    "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=900&q=80";
 
-      const password =
-        document.getElementById(
-          "authPassword"
-        )?.value;
 
+  const sport =
+    getCoachSportName(coach);
 
-      if (
-        !email ||
-        !password
-      ) {
 
-        showMessage(
-          "authMessage",
-          "Введите email и пароль.",
-          true
-        );
+  const rating =
+    Number(
+      coach.rating || 0
+    ).toFixed(1);
 
-        return;
 
-      }
+  container.innerHTML = `
 
+    <button
+      id="backToCoaches"
+      class="btn"
+      type="button"
+    >
+      ← Назад
+    </button>
 
-      showMessage(
-        "authMessage",
-        "Выполняется вход..."
-      );
 
+    <div class="coach-profile">
 
-      const result =
-        await supabase.auth
-          .signInWithPassword({
+      <div class="coach-profile-image">
 
-            email,
-            password
+        <img
+          src="${escapeHTML(image)}"
+          alt="${escapeHTML(coach.name || "Тренер")}"
+          onerror="this.src='https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=900&q=80'"
+        >
 
-          });
+      </div>
 
 
-      if (result.error) {
+      <div class="coach-profile-info">
 
-        showMessage(
-          "authMessage",
-          result.error.message,
-          true
-        );
+        <p class="eyebrow">
+          ${escapeHTML(sport || "APLEX COACH")}
+        </p>
 
-        return;
 
-      }
+        <h1>
+          ${escapeHTML(
+            coach.name || "Тренер"
+          )}
+        </h1>
 
 
-      currentUser =
-        result.data.user;
+        <p>
+          ⭐ ${rating}
+        </p>
 
 
-      showMessage(
-        "authMessage",
-        "Вход выполнен."
-      );
+        <p>
+          ${escapeHTML(
+            coach.bio ||
+            "Информация о тренере будет добавлена."
+          )}
+        </p>
 
 
-      updateAuthUI();
+        <p>
+          <strong>
+            Специализация:
+          </strong>
 
+          ${escapeHTML(
+            coach.goal ||
+            "Персональные тренировки"
+          )}
+        </p>
 
-      setTimeout(
-        function () {
 
-          toggleModal(
-            "modal",
-            false
-          );
+        <p>
+          <strong>
+            Формат:
+          </strong>
 
-          form.reset();
+          ${escapeHTML(
+            coach.format ||
+            "Не указан"
+          )}
+        </p>
 
-        },
-        500
-      );
 
-    }
-  );
-
-}
-
-
-// =====================================================
-// SIGNUP
-// =====================================================
-
-function initSignup() {
-
-  const button =
-    document.getElementById(
-      "signupBtn"
-    );
-
-
-  if (!button) return;
-
-
-  button.addEventListener(
-    "click",
-    function () {
-
-      toggleModal(
-        "modal",
-        false
-      );
-
-
-      toggleModal(
-        "signupModal",
-        true
-      );
-
-    }
-  );
-
-
-  const form =
-    document.getElementById(
-      "signupForm"
-    );
-
-
-  if (!form) return;
-
-
-  form.addEventListener(
-    "submit",
-    async function (event) {
-
-      event.preventDefault();
-
-
-      const email =
-        document.getElementById(
-          "signupEmail"
-        )?.value
-          .trim();
-
-
-      const password =
-        document.getElementById(
-          "signupPassword"
-        )?.value;
-
-
-      const confirm =
-        document.getElementById(
-          "signupPasswordConfirm"
-        )?.value;
-
-
-      if (
-        !email ||
-        !password
-      ) {
-
-        showMessage(
-          "signupMessage",
-          "Заполните email и пароль.",
-          true
-        );
-
-        return;
-
-      }
-
-
-      if (
-        password.length < 6
-      ) {
-
-        showMessage(
-          "signupMessage",
-          "Пароль должен содержать минимум 6 символов.",
-          true
-        );
-
-        return;
-
-      }
-
-
-      if (
-        confirm !== undefined &&
-        password !== confirm
-      ) {
-
-        showMessage(
-          "signupMessage",
-          "Пароли не совпадают.",
-          true
-        );
-
-        return;
-
-      }
-
-
-      showMessage(
-        "signupMessage",
-        "Создаём аккаунт..."
-      );
-
-
-      const redirectTo =
-        `${window.location.origin}${window.location.pathname}`;
-
-
-      const result =
-        await supabase.auth.signUp({
-
-          email,
-
-          password,
-
-          options: {
-
-            emailRedirectTo:
-              redirectTo
-
+        <p>
+          <strong>
+            Цена:
+          </strong>
+
+          ${coach.price
+            ? `${escapeHTML(coach.price)} €`
+            : "Не указана"
           }
-
-        });
-
-
-      if (result.error) {
-
-        showMessage(
-          "signupMessage",
-          result.error.message,
-          true
-        );
-
-        return;
-
-      }
+        </p>
 
 
-      if (
-        result.data.session
-      ) {
+        <div class="actions">
 
-        currentUser =
-          result.data.user;
+          <button
+            id="contactCoachBtn"
+            class="btn btn-primary"
+            type="button"
+          >
+            НАПИСАТЬ ТРЕНЕРУ
+          </button>
 
+        </div>
 
-        updateAuthUI();
+      </div>
 
+    </div>
 
-        showMessage(
-          "signupMessage",
-          "Аккаунт создан."
-        );
-
-      }
-
-      else {
-
-        showMessage(
-          "signupMessage",
-          "Аккаунт создан. Проверьте email и подтвердите регистрацию."
-        );
-
-      }
+  `;
 
 
-      form.reset();
-
-    }
-  );
-
-}
-
-
-// =====================================================
-// FORGOT PASSWORD
-// =====================================================
-
-function initForgotPassword() {
-
-  const button =
-    document.getElementById(
-      "forgotPasswordBtn"
-    );
-
-
-  if (!button) return;
-
-
-  button.addEventListener(
+  $("#backToCoaches")?.addEventListener(
     "click",
-    function () {
-
-      toggleModal(
-        "modal",
-        false
-      );
-
-
-      toggleModal(
-        "forgotPasswordModal",
-        true
-      );
-
-    }
+    () => showPage("coaches")
   );
 
 
-  const form =
-    document.getElementById(
-      "forgotPasswordForm"
-    );
-
-
-  if (!form) return;
-
-
-  form.addEventListener(
-    "submit",
-    async function (event) {
-
-      event.preventDefault();
-
-
-      const email =
-        document.getElementById(
-          "forgotEmail"
-        )?.value
-          .trim();
-
-
-      if (!email) {
-
-        showMessage(
-          "forgotMessage",
-          "Введите email.",
-          true
-        );
-
-        return;
-
-      }
-
-
-      const redirectTo =
-        `${window.location.origin}${window.location.pathname}`;
-
-
-      const result =
-        await supabase.auth
-          .resetPasswordForEmail(
-            email,
-            {
-              redirectTo
-            }
-          );
-
-
-      if (result.error) {
-
-        showMessage(
-          "forgotMessage",
-          result.error.message,
-          true
-        );
-
-        return;
-
-      }
-
-
-      showMessage(
-        "forgotMessage",
-        "Письмо для восстановления пароля отправлено."
-      );
-
-    }
-  );
-
-}
-
-
-// =====================================================
-// RESET PASSWORD
-// =====================================================
-
-function initResetPassword() {
-
-  const form =
-    document.getElementById(
-      "resetPasswordForm"
-    );
-
-
-  if (!form) return;
-
-
-  form.addEventListener(
-    "submit",
-    async function (event) {
-
-      event.preventDefault();
-
-
-      const password =
-        document.getElementById(
-          "newPassword"
-        )?.value;
-
-
-      const confirm =
-        document.getElementById(
-          "newPasswordConfirm"
-        )?.value;
-
-
-      if (
-        !password ||
-        password.length < 6
-      ) {
-
-        showMessage(
-          "resetMessage",
-          "Пароль должен содержать минимум 6 символов.",
-          true
-        );
-
-        return;
-
-      }
-
-
-      if (
-        confirm !== undefined &&
-        password !== confirm
-      ) {
-
-        showMessage(
-          "resetMessage",
-          "Пароли не совпадают.",
-          true
-        );
-
-        return;
-
-      }
-
-
-      const result =
-        await supabase.auth
-          .updateUser({
-
-            password
-
-          });
-
-
-      if (result.error) {
-
-        showMessage(
-          "resetMessage",
-          result.error.message,
-          true
-        );
-
-        return;
-
-      }
-
-
-      showMessage(
-        "resetMessage",
-        "Пароль успешно изменён."
-      );
-
-
-      form.reset();
-
-
-      setTimeout(
-        function () {
-
-          toggleModal(
-            "resetPasswordModal",
-            false
-          );
-
-        },
-        800
-      );
-
-    }
-  );
-
-}
-
-
-// =====================================================
-// RECOVERY MODE
-// =====================================================
-
-function checkRecoveryMode() {
-
-  const hash =
-    window.location.hash;
-
-
-  if (
-    hash.includes(
-      "type=recovery"
-    )
-  ) {
-
-    toggleModal(
-      "resetPasswordModal",
-      true
-    );
-
-  }
-
-}
-
-
-// =====================================================
-// CREATE / EDIT COACH
-// =====================================================
-
-function initCreateCoach() {
-
-  const button =
-    document.getElementById(
-      "createBtn"
-    );
-
-
-  if (!button) return;
-
-
-  button.addEventListener(
+  $("#contactCoachBtn")?.addEventListener(
     "click",
-    async function () {
+    () => {
 
       if (!currentUser) {
 
-        toggleModal(
-          "modal",
-          true
-        );
+        openLoginModal();
 
         return;
 
       }
 
 
-      await openCoachEditor();
+      alert(
+        "Система сообщений будет подключена к новой структуре Supabase."
+      );
+
+    }
+  );
+
+
+  showPage(
+    "profile"
+  );
+
+}
+
+
+/* =========================================================
+   RANKING
+========================================================= */
+
+function renderRanking() {
+
+  const container =
+    $("#rankingList");
+
+
+  if (!container) return;
+
+
+  const ranked =
+    [...coaches]
+      .sort(
+        (a, b) =>
+          Number(b.rating || 0) -
+          Number(a.rating || 0)
+      );
+
+
+  if (!ranked.length) {
+
+    container.innerHTML =
+      emptyHTML(
+        "Рейтинг пока пуст."
+      );
+
+    return;
+
+  }
+
+
+  container.innerHTML =
+    ranked
+      .map(
+        (coach, index) => `
+
+          <article
+            class="ranking-item"
+            data-coach-id="${coach.id}"
+          >
+
+            <div class="ranking-position">
+              ${index + 1}
+            </div>
+
+
+            <div>
+
+              <strong>
+                ${escapeHTML(
+                  coach.name || "Тренер"
+                )}
+              </strong>
+
+
+              <p>
+                ${escapeHTML(
+                  getCoachSportName(coach) ||
+                  "Спорт"
+                )}
+              </p>
+
+            </div>
+
+
+            <strong>
+              ⭐ ${Number(
+                coach.rating || 0
+              ).toFixed(1)}
+            </strong>
+
+          </article>
+
+        `
+      )
+      .join("");
+
+
+  $$(".ranking-item").forEach(
+    item => {
+
+      item.addEventListener(
+        "click",
+        () => {
+
+          openCoachProfile(
+            item.dataset.coachId
+          );
+
+        }
+      );
 
     }
   );
@@ -2496,17 +1732,308 @@ function initCreateCoach() {
 }
 
 
-// =====================================================
-// OPEN COACH EDITOR
-// =====================================================
+/* =========================================================
+   MATCH
+========================================================= */
 
-async function openCoachEditor() {
+function setupForms() {
+
+  $("#findMatchBtn")?.addEventListener(
+    "click",
+    findMatch
+  );
+
+
+  $("#createForm")?.addEventListener(
+    "submit",
+    saveCoachProfile
+  );
+
+
+  $("#resetPasswordForm")?.addEventListener(
+    "submit",
+    updatePassword
+  );
+
+}
+
+
+function findMatch() {
+
+  const sportId =
+    $("#matchSport")?.value || "";
+
+
+  const goal =
+    $("#matchGoal")?.value || "";
+
+
+  const format =
+    $("#matchFormat")?.value || "";
+
+
+  let results =
+    [...coaches];
+
+
+  if (sportId) {
+
+    results =
+      results.filter(
+        coach =>
+          String(
+            getCoachSportId(coach)
+          ) === String(sportId)
+      );
+
+  }
+
+
+  if (format) {
+
+    results =
+      results.filter(
+        coach =>
+          coach.format === format
+      );
+
+  }
+
+
+  if (goal) {
+
+    const goalText =
+      String(goal).toLowerCase();
+
+
+    results =
+      results.filter(
+        coach => {
+
+          const text = [
+
+            coach.goal,
+            coach.bio
+
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+
+
+          return (
+            text.includes(goalText) ||
+            goalText.includes(text)
+          );
+
+        }
+      );
+
+  }
+
+
+  const container =
+    $("#matchResults");
+
+
+  if (!container) return;
+
+
+  if (!results.length) {
+
+    container.innerHTML =
+      emptyHTML(
+        "Подходящий тренер пока не найден. Попробуйте изменить параметры."
+      );
+
+    return;
+
+  }
+
+
+  container.innerHTML =
+    results
+      .slice(0, 6)
+      .map(
+        coach =>
+          coachCardHTML(coach)
+      )
+      .join("");
+
+
+  addCoachCardEvents();
+
+}
+
+
+/* =========================================================
+   FILTERS
+========================================================= */
+
+function setupFilters() {
+
+  $("#searchInput")?.addEventListener(
+    "input",
+    renderCoaches
+  );
+
+
+  $("#sportFilter")?.addEventListener(
+    "change",
+    () => {
+
+      if (!$("#sportFilter").value) {
+
+        currentSport = null;
+
+        $("#categoryBanner").style.display =
+          "none";
+
+      }
+
+      renderCoaches();
+
+    }
+  );
+
+
+  $("#formatFilter")?.addEventListener(
+    "change",
+    renderCoaches
+  );
+
+}
+
+
+/* =========================================================
+   FILL SELECTS
+========================================================= */
+
+function fillSportSelects() {
+
+  const selects = [
+
+    $("#sportFilter"),
+    $("#matchSport"),
+    $("#coachSport")
+
+  ].filter(Boolean);
+
+
+  selects.forEach(
+    select => {
+
+      const currentValue =
+        select.value;
+
+
+      const firstOption =
+        select.querySelector("option");
+
+
+      const firstOptionHTML =
+        firstOption
+          ? firstOption.outerHTML
+          : `<option value="">Выберите спорт</option>`;
+
+
+      select.innerHTML =
+        firstOptionHTML;
+
+
+      sports.forEach(
+        sport => {
+
+          const option =
+            document.createElement("option");
+
+
+          option.value =
+            sport.id;
+
+
+          option.textContent =
+            sport.name;
+
+
+          select.appendChild(option);
+
+        }
+      );
+
+
+      select.value =
+        currentValue;
+
+    }
+  );
+
+
+  const goalSelect =
+    $("#matchGoal");
+
+
+  if (goalSelect) {
+
+    const goals =
+      [
+        "Похудение",
+        "Набор мышечной массы",
+        "Сила",
+        "Выносливость",
+        "Подготовка к соревнованиям",
+        "Общее здоровье"
+      ];
+
+
+    goals.forEach(
+      goal => {
+
+        const option =
+          document.createElement("option");
+
+
+        option.value =
+          goal;
+
+
+        option.textContent =
+          goal;
+
+
+        goalSelect.appendChild(option);
+
+      }
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   SAVE COACH PROFILE
+========================================================= */
+
+async function saveCoachProfile(event) {
+
+  event.preventDefault();
+
+
+  const form =
+    event.currentTarget;
+
+
+  const message =
+    $("#coachMessage");
+
 
   if (!currentUser) {
 
-    toggleModal(
-      "modal",
-      true
+    showMessage(
+      message,
+      "Сначала необходимо войти в аккаунт.",
+      "error"
     );
 
     return;
@@ -2514,34 +2041,74 @@ async function openCoachEditor() {
   }
 
 
-  const form =
-    document.getElementById(
-      "createForm"
+  const name =
+    form.name.value.trim();
+
+
+  const sportId =
+    form.sport.value;
+
+
+  const goal =
+    form.goal.value.trim();
+
+
+  const format =
+    form.format.value;
+
+
+  const price =
+    Number(form.price.value);
+
+
+  const period =
+    form.period.value;
+
+
+  const bio =
+    form.bio.value.trim();
+
+
+  try {
+
+    showMessage(
+      message,
+      "Сохранение..."
     );
 
 
-  if (!form) return;
+    const payload = {
+
+      user_id:
+        currentUser.id,
+
+      name,
+
+      sport_id:
+        sportId,
+
+      goal,
+
+      format,
+
+      price,
+
+      period,
+
+      bio,
+
+      updated_at:
+        new Date().toISOString()
+
+    };
 
 
-  const title =
-    document.getElementById(
-      "coachTitle"
-    );
-
-
-  const submit =
-    form.querySelector(
-      '[type="submit"]'
-    );
-
-
-  form.reset();
-
-
-  const result =
-    await supabase
+    const {
+      data: existing,
+      error: findError
+    } = await supabase
       .from("coaches")
-      .select("*")
+      .select("id")
       .eq(
         "user_id",
         currentUser.id
@@ -2549,658 +2116,783 @@ async function openCoachEditor() {
       .maybeSingle();
 
 
-  if (
-    result.error &&
-    result.error.code !== "PGRST116"
-  ) {
+    if (findError) {
 
-    console.error(
-      result.error
+      throw findError;
+
+    }
+
+
+    let error;
+
+
+    if (existing) {
+
+      ({
+        error
+      } = await supabase
+        .from("coaches")
+        .update(payload)
+        .eq(
+          "id",
+          existing.id
+        ));
+
+    } else {
+
+      ({
+        error
+      } = await supabase
+        .from("coaches")
+        .insert(payload)
+      );
+
+    }
+
+
+    if (error) {
+
+      throw error;
+
+    }
+
+
+    showMessage(
+      message,
+      "Профиль тренера сохранён.",
+      "success"
+    );
+
+
+    await loadCoaches();
+
+    renderTopCoaches();
+
+    renderCoaches();
+
+    renderRanking();
+
+
+    setTimeout(
+      closeCoachModal,
+      700
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+
+    showMessage(
+      message,
+      error.message ||
+      "Не удалось сохранить профиль.",
+      "error"
     );
 
   }
 
-
-  const coach =
-    result.data;
+}
 
 
-  if (coach) {
+/* =========================================================
+   DASHBOARD
+========================================================= */
 
-    if (title) {
+async function renderDashboard() {
 
-      title.textContent =
-        "Мой профиль";
+  const container =
+    $("#dashboardContent");
+
+
+  if (!container) return;
+
+
+  if (!currentUser) {
+
+    container.innerHTML = `
+
+      <div class="empty">
+
+        <p>
+          Войдите в аккаунт,
+          чтобы открыть личный кабинет.
+        </p>
+
+        <button
+          id="dashboardLogin"
+          class="btn btn-primary"
+          type="button"
+        >
+          ВОЙТИ
+        </button>
+
+      </div>
+
+    `;
+
+
+    $("#dashboardLogin")?.addEventListener(
+      "click",
+      openLoginModal
+    );
+
+
+    return;
+
+  }
+
+
+  let myCoach = null;
+
+
+  try {
+
+    const {
+      data,
+      error
+    } = await supabase
+      .from("coaches")
+      .select(`
+        *,
+        sports (
+          id,
+          name
+        )
+      `)
+      .eq(
+        "user_id",
+        currentUser.id
+      )
+      .maybeSingle();
+
+
+    if (error) {
+
+      throw error;
 
     }
 
 
-    if (submit) {
+    myCoach =
+      data;
 
-      submit.textContent =
-        "СОХРАНИТЬ ИЗМЕНЕНИЯ";
+  } catch (error) {
+
+    console.error(error);
+
+  }
+
+
+  container.innerHTML = `
+
+    <div class="score-box">
+
+      <p>
+        ${escapeHTML(
+          currentUser.email
+        )}
+      </p>
+
+
+      ${
+        myCoach
+          ? `
+
+            <h2>
+              ${escapeHTML(
+                myCoach.name
+              )}
+            </h2>
+
+            <p>
+              Ваш профиль тренера активен.
+            </p>
+
+            <div class="actions">
+
+              <button
+                id="editCoachProfile"
+                class="btn btn-primary"
+                type="button"
+              >
+                РЕДАКТИРОВАТЬ АНКЕТУ
+              </button>
+
+
+              <button
+                id="dashboardLogout"
+                class="btn"
+                type="button"
+              >
+                ВЫЙТИ
+              </button>
+
+            </div>
+
+          `
+          : `
+
+            <h2>
+              Добро пожаловать в APLEX
+            </h2>
+
+            <p>
+              Вы можете создать профиль тренера.
+            </p>
+
+            <div class="actions">
+
+              <button
+                id="createCoachFromDashboard"
+                class="btn btn-primary"
+                type="button"
+              >
+                СОЗДАТЬ АНКЕТУ ТРЕНЕРА
+              </button>
+
+
+              <button
+                id="dashboardLogout"
+                class="btn"
+                type="button"
+              >
+                ВЫЙТИ
+              </button>
+
+            </div>
+
+          `
+      }
+
+    </div>
+
+  `;
+
+
+  $("#dashboardLogout")?.addEventListener(
+    "click",
+    signOut
+  );
+
+
+  $("#createCoachFromDashboard")?.addEventListener(
+    "click",
+    openCoachModal
+  );
+
+
+  $("#editCoachProfile")?.addEventListener(
+    "click",
+    () => {
+
+      openCoachModal(
+        myCoach
+      );
 
     }
+  );
+
+}
 
 
-    form.elements.name.value =
+/* =========================================================
+   MODALS
+========================================================= */
+
+function setupModals() {
+
+  $("#authClose")?.addEventListener(
+    "click",
+    closeLoginModal
+  );
+
+
+  $("#modalCancel")?.addEventListener(
+    "click",
+    closeLoginModal
+  );
+
+
+  $("#coachClose")?.addEventListener(
+    "click",
+    closeCoachModal
+  );
+
+
+  $("#coachCancel")?.addEventListener(
+    "click",
+    closeCoachModal
+  );
+
+
+  $("#resetClose")?.addEventListener(
+    "click",
+    closeResetModal
+  );
+
+
+  $("#resetCancel")?.addEventListener(
+    "click",
+    closeResetModal
+  );
+
+
+  $$(".modal").forEach(
+    modal => {
+
+      modal.addEventListener(
+        "click",
+        event => {
+
+          if (
+            event.target === modal
+          ) {
+
+            modal.classList.remove(
+              "show"
+            );
+
+            document.body.classList.remove(
+              "modal-open"
+            );
+
+          }
+
+        }
+      );
+
+    }
+  );
+
+
+  window.addEventListener(
+    "keydown",
+    event => {
+
+      if (event.key === "Escape") {
+
+        $$(".modal.show").forEach(
+          modal =>
+            modal.classList.remove("show")
+        );
+
+
+        document.body.classList.remove(
+          "modal-open"
+        );
+
+      }
+
+    }
+  );
+
+}
+
+
+function openLoginModal() {
+
+  $("#modal")?.classList.add(
+    "show"
+  );
+
+
+  document.body.classList.add(
+    "modal-open"
+  );
+
+
+  $("#authEmail")?.focus();
+
+}
+
+
+function closeLoginModal() {
+
+  $("#modal")?.classList.remove(
+    "show"
+  );
+
+
+  document.body.classList.remove(
+    "modal-open"
+  );
+
+}
+
+
+function openCoachModal(coach = null) {
+
+  if (!currentUser) {
+
+    openLoginModal();
+
+    return;
+
+  }
+
+
+  const modal =
+    $("#coachModal");
+
+
+  if (!modal) return;
+
+
+  modal.classList.add(
+    "show"
+  );
+
+
+  document.body.classList.add(
+    "modal-open"
+  );
+
+
+  const form =
+    $("#createForm");
+
+
+  if (
+    coach &&
+    form
+  ) {
+
+    form.name.value =
       coach.name || "";
 
 
-    form.elements.sport.value =
-      String(
-        coach.sport || ""
-      );
+    form.sport.value =
+      getCoachSportId(coach) || "";
 
 
-    form.elements.goal.value =
+    form.goal.value =
       coach.goal || "";
 
 
-    form.elements.format.value =
+    form.format.value =
       coach.format || "Онлайн";
 
 
-    form.elements.price.value =
-      coach.price ?? "";
+    form.price.value =
+      coach.price || "";
 
 
-    form.elements.period.value =
+    form.period.value =
       coach.period || "месяц";
 
 
-    form.elements.bio.value =
+    form.bio.value =
       coach.bio || "";
 
   }
 
-  else {
-
-    if (title) {
-
-      title.textContent =
-        "Создать профиль тренера";
-
-    }
+}
 
 
-    if (submit) {
+function closeCoachModal() {
 
-      submit.textContent =
-        "СОЗДАТЬ ПРОФИЛЬ";
+  $("#coachModal")?.classList.remove(
+    "show"
+  );
 
-    }
+
+  document.body.classList.remove(
+    "modal-open"
+  );
+
+
+  $("#coachMessage").innerHTML = "";
+
+}
+
+
+function closeResetModal() {
+
+  $("#resetPasswordModal")?.classList.remove(
+    "show"
+  );
+
+
+  document.body.classList.remove(
+    "modal-open"
+  );
+
+}
+
+
+/* =========================================================
+   UPDATE PASSWORD
+========================================================= */
+
+async function updatePassword(event) {
+
+  event.preventDefault();
+
+
+  const password =
+    $("#newPassword")?.value;
+
+
+  const confirm =
+    $("#confirmPassword")?.value;
+
+
+  const message =
+    $("#resetMessage");
+
+
+  if (password !== confirm) {
+
+    showMessage(
+      message,
+      "Пароли не совпадают.",
+      "error"
+    );
+
+    return;
 
   }
 
 
-  toggleModal(
-    "coachModal",
-    true
-  );
+  try {
 
-}
+    const {
+      error
+    } = await supabase.auth.updateUser({
 
+      password
 
-// =====================================================
-// COACH FORM
-// =====================================================
+    });
 
-function initCoachForm() {
 
-  const form =
-    document.getElementById(
-      "createForm"
-    );
+    if (error) {
 
-
-  if (!form) return;
-
-
-  form.addEventListener(
-    "submit",
-    async function (event) {
-
-      event.preventDefault();
-
-
-      if (!currentUser) {
-
-        toggleModal(
-          "coachModal",
-          false
-        );
-
-
-        toggleModal(
-          "modal",
-          true
-        );
-
-        return;
-
-      }
-
-
-      const data =
-        new FormData(form);
-
-
-      const name =
-        String(
-          data.get("name") || ""
-        )
-          .trim();
-
-
-      const sport =
-        String(
-          data.get("sport") || ""
-        )
-          .trim();
-
-
-      const goal =
-        String(
-          data.get("goal") || ""
-        )
-          .trim();
-
-
-      const format =
-        String(
-          data.get("format") || ""
-        )
-          .trim();
-
-
-      const price =
-        Number(
-          data.get("price")
-        );
-
-
-      const period =
-        String(
-          data.get("period") || "месяц"
-        )
-          .trim();
-
-
-      const bio =
-        String(
-          data.get("bio") || ""
-        )
-          .trim();
-
-
-      if (!name) {
-
-        showMessage(
-          "coachMessage",
-          "Введите имя.",
-          true
-        );
-
-        return;
-
-      }
-
-
-      if (!sport) {
-
-        showMessage(
-          "coachMessage",
-          "Выберите вид спорта.",
-          true
-        );
-
-        return;
-
-      }
-
-
-      if (
-        !Number.isFinite(price) ||
-        price < 0
-      ) {
-
-        showMessage(
-          "coachMessage",
-          "Введите корректную цену.",
-          true
-        );
-
-        return;
-
-      }
-
-
-      showMessage(
-        "coachMessage",
-        "Сохраняем профиль..."
-      );
-
-
-      const payload = {
-
-        user_id:
-          currentUser.id,
-
-        name,
-
-        sport,
-
-        goal,
-
-        format,
-
-        price,
-
-        period,
-
-        bio
-
-      };
-
-
-      const existing =
-        await supabase
-          .from("coaches")
-          .select("id")
-          .eq(
-            "user_id",
-            currentUser.id
-          )
-          .maybeSingle();
-
-
-      if (existing.error) {
-
-        showMessage(
-          "coachMessage",
-          existing.error.message,
-          true
-        );
-
-        return;
-
-      }
-
-
-      let response;
-
-
-      if (existing.data) {
-
-        response =
-          await supabase
-            .from("coaches")
-            .update(payload)
-            .eq(
-              "id",
-              existing.data.id
-            );
-
-      }
-
-      else {
-
-        response =
-          await supabase
-            .from("coaches")
-            .insert(payload);
-
-      }
-
-
-      if (response.error) {
-
-        console.error(
-          response.error
-        );
-
-
-        showMessage(
-          "coachMessage",
-          response.error.message,
-          true
-        );
-
-        return;
-
-      }
-
-
-      showMessage(
-        "coachMessage",
-        "Профиль тренера успешно сохранён."
-      );
-
-
-      await loadData();
-
-
-      setTimeout(
-        function () {
-
-          toggleModal(
-            "coachModal",
-            false
-          );
-
-        },
-        700
-      );
+      throw error;
 
     }
-  );
+
+
+    showMessage(
+      message,
+      "Пароль успешно изменён.",
+      "success"
+    );
+
+
+    setTimeout(
+      closeResetModal,
+      700
+    );
+
+  } catch (error) {
+
+    showMessage(
+      message,
+      error.message ||
+      "Не удалось изменить пароль.",
+      "error"
+    );
+
+  }
 
 }
 
 
-// =====================================================
-// MODALS
-// =====================================================
+/* =========================================================
+   AUTH STATE
+========================================================= */
 
-function initModals() {
+supabase.auth.onAuthStateChange(
+  (event, session) => {
 
-  document
-    .getElementById("authClose")
-    ?.addEventListener(
-      "click",
-      function () {
-
-        toggleModal(
-          "modal",
-          false
-        );
-
-      }
-    );
+    currentUser =
+      session?.user || null;
 
 
-  document
-    .getElementById("modalCancel")
-    ?.addEventListener(
-      "click",
-      function () {
-
-        toggleModal(
-          "modal",
-          false
-        );
-
-      }
-    );
+    updateAuthUI();
 
 
-  document
-    .getElementById("coachCancel")
-    ?.addEventListener(
-      "click",
-      function () {
-
-        toggleModal(
-          "coachModal",
-          false
-        );
-
-      }
-    );
-
-
-  document
-    .querySelectorAll(".modal")
-    .forEach(
-      function (modal) {
-
-        modal.addEventListener(
-          "click",
-          function (event) {
-
-            if (
-              event.target === modal
-            ) {
-
-              toggleModal(
-                modal.id,
-                false
-              );
-
-            }
-
-          }
-        );
-
-      }
-    );
-
-}
-
-
-// =====================================================
-// MOBILE MENU
-// =====================================================
-
-function initMobileMenu() {
-
-  const hamburger =
-    document.getElementById(
-      "hamburger"
-    );
-
-
-  const nav =
-    document.getElementById(
-      "mainNav"
-    );
-
-
-  if (
-    !hamburger ||
-    !nav
-  ) return;
-
-
-  hamburger.addEventListener(
-    "click",
-    function () {
-
-      nav.classList.toggle(
-        "mobile-open"
-      );
-
-
-      hamburger.setAttribute(
-        "aria-expanded",
-
-        nav.classList.contains(
-          "mobile-open"
-        )
-          ? "true"
-          : "false"
-      );
-
-    }
-  );
-
-}
-
-
-// =====================================================
-// AUTH STATE
-// =====================================================
-
-function initAuthState() {
-
-  supabase.auth.onAuthStateChange(
-    function (
-      event,
-      session
+    if (
+      event === "PASSWORD_RECOVERY"
     ) {
 
-      currentUser =
-        session
-          ? session.user
-          : null;
+      $("#resetPasswordModal")?.classList.add(
+        "show"
+      );
 
 
-      updateAuthUI();
-
-
-      if (
-        event ===
-        "PASSWORD_RECOVERY"
-      ) {
-
-        toggleModal(
-          "resetPasswordModal",
-          true
-        );
-
-      }
+      document.body.classList.add(
+        "modal-open"
+      );
 
     }
-  );
 
-}
+  }
+);
 
 
-// =====================================================
-// HERO SLIDESHOW
-// =====================================================
+/* =========================================================
+   HERO SLIDESHOW
+========================================================= */
 
-function initHeroSlideshow() {
+function startHeroSlideshow() {
 
   const hero =
-    document.getElementById(
-      "heroSlideshow"
-    );
+    $("#heroSlideshow");
 
 
   if (!hero) return;
 
 
-  const images =
-    Object.values(
-      SPORT_IMAGES
-    );
+  const images = [
 
+    "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1600&q=85",
 
-  if (!images.length) return;
+    "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1600&q=85",
+
+    "https://images.unsplash.com/photo-1554284126-aa88f22d8b74?auto=format&fit=crop&w=1600&q=85"
+
+  ];
 
 
   let index = 0;
 
 
-  function showImage() {
-
-    hero.style.backgroundImage =
-      `url("${images[index]}")`;
-
-
-    index =
-      (
-        index + 1
-      ) %
-      images.length;
-
-  }
-
-
-  showImage();
+  hero.style.backgroundImage =
+    `url("${images[index]}")`;
 
 
   setInterval(
-    showImage,
+    () => {
+
+      index =
+        (index + 1) %
+        images.length;
+
+
+      hero.style.backgroundImage =
+        `url("${images[index]}")`;
+
+    },
     7000
   );
 
 }
 
 
-// =====================================================
-// START
-// =====================================================
+/* =========================================================
+   HELPERS
+========================================================= */
 
-async function init() {
+function getCoachSportId(coach) {
 
-  initNavigation();
+  if (coach.sport_id) {
 
-  initFilters();
-
-  initMatch();
-
-  initModals();
-
-  initMobileMenu();
-
-  initAuthButton();
-
-  initAuthForm();
-
-  initSignup();
-
-  initForgotPassword();
-
-  initResetPassword();
-
-  initCreateCoach();
-
-  initCoachForm();
-
-  initAuthState();
-
-  checkRecoveryMode();
-
-  initHeroSlideshow();
-
-
-  try {
-
-    await refreshUser();
-
-    await loadData();
+    return coach.sport_id;
 
   }
 
-  catch (error) {
 
-    console.error(
-      "APLEX ERROR:",
-      error
-    );
+  if (coach.sports?.id) {
 
-
-    const container =
-      document.getElementById(
-        "coachesList"
-      );
-
-
-    if (container) {
-
-      container.innerHTML = `
-
-        <p class="error">
-
-          Ошибка подключения к Supabase.
-
-          ${esc(
-            error.message ||
-            String(error)
-          )}
-
-        </p>
-
-      `;
-
-    }
+    return coach.sports.id;
 
   }
+
+
+  return null;
 
 }
 
 
-init();
+function getCoachSportName(coach) {
+
+  if (coach.sports?.name) {
+
+    return coach.sports.name;
+
+  }
+
+
+  if (coach.sport_name) {
+
+    return coach.sport_name;
+
+  }
+
+
+  return "";
+
+}
+
+
+function showMessage(
+  element,
+  text,
+  type = ""
+) {
+
+  if (!element) return;
+
+
+  element.innerHTML = `
+
+    <div class="${type}">
+
+      ${escapeHTML(text)}
+
+    </div>
+
+  `;
+
+}
+
+
+function emptyHTML(text) {
+
+  return `
+
+    <div class="empty">
+
+      ${escapeHTML(text)}
+
+    </div>
+
+  `;
+
+}
+
+
+function escapeHTML(value) {
+
+  return String(
+    value ?? ""
+  )
+
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+
+    .replace(
+      /</g,
+      "&lt;"
+    )
+
+    .replace(
+      />/g,
+      "&gt;"
+    )
+
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+
+    .replace(
+      /'/g,
+      "&#039;"
+    );
+
+}
