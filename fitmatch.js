@@ -1,4 +1,14 @@
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+// =====================================================
+// APLEX — SUPABASE
+// =====================================================
+
+const SUPABASE_URL = "https://ypbhcgcwkpiujcakvaji.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_Lsrk07A5aXJH7YypVR8QGQ_TQPwhfOV";
+
+const supabase = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
 
 // =====================================================
 // APLEX — SUPABASE
