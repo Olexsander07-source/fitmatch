@@ -1,55 +1,47 @@
-/* =========================================================
+/* =====================================================
    APLEX — FIND YOUR LEVEL.
    styles.css
-   Professional responsive interface
-   ========================================================= */
+   Полная версия, совместимая с index.html и fitmatch.js
+===================================================== */
 
 
-/* =========================================================
-   1. ROOT
-   ========================================================= */
+/* =====================================================
+   ROOT
+===================================================== */
 
 :root {
   --bg: #080808;
-  --bg-secondary: #0d0d0d;
-  --bg-card: #141414;
-  --bg-card-hover: #1a1a1a;
+  --bg-soft: #111111;
+  --bg-card: #151515;
+  --bg-card-hover: #1b1b1b;
 
-  --text: #ffffff;
-  --text-secondary: #b5b5b5;
-  --text-muted: #747474;
+  --text: #f5f5f5;
+  --text-soft: #a7a7a7;
+  --text-muted: #727272;
 
   --accent: #d7ff00;
-  --accent-hover: #c5e900;
-  --accent-text: #080808;
+  --accent-dark: #b5d800;
 
   --border: rgba(255, 255, 255, 0.12);
   --border-soft: rgba(255, 255, 255, 0.07);
 
-  --success: #5ee889;
-  --danger: #ff6262;
+  --danger: #ff5c5c;
+  --success: #72e58b;
 
+  --shadow: 0 20px 70px rgba(0, 0, 0, 0.45);
+
+  --radius: 18px;
   --radius-small: 12px;
-  --radius: 20px;
-  --radius-large: 28px;
-
-  --shadow-small:
-    0 12px 30px rgba(0, 0, 0, 0.25);
-
-  --shadow:
-    0 25px 70px rgba(0, 0, 0, 0.45);
 
   --container: 1240px;
 }
 
 
-/* =========================================================
-   2. RESET
-   ========================================================= */
+/* =====================================================
+   RESET
+===================================================== */
 
-*,
-*::before,
-*::after {
+* {
   box-sizing: border-box;
 }
 
@@ -61,20 +53,18 @@ html {
 
 body {
   margin: 0;
-  min-width: 320px;
-
-  overflow-x: hidden;
 
   background: var(--bg);
-
   color: var(--text);
 
   font-family:
-    Inter,
+    "Inter",
     Arial,
     sans-serif;
 
   line-height: 1.5;
+
+  overflow-x: hidden;
 }
 
 
@@ -84,14 +74,9 @@ input,
 select,
 textarea {
   font-family:
-    Inter,
+    "Inter",
     Arial,
     sans-serif;
-}
-
-
-body.modal-open {
-  overflow: hidden;
 }
 
 
@@ -111,13 +96,13 @@ button {
 img {
   display: block;
 
+  width: 100%;
   max-width: 100%;
 }
 
 
 a {
   color: inherit;
-
   text-decoration: none;
 }
 
@@ -125,7 +110,6 @@ a {
 h1,
 h2,
 h3,
-h4,
 p {
   margin-top: 0;
 }
@@ -133,19 +117,17 @@ p {
 
 h1,
 h2,
-h3,
-h4 {
+h3 {
   font-family:
     "Space Grotesk",
-    Inter,
-    Arial,
+    "Inter",
     sans-serif;
 }
 
 
-/* =========================================================
-   3. GLOBAL CONTAINER
-   ========================================================= */
+/* =====================================================
+   CONTAINER
+===================================================== */
 
 .container {
   width: min(
@@ -157,9 +139,9 @@ h4 {
 }
 
 
-/* =========================================================
-   4. HEADER
-   ========================================================= */
+/* =====================================================
+   HEADER
+===================================================== */
 
 .header {
   position: sticky;
@@ -167,8 +149,6 @@ h4 {
   top: 0;
 
   z-index: 1000;
-
-  width: 100%;
 
   min-height: 76px;
 
@@ -178,33 +158,31 @@ h4 {
 
   gap: 28px;
 
-  padding: 0 28px;
+  padding:
+    0 28px;
 
   background:
     rgba(8, 8, 8, 0.88);
 
-  border-bottom:
-    1px solid var(--border-soft);
-
   backdrop-filter:
     blur(18px);
 
-  -webkit-backdrop-filter:
-    blur(18px);
+  border-bottom:
+    1px solid
+    var(--border-soft);
 }
 
 
-/* =========================================================
-   5. LOGO
-   ========================================================= */
+/* =====================================================
+   LOGO
+===================================================== */
 
 .logo {
   flex-shrink: 0;
 
-  margin: 0;
-  padding: 0;
-
   border: 0;
+
+  padding: 0;
 
   background: transparent;
 
@@ -212,12 +190,11 @@ h4 {
 
   font-family:
     "Space Grotesk",
-    Inter,
     sans-serif;
 
   font-size: 28px;
 
-  font-weight: 800;
+  font-weight: 700;
 
   letter-spacing: -1.5px;
 }
@@ -228,13 +205,11 @@ h4 {
 }
 
 
-/* =========================================================
-   6. NAVIGATION
-   ========================================================= */
+/* =====================================================
+   NAVIGATION
+===================================================== */
 
 .nav {
-  flex: 1;
-
   display: flex;
 
   align-items: center;
@@ -242,22 +217,24 @@ h4 {
   justify-content: center;
 
   gap: 4px;
+
+  flex: 1;
 }
 
 
 .nav button {
-  padding: 10px 14px;
-
   border: 0;
-  border-radius: 10px;
+
+  padding:
+    10px 14px;
 
   background: transparent;
 
-  color: var(--text-secondary);
+  color: var(--text-soft);
 
   font-size: 14px;
 
-  font-weight: 600;
+  font-weight: 500;
 
   transition:
     color 0.2s ease,
@@ -265,38 +242,35 @@ h4 {
 }
 
 
-.nav button:hover,
-.nav button.active {
+.nav button:hover {
   color: var(--text);
 
   background:
-    rgba(255, 255, 255, 0.07);
+    rgba(255, 255, 255, 0.06);
 }
 
 
-/* =========================================================
-   7. HEADER ACTIONS
-   ========================================================= */
+/* =====================================================
+   HEADER ACTIONS
+===================================================== */
 
 .header-actions {
-  flex-shrink: 0;
-
   display: flex;
 
   align-items: center;
 
   gap: 10px;
+
+  flex-shrink: 0;
 }
 
 
-/* =========================================================
-   8. MOBILE MENU BUTTON
-   ========================================================= */
+/* =====================================================
+   HAMBURGER
+===================================================== */
 
 .hamburger {
   display: none;
-
-  padding: 8px;
 
   border: 0;
 
@@ -305,42 +279,38 @@ h4 {
   color: var(--text);
 
   font-size: 26px;
-
-  line-height: 1;
 }
 
 
-/* =========================================================
-   9. BUTTONS
-   ========================================================= */
+/* =====================================================
+   BUTTONS
+===================================================== */
 
 .btn {
-  display: inline-flex;
-
-  align-items: center;
-
-  justify-content: center;
-
-  gap: 8px;
-
-  min-height: 46px;
-
-  padding: 11px 20px;
-
   border:
-    1px solid var(--border);
+    1px solid
+    var(--border);
 
-  border-radius: 999px;
+  border-radius:
+    999px;
 
-  background: transparent;
+  padding:
+    12px 20px;
 
-  color: var(--text);
+  background:
+    transparent;
 
-  font-size: 13px;
+  color:
+    var(--text);
 
-  font-weight: 700;
+  font-size:
+    13px;
 
-  letter-spacing: 0.2px;
+  font-weight:
+    700;
+
+  letter-spacing:
+    0.4px;
 
   transition:
     transform 0.2s ease,
@@ -351,53 +321,64 @@ h4 {
 
 
 .btn:hover {
-  transform: translateY(-2px);
+  transform:
+    translateY(-2px);
 
   background:
     rgba(255, 255, 255, 0.08);
 
   border-color:
-    rgba(255, 255, 255, 0.25);
+    rgba(255, 255, 255, 0.28);
 }
 
 
 .btn:active {
-  transform: translateY(0);
+  transform:
+    translateY(0);
 }
 
 
 .btn-primary {
-  border-color: var(--accent);
+  background:
+    var(--accent);
 
-  background: var(--accent);
+  border-color:
+    var(--accent);
 
-  color: var(--accent-text);
+  color:
+    #080808;
 }
 
 
 .btn-primary:hover {
-  border-color: var(--accent-hover);
+  background:
+    var(--accent-dark);
 
-  background: var(--accent-hover);
+  border-color:
+    var(--accent-dark);
 }
 
 
 .login-btn {
-  min-height: 42px;
-
-  padding: 10px 18px;
-
   border: 0;
 
-  border-radius: 999px;
+  border-radius:
+    999px;
 
-  background: #ffffff;
+  padding:
+    12px 18px;
 
-  color: #080808;
+  background:
+    #ffffff;
 
-  font-size: 13px;
+  color:
+    #000000;
 
-  font-weight: 800;
+  font-size:
+    13px;
+
+  font-weight:
+    700;
 
   transition:
     transform 0.2s ease,
@@ -406,15 +387,17 @@ h4 {
 
 
 .login-btn:hover {
-  transform: translateY(-2px);
+  transform:
+    translateY(-2px);
 
-  opacity: 0.9;
+  opacity:
+    0.9;
 }
 
 
-/* =========================================================
-   10. PAGE SYSTEM
-   ========================================================= */
+/* =====================================================
+   PAGE SYSTEM
+===================================================== */
 
 .page {
   display: none;
@@ -429,51 +412,41 @@ h4 {
 }
 
 
-/* =========================================================
-   11. HERO / HOME
-   ========================================================= */
+/* =====================================================
+   HERO
+===================================================== */
 
 #home {
   position: relative;
 
   overflow: hidden;
-
-  min-height:
-    calc(100vh - 76px);
 }
 
-
-/* Background image */
 
 .hero-slideshow {
   position: absolute;
 
   inset: 0;
 
-  z-index: 0;
-
-  width: 100%;
-  height: 100%;
-
   min-height: 760px;
 
-  background-color: #111111;
+  z-index: 0;
 
-  background-position: center center;
+  background-position:
+    center;
 
-  background-size: cover;
+  background-size:
+    cover;
 
-  background-repeat: no-repeat;
+  background-repeat:
+    no-repeat;
+
+  opacity: 0.22;
 
   transition:
-    background-image 0.8s ease,
-    transform 8s ease;
-
-  transform: scale(1.01);
+    background-image 1s ease;
 }
 
-
-/* Professional contrast overlay */
 
 .hero-slideshow::after {
   content: "";
@@ -485,15 +458,12 @@ h4 {
   background:
     linear-gradient(
       90deg,
-      rgba(5, 5, 5, 0.82) 0%,
-      rgba(5, 5, 5, 0.63) 34%,
-      rgba(5, 5, 5, 0.34) 58%,
-      rgba(5, 5, 5, 0.12) 100%
+      #080808 0%,
+      rgba(8, 8, 8, 0.82) 45%,
+      rgba(8, 8, 8, 0.48) 100%
     );
 }
 
-
-/* Main hero content */
 
 .hero {
   position: relative;
@@ -505,94 +475,98 @@ h4 {
   display: grid;
 
   grid-template-columns:
-    minmax(0, 1.15fr)
-    minmax(300px, 0.85fr);
+    minmax(0, 1.25fr)
+    minmax(280px, 0.75fr);
 
   align-items: center;
 
-  gap: 60px;
+  gap: 70px;
 
-  padding-top: 70px;
-  padding-bottom: 70px;
+  padding-top:
+    80px;
+
+  padding-bottom:
+    80px;
 }
 
-
-/* =========================================================
-   12. HERO TEXT
-   ========================================================= */
 
 .eyebrow {
   margin-bottom: 16px;
 
-  color: var(--accent);
+  color:
+    var(--accent);
 
-  font-size: 12px;
+  font-size:
+    12px;
 
-  font-weight: 800;
+  font-weight:
+    800;
 
-  letter-spacing: 2px;
+  letter-spacing:
+    2px;
 
-  text-transform: uppercase;
+  text-transform:
+    uppercase;
 }
 
 
 .hero h1,
 .page-title {
-  max-width: 900px;
-
-  margin-bottom: 28px;
-
-  color: var(--text);
+  margin-bottom:
+    28px;
 
   font-size:
     clamp(
-      58px,
-      8vw,
-      118px
+      56px,
+      10vw,
+      130px
     );
 
-  font-weight: 800;
+  line-height:
+    0.87;
 
-  line-height: 0.9;
+  letter-spacing:
+    -6px;
 
-  letter-spacing: -5px;
+  font-weight:
+    700;
 
-  text-transform: uppercase;
-
-  text-shadow:
-    0 8px 35px
-    rgba(0, 0, 0, 0.35);
+  text-transform:
+    uppercase;
 }
 
 
 .hero h1 em,
 .page-title em {
-  color: var(--accent);
+  color:
+    var(--accent);
 
-  font-style: normal;
+  font-style:
+    normal;
 }
 
 
 .lead {
-  max-width: 640px;
+  max-width:
+    650px;
 
-  margin-bottom: 30px;
+  margin-bottom:
+    28px;
 
-  color: #e0e0e0;
+  color:
+    var(--text-soft);
 
-  font-size: 17px;
+  font-size:
+    17px;
 
-  line-height: 1.7;
-
-  text-shadow:
-    0 3px 15px
-    rgba(0, 0, 0, 0.35);
+  line-height:
+    1.7;
 }
 
 
-/* =========================================================
-   13. HERO ACTIONS
-   ========================================================= */
+/* =====================================================
+   HERO ACTIONS
+===================================================== */
 
 .actions {
   display: flex;
@@ -605,43 +579,45 @@ h4 {
 }
 
 
-/* =========================================================
-   14. HERO LEVEL CARD
-   ========================================================= */
+/* =====================================================
+   LEVEL BOX
+===================================================== */
 
 .score-box {
   position: relative;
 
   overflow: hidden;
 
-  min-height: 300px;
+  padding:
+    42px;
+
+  min-height:
+    360px;
 
   display: flex;
 
-  flex-direction: column;
+  flex-direction:
+    column;
 
-  justify-content: center;
-
-  padding: 36px;
+  justify-content:
+    center;
 
   border:
     1px solid
-    rgba(255, 255, 255, 0.16);
+    var(--border);
 
-  border-radius: var(--radius-large);
+  border-radius:
+    var(--radius);
 
   background:
     linear-gradient(
       145deg,
-      rgba(20, 20, 20, 0.80),
-      rgba(10, 10, 10, 0.62)
+      rgba(255, 255, 255, 0.07),
+      rgba(255, 255, 255, 0.015)
     );
 
-  box-shadow: var(--shadow);
-
-  backdrop-filter: blur(18px);
-
-  -webkit-backdrop-filter: blur(18px);
+  box-shadow:
+    var(--shadow);
 }
 
 
@@ -650,26 +626,23 @@ h4 {
 
   position: absolute;
 
-  top: -130px;
-  right: -110px;
+  width: 250px;
+  height: 250px;
 
-  width: 270px;
-  height: 270px;
+  border-radius:
+    50%;
 
-  border-radius: 50%;
+  top: -120px;
+  right: -120px;
 
-  background: var(--accent);
+  background:
+    var(--accent);
 
-  opacity: 0.14;
+  opacity:
+    0.1;
 
-  filter: blur(35px);
-}
-
-
-.score-box > * {
-  position: relative;
-
-  z-index: 1;
+  filter:
+    blur(20px);
 }
 
 
@@ -679,9 +652,13 @@ h4 {
 
 
 .score {
-  margin: 12px 0 24px;
+  position: relative;
 
-  color: var(--text);
+  margin:
+    12px 0 24px;
+
+  color:
+    var(--text);
 
   font-family:
     "Space Grotesk",
@@ -689,62 +666,64 @@ h4 {
 
   font-size:
     clamp(
-      54px,
+      50px,
       6vw,
-      86px
+      90px
     );
 
-  font-weight: 800;
+  font-weight:
+    700;
 
-  line-height: 1;
-
-  letter-spacing: -4px;
+  letter-spacing:
+    -4px;
 }
 
 
-/* =========================================================
-   15. SECTIONS
-   ========================================================= */
+/* =====================================================
+   SECTIONS
+===================================================== */
 
 .section {
   position: relative;
 
-  padding: 110px 0;
+  z-index: 2;
 
-  background: var(--bg);
+  padding:
+    110px 0;
 }
 
 
 .section.dark {
-  background: var(--bg-secondary);
+  background:
+    #0c0c0c;
 }
 
 
 .section-title {
-  margin-bottom: 40px;
-
-  color: var(--text);
+  margin-bottom:
+    38px;
 
   font-size:
     clamp(
-      38px,
+      34px,
       5vw,
-      64px
+      62px
     );
 
-  font-weight: 800;
+  line-height:
+    1;
 
-  line-height: 1;
+  letter-spacing:
+    -3px;
 
-  letter-spacing: -3px;
-
-  text-transform: uppercase;
+  text-transform:
+    uppercase;
 }
 
 
-/* =========================================================
-   16. SPORTS GRID
-   ========================================================= */
+/* =====================================================
+   SPORTS GRID
+===================================================== */
 
 .sports-grid {
   display: grid;
@@ -759,61 +738,63 @@ h4 {
 }
 
 
-/* =========================================================
-   17. SPORT CARD
-   ========================================================= */
+/* =====================================================
+   SPORT CARD
+===================================================== */
 
 .sport-card {
   position: relative;
 
-  isolation: isolate;
-
   overflow: hidden;
 
-  min-height: 320px;
+  min-height:
+    260px;
 
   display: flex;
 
-  align-items: flex-end;
+  align-items:
+    flex-end;
 
-  padding: 24px;
+  padding:
+    22px;
 
   border:
     1px solid
-    rgba(255, 255, 255, 0.11);
+    var(--border-soft);
 
-  border-radius: 20px;
+  border-radius:
+    var(--radius-small);
 
-  background-color: #181818;
+  background-position:
+    center;
 
-  background-position: center center;
+  background-size:
+    cover;
 
-  background-size: cover;
-
-  background-repeat: no-repeat;
+  background-repeat:
+    no-repeat;
 
   cursor: pointer;
 
   transition:
-    transform 0.3s ease,
-    border-color 0.3s ease,
-    box-shadow 0.3s ease;
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
 }
 
 
 .sport-card:hover {
-  transform: translateY(-7px);
+  transform:
+    translateY(-6px);
 
   border-color:
-    rgba(215, 255, 0, 0.5);
+    rgba(215, 255, 0, 0.4);
 
   box-shadow:
-    0 25px 60px
-    rgba(0, 0, 0, 0.5);
+    0 20px 50px
+    rgba(0, 0, 0, 0.45);
 }
 
-
-/* Image overlay */
 
 .sport-card::before {
   content: "";
@@ -822,14 +803,11 @@ h4 {
 
   inset: 0;
 
-  z-index: -1;
-
   background:
     linear-gradient(
       180deg,
-      rgba(0, 0, 0, 0.02) 15%,
-      rgba(0, 0, 0, 0.20) 45%,
-      rgba(0, 0, 0, 0.92) 100%
+      transparent 0%,
+      rgba(0, 0, 0, 0.82) 100%
     );
 }
 
@@ -837,80 +815,78 @@ h4 {
 .sport-card-content {
   position: relative;
 
-  z-index: 2;
-
-  width: 100%;
+  z-index: 1;
 }
 
 
 .sport-icon {
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
 
   display: grid;
 
   place-items: center;
 
-  margin-bottom: 16px;
+  margin-bottom:
+    15px;
 
-  border-radius: 50%;
+  border-radius:
+    50%;
 
   background:
     rgba(0, 0, 0, 0.48);
 
-  font-size: 20px;
+  backdrop-filter:
+    blur(8px);
 
-  backdrop-filter: blur(8px);
+  font-size:
+    20px;
 }
 
 
 .sport-card h3 {
-  margin-bottom: 7px;
+  margin-bottom:
+    6px;
 
-  color: #ffffff;
+  font-size:
+    25px;
 
-  font-size: 26px;
-
-  font-weight: 700;
-
-  line-height: 1.05;
-
-  letter-spacing: -1px;
-
-  text-shadow:
-    0 4px 18px
-    rgba(0, 0, 0, 0.8);
+  line-height:
+    1.1;
 }
 
 
 .sport-card p {
   margin: 0;
 
-  color: var(--accent);
+  color:
+    var(--accent);
 
-  font-size: 13px;
+  font-size:
+    13px;
 
-  font-weight: 700;
+  font-weight:
+    700;
 }
 
 
-/* =========================================================
-   18. PAGE CONTENT
-   ========================================================= */
+/* =====================================================
+   PAGE LAYOUT
+===================================================== */
 
 #sports,
 #coaches,
 #ranking,
 #match,
 #profile {
-  padding-top: 80px;
-  padding-bottom: 110px;
+  padding:
+    80px 0 110px;
 }
 
 
-/* =========================================================
-   19. FILTERS
-   ========================================================= */
+/* =====================================================
+   FILTERS
+===================================================== */
 
 .filters {
   display: grid;
@@ -920,7 +896,8 @@ h4 {
 
   gap: 12px;
 
-  margin-bottom: 32px;
+  margin-bottom:
+    32px;
 }
 
 
@@ -928,20 +905,26 @@ h4 {
 .filters select {
   width: 100%;
 
-  min-height: 52px;
+  min-height:
+    52px;
 
-  padding: 0 16px;
+  padding:
+    0 16px;
 
   border:
-    1px solid var(--border);
+    1px solid
+    var(--border);
 
-  border-radius: 12px;
+  border-radius:
+    12px;
 
   outline: none;
 
-  background: var(--bg-card);
+  background:
+    var(--bg-card);
 
-  color: var(--text);
+  color:
+    var(--text);
 
   transition:
     border-color 0.2s ease,
@@ -949,94 +932,105 @@ h4 {
 }
 
 
-.filters input::placeholder {
-  color: var(--text-muted);
-}
-
-
 .filters input:focus,
 .filters select:focus {
-  border-color: var(--accent);
+  border-color:
+    var(--accent);
 
-  background: #191919;
+  background:
+    #191919;
 }
 
 
-/* =========================================================
-   20. CATEGORY BANNER
-   ========================================================= */
+.filters input::placeholder {
+  color:
+    var(--text-muted);
+}
+
+
+/* =====================================================
+   CATEGORY BANNER
+===================================================== */
 
 .category-banner {
   position: relative;
 
   overflow: hidden;
 
-  min-height: 480px;
+  min-height:
+    380px;
 
-  margin-bottom: 40px;
+  margin-bottom:
+    32px;
+
+  border-radius:
+    var(--radius);
 
   border:
     1px solid
-    rgba(255, 255, 255, 0.12);
+    var(--border);
 
-  border-radius: 24px;
+  background-position:
+    center;
 
-  background-color: #151515;
+  background-size:
+    cover;
 
-  background-position: center center;
+  background-repeat:
+    no-repeat;
 
-  background-size: cover;
-
-  background-repeat: no-repeat;
-
-  box-shadow: var(--shadow);
+  box-shadow:
+    var(--shadow);
 }
 
 
 .category-banner-overlay {
-  min-height: 480px;
+  min-height:
+    380px;
 
   display: flex;
 
-  flex-direction: column;
+  flex-direction:
+    column;
 
-  justify-content: flex-end;
+  justify-content:
+    center;
 
-  align-items: flex-start;
+  align-items:
+    flex-start;
 
-  padding: 50px;
+  padding:
+    48px;
 
   background:
     linear-gradient(
       90deg,
-      rgba(0, 0, 0, 0.85) 0%,
-      rgba(0, 0, 0, 0.52) 48%,
-      rgba(0, 0, 0, 0.08) 100%
+      rgba(0, 0, 0, 0.86),
+      rgba(0, 0, 0, 0.5),
+      rgba(0, 0, 0, 0.1)
     );
 }
 
 
 .category-banner-title {
-  max-width: 900px;
-
-  margin-bottom: 16px;
-
-  color: var(--text);
+  margin-bottom:
+    14px;
 
   font-size:
     clamp(
-      48px,
+      45px,
       7vw,
-      88px
+      85px
     );
 
-  font-weight: 800;
+  line-height:
+    0.95;
 
-  line-height: 0.95;
+  letter-spacing:
+    -4px;
 
-  letter-spacing: -4px;
-
-  text-transform: uppercase;
+  text-transform:
+    uppercase;
 }
 
 
@@ -1047,29 +1041,30 @@ h4 {
 
   gap: 10px;
 
-  margin-bottom: 24px;
+  margin-bottom:
+    24px;
 }
 
 
 .category-banner-stat {
-  padding: 9px 13px;
+  padding:
+    9px 13px;
 
   border:
     1px solid
-    rgba(255, 255, 255, 0.16);
+    rgba(255, 255, 255, 0.15);
 
-  border-radius: 999px;
+  border-radius:
+    999px;
 
   background:
     rgba(0, 0, 0, 0.38);
 
-  color: var(--text);
+  backdrop-filter:
+    blur(8px);
 
-  font-size: 13px;
-
-  font-weight: 600;
-
-  backdrop-filter: blur(8px);
+  font-size:
+    13px;
 }
 
 
@@ -1078,9 +1073,9 @@ h4 {
 }
 
 
-/* =========================================================
-   21. COACH GRID
-   ========================================================= */
+/* =====================================================
+   COACH GRID
+===================================================== */
 
 .coach-grid {
   display: grid;
@@ -1095,9 +1090,9 @@ h4 {
 }
 
 
-/* =========================================================
-   22. COACH CARD
-   ========================================================= */
+/* =====================================================
+   COACH CARD
+===================================================== */
 
 .coach-card {
   position: relative;
@@ -1108,65 +1103,45 @@ h4 {
 
   border:
     1px solid
-    rgba(255, 255, 255, 0.10);
+    var(--border-soft);
 
-  border-radius: 20px;
+  border-radius:
+    var(--radius);
 
-  background: var(--bg-card);
+  background:
+    var(--bg-card);
 
   cursor: pointer;
 
   transition:
-    transform 0.3s ease,
-    border-color 0.3s ease,
-    box-shadow 0.3s ease;
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
 }
 
 
 .coach-card:hover {
-  transform: translateY(-7px);
+  transform:
+    translateY(-6px);
 
   border-color:
-    rgba(215, 255, 0, 0.4);
+    rgba(215, 255, 0, 0.28);
 
   box-shadow:
-    0 25px 70px
-    rgba(0, 0, 0, 0.45);
+    var(--shadow);
 }
 
-
-/* =========================================================
-   23. COACH IMAGE
-   ========================================================= */
 
 .coach-image {
   position: relative;
 
-  width: 100%;
-
-  aspect-ratio: 4 / 5;
+  height:
+    290px;
 
   overflow: hidden;
 
-  background: #202020;
-}
-
-
-.coach-image img {
-  width: 100%;
-  height: 100%;
-
-  object-fit: cover;
-
-  object-position: center top;
-
-  transition:
-    transform 0.5s ease;
-}
-
-
-.coach-card:hover .coach-image img {
-  transform: scale(1.05);
+  background:
+    #222;
 }
 
 
@@ -1177,25 +1152,39 @@ h4 {
 
   inset: 0;
 
-  pointer-events: none;
-
   background:
     linear-gradient(
       180deg,
-      transparent 60%,
-      rgba(0, 0, 0, 0.30)
+      transparent 45%,
+      rgba(0, 0, 0, 0.35)
     );
 }
 
 
-/* =========================================================
-   24. COACH CONTENT
-   ========================================================= */
+.coach-image img {
+  width: 100%;
+  height: 100%;
+
+  object-fit:
+    cover;
+
+  transition:
+    transform 0.5s ease;
+}
+
+
+.coach-card:hover
+.coach-image img {
+  transform:
+    scale(1.06);
+}
+
 
 .coach-content {
   position: relative;
 
-  padding: 22px;
+  padding:
+    22px;
 }
 
 
@@ -1205,52 +1194,61 @@ h4 {
   top: -22px;
   right: 18px;
 
-  width: 46px;
-  height: 46px;
+  width: 44px;
+  height: 44px;
 
   display: grid;
 
   place-items: center;
 
-  border-radius: 50%;
+  border-radius:
+    50%;
 
-  background: var(--accent);
+  background:
+    var(--accent);
 
-  color: #080808;
+  color:
+    #000;
 
-  font-size: 13px;
+  font-size:
+    13px;
 
-  font-weight: 800;
+  font-weight:
+    800;
 
   box-shadow:
-    0 10px 25px
-    rgba(0, 0, 0, 0.4);
+    0 8px 20px
+    rgba(0, 0, 0, 0.35);
 }
 
 
 .coach-content h3 {
-  margin-bottom: 7px;
+  margin-bottom:
+    7px;
 
-  color: var(--text);
+  font-size:
+    24px;
 
-  font-size: 24px;
-
-  line-height: 1.15;
+  line-height:
+    1.15;
 }
 
 
 .coach-sport {
-  margin-bottom: 16px;
+  margin-bottom:
+    16px;
 
-  color: var(--text-secondary);
+  color:
+    var(--text-soft);
 
-  font-size: 14px;
+  font-size:
+    14px;
 }
 
 
-/* =========================================================
-   25. TAGS
-   ========================================================= */
+/* =====================================================
+   TAGS
+===================================================== */
 
 .tags {
   display: flex;
@@ -1259,7 +1257,8 @@ h4 {
 
   gap: 7px;
 
-  margin-bottom: 18px;
+  margin-bottom:
+    18px;
 }
 
 
@@ -1268,66 +1267,83 @@ h4 {
 
   align-items: center;
 
-  min-height: 28px;
+  min-height:
+    28px;
 
-  padding: 5px 10px;
+  padding:
+    5px 10px;
 
-  border-radius: 999px;
+  border-radius:
+    999px;
 
   background:
     rgba(255, 255, 255, 0.07);
 
-  color: var(--text-secondary);
+  color:
+    var(--text-soft);
 
-  font-size: 11px;
+  font-size:
+    11px;
 
-  font-weight: 600;
+  font-weight:
+    600;
 }
 
 
-/* =========================================================
-   26. CARD FOOTER
-   ========================================================= */
+/* =====================================================
+   CARD FOOTER
+===================================================== */
 
 .card-footer {
   display: flex;
 
-  align-items: center;
+  justify-content:
+    space-between;
 
-  justify-content: space-between;
+  align-items:
+    center;
 
   gap: 12px;
 
-  padding-top: 16px;
+  padding-top:
+    16px;
 
   border-top:
-    1px solid var(--border-soft);
+    1px solid
+    var(--border-soft);
 
-  color: var(--text-secondary);
+  color:
+    var(--text-soft);
 
-  font-size: 13px;
+  font-size:
+    13px;
 
-  font-weight: 600;
+  font-weight:
+    600;
 }
 
 
 .card-footer span:last-child {
-  color: var(--accent);
+  color:
+    var(--accent);
 
-  text-align: right;
+  text-align:
+    right;
 }
 
 
-/* =========================================================
-   27. STATUS MESSAGES
-   ========================================================= */
+/* =====================================================
+   EMPTY / ERROR
+===================================================== */
 
 .empty,
 .error,
 .success {
-  padding: 22px;
+  padding:
+    24px;
 
-  border-radius: 12px;
+  border-radius:
+    12px;
 
   background:
     rgba(255, 255, 255, 0.04);
@@ -1335,31 +1351,34 @@ h4 {
 
 
 .empty {
-  color: var(--text-secondary);
+  color:
+    var(--text-soft);
 }
 
 
 .error {
+  color:
+    var(--danger);
+
   border:
     1px solid
-    rgba(255, 98, 98, 0.25);
-
-  color: var(--danger);
+    rgba(255, 92, 92, 0.25);
 }
 
 
 .success {
+  color:
+    var(--success);
+
   border:
     1px solid
-    rgba(94, 232, 137, 0.25);
-
-  color: var(--success);
+    rgba(114, 229, 139, 0.25);
 }
 
 
-/* =========================================================
-   28. RANKING
-   ========================================================= */
+/* =====================================================
+   RANKING
+===================================================== */
 
 #rankingList {
   display: grid;
@@ -1373,21 +1392,25 @@ h4 {
 
   grid-template-columns:
     70px
-    minmax(0, 1fr)
+    1fr
     auto;
 
   align-items: center;
 
   gap: 20px;
 
-  padding: 22px;
+  padding:
+    22px;
 
   border:
-    1px solid var(--border-soft);
+    1px solid
+    var(--border-soft);
 
-  border-radius: var(--radius-small);
+  border-radius:
+    var(--radius-small);
 
-  background: var(--bg-card);
+  background:
+    var(--bg-card);
 
   transition:
     transform 0.2s ease,
@@ -1396,59 +1419,74 @@ h4 {
 
 
 .ranking-item:hover {
-  transform: translateX(5px);
+  transform:
+    translateX(5px);
 
   border-color:
-    rgba(215, 255, 0, 0.30);
+    rgba(215, 255, 0, 0.3);
 }
 
 
 .ranking-position {
-  color: var(--accent);
+  color:
+    var(--accent);
 
   font-family:
     "Space Grotesk",
     sans-serif;
 
-  font-size: 36px;
+  font-size:
+    36px;
 
-  font-weight: 800;
+  font-weight:
+    700;
 }
 
 
 .ranking-item strong {
-  font-size: 18px;
+  font-size:
+    18px;
 }
 
 
 .ranking-item p {
-  margin: 4px 0 0;
+  margin:
+    4px 0 0;
 
-  color: var(--text-secondary);
+  color:
+    var(--text-soft);
 
-  font-size: 14px;
+  font-size:
+    14px;
 }
 
 
-/* =========================================================
-   29. MATCH
-   ========================================================= */
+/* =====================================================
+   MATCH
+===================================================== */
 
 .match-box {
-  max-width: 920px;
+  max-width:
+    920px;
 
-  margin-top: 35px;
+  margin-top:
+    35px;
 
-  padding: 32px;
+  padding:
+    32px;
 
   border:
-    1px solid var(--border);
+    1px solid
+    var(--border);
 
-  border-radius: var(--radius);
+  border-radius:
+    var(--radius);
 
-  background: var(--bg-card);
+  background:
+    var(--bg-card);
 
-  box-shadow: var(--shadow);
+  box-shadow:
+    var(--shadow);
 }
 
 
@@ -1458,13 +1496,17 @@ h4 {
 
   gap: 9px;
 
-  margin-bottom: 18px;
+  margin-bottom:
+    18px;
 
-  color: var(--text-secondary);
+  color:
+    var(--text-soft);
 
-  font-size: 13px;
+  font-size:
+    13px;
 
-  font-weight: 600;
+  font-weight:
+    600;
 }
 
 
@@ -1474,20 +1516,26 @@ h4 {
 .form textarea {
   width: 100%;
 
-  min-height: 50px;
+  min-height:
+    50px;
 
-  padding: 12px 15px;
+  padding:
+    12px 15px;
 
   border:
-    1px solid var(--border);
+    1px solid
+    var(--border);
 
-  border-radius: 10px;
+  border-radius:
+    10px;
 
   outline: none;
 
-  background: #0d0d0d;
+  background:
+    #0d0d0d;
 
-  color: var(--text);
+  color:
+    var(--text);
 
   transition:
     border-color 0.2s ease,
@@ -1499,16 +1547,20 @@ h4 {
 .form input:focus,
 .form select:focus,
 .form textarea:focus {
-  border-color: var(--accent);
+  border-color:
+    var(--accent);
 
-  background: #141414;
+  background:
+    #141414;
 }
 
 
 .form textarea {
-  min-height: 130px;
+  min-height:
+    130px;
 
-  resize: vertical;
+  resize:
+    vertical;
 }
 
 
@@ -1523,13 +1575,14 @@ h4 {
 
   gap: 18px;
 
-  margin-top: 32px;
+  margin-top:
+    32px;
 }
 
 
-/* =========================================================
-   30. PROFILE
-   ========================================================= */
+/* =====================================================
+   PROFILE
+===================================================== */
 
 .coach-profile {
   display: grid;
@@ -1540,7 +1593,8 @@ h4 {
 
   gap: 50px;
 
-  align-items: start;
+  align-items:
+    start;
 }
 
 
@@ -1551,31 +1605,33 @@ h4 {
 
   overflow: hidden;
 
-  border:
-    1px solid var(--border);
+  border-radius:
+    var(--radius);
 
-  border-radius: var(--radius);
+  border:
+    1px solid
+    var(--border);
 }
 
 
 .coach-profile-image img {
-  width: 100%;
+  min-height:
+    560px;
 
-  min-height: 560px;
-
-  object-fit: cover;
-
-  object-position: center top;
+  object-fit:
+    cover;
 }
 
 
 .coach-profile-info {
-  padding: 25px 0;
+  padding:
+    25px 0;
 }
 
 
 .coach-profile-info h1 {
-  margin-bottom: 18px;
+  margin-bottom:
+    18px;
 
   font-size:
     clamp(
@@ -1584,28 +1640,38 @@ h4 {
       85px
     );
 
-  font-weight: 800;
+  line-height:
+    0.9;
 
-  line-height: 0.9;
-
-  letter-spacing: -4px;
+  letter-spacing:
+    -4px;
 }
 
 
 .coach-profile-info p {
-  margin-bottom: 15px;
+  margin-bottom:
+    15px;
 
-  color: var(--text-secondary);
+  color:
+    var(--text-soft);
 
-  font-size: 16px;
+  font-size:
+    16px;
 
-  line-height: 1.7;
+  line-height:
+    1.7;
 }
 
 
-/* =========================================================
-   31. MODAL
-   ========================================================= */
+.coach-profile-info p:nth-of-type(4) {
+  color:
+    var(--accent);
+}
+
+
+/* =====================================================
+   MODALS
+===================================================== */
 
 .modal {
   position: fixed;
@@ -1620,14 +1686,14 @@ h4 {
 
   justify-content: center;
 
-  padding: 20px;
+  padding:
+    20px;
 
   background:
-    rgba(0, 0, 0, 0.78);
+    rgba(0, 0, 0, 0.75);
 
-  backdrop-filter: blur(10px);
-
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter:
+    blur(10px);
 }
 
 
@@ -1639,20 +1705,27 @@ h4 {
 .modal-content {
   position: relative;
 
-  width: min(100%, 560px);
+  width:
+    min(100%, 560px);
 
-  max-height: 90vh;
+  max-height:
+    90vh;
 
-  overflow-y: auto;
+  overflow-y:
+    auto;
 
-  padding: 38px;
+  padding:
+    38px;
 
   border:
-    1px solid var(--border);
+    1px solid
+    var(--border);
 
-  border-radius: var(--radius);
+  border-radius:
+    var(--radius);
 
-  background: #111111;
+  background:
+    #111111;
 
   box-shadow:
     0 30px 100px
@@ -1661,11 +1734,14 @@ h4 {
 
 
 .modal-content h2 {
-  margin-bottom: 22px;
+  margin-bottom:
+    22px;
 
-  font-size: 34px;
+  font-size:
+    34px;
 
-  letter-spacing: -1.5px;
+  letter-spacing:
+    -1.5px;
 }
 
 
@@ -1682,38 +1758,41 @@ h4 {
 
   place-items: center;
 
-  padding: 0;
-
   border: 0;
 
-  border-radius: 50%;
+  border-radius:
+    50%;
 
   background:
     rgba(255, 255, 255, 0.07);
 
-  color: var(--text);
+  color:
+    var(--text);
 
-  font-size: 26px;
+  font-size:
+    26px;
 
-  line-height: 1;
+  line-height:
+    1;
 
   transition:
-    transform 0.2s ease,
-    background 0.2s ease;
+    background 0.2s ease,
+    transform 0.2s ease;
 }
 
 
 .modal-close:hover {
-  transform: rotate(90deg);
+  transform:
+    rotate(90deg);
 
   background:
-    rgba(255, 255, 255, 0.14);
+    rgba(255, 255, 255, 0.13);
 }
 
 
-/* =========================================================
-   32. FORMS
-   ========================================================= */
+/* =====================================================
+   FORMS
+===================================================== */
 
 .form {
   width: 100%;
@@ -1721,22 +1800,30 @@ h4 {
 
 
 .form .actions {
-  margin-top: 20px;
+  margin-top:
+    20px;
 }
 
 
 .forgot-password {
+  margin-top:
+    18px;
+
   padding: 0;
 
   border: 0;
 
-  background: transparent;
+  background:
+    transparent;
 
-  color: var(--accent);
+  color:
+    var(--accent);
 
-  font-size: 13px;
+  font-size:
+    13px;
 
-  font-weight: 600;
+  font-weight:
+    600;
 }
 
 
@@ -1744,103 +1831,141 @@ h4 {
 #signupMessage,
 #coachMessage,
 #resetMessage {
-  margin-top: 18px;
+  margin-top:
+    18px;
 
-  font-size: 14px;
+  font-size:
+    14px;
 }
 
 
-/* =========================================================
-   33. SIGNUP
-   ========================================================= */
+/* =====================================================
+   SIGNUP SECTION
+===================================================== */
 
 .signup-section {
-  padding: 100px 0;
+  padding:
+    100px 0;
+
+  background:
+    #0c0c0c;
 
   border-top:
-    1px solid var(--border-soft);
-
-  background: var(--bg-secondary);
+    1px solid
+    var(--border-soft);
 }
 
 
 .signup-form {
-  width: min(100%, 560px);
+  width:
+    min(100%, 560px);
 
-  margin: 0 auto;
+  margin:
+    0 auto;
 
-  padding: 36px;
+  padding:
+    36px;
 
   border:
-    1px solid var(--border);
+    1px solid
+    var(--border);
 
-  border-radius: var(--radius);
+  border-radius:
+    var(--radius);
 
-  background: var(--bg-card);
+  background:
+    var(--bg-card);
 }
 
 
 .signup-form h2 {
-  margin-bottom: 30px;
+  margin-bottom:
+    30px;
 
-  font-size: 32px;
+  font-size:
+    32px;
 
-  letter-spacing: -1px;
+  letter-spacing:
+    -1px;
 }
 
 
-/* =========================================================
-   34. FOOTER
-   ========================================================= */
+/* =====================================================
+   FOOTER
+===================================================== */
 
 footer {
-  padding: 35px 24px;
+  padding:
+    35px 24px;
 
   border-top:
-    1px solid var(--border-soft);
+    1px solid
+    var(--border-soft);
 
-  background: #050505;
+  background:
+    #050505;
 
-  color: var(--text-muted);
+  color:
+    var(--text-muted);
 
-  text-align: center;
+  text-align:
+    center;
 
-  font-size: 13px;
+  font-size:
+    13px;
 }
 
 
-/* =========================================================
-   35. SELECT OPTIONS
-   ========================================================= */
+/* =====================================================
+   SELECT OPTIONS
+===================================================== */
 
 option {
-  background: #111111;
+  background:
+    #111111;
 
-  color: #ffffff;
+  color:
+    #ffffff;
 }
 
 
-/* =========================================================
-   36. ACCESSIBILITY
-   ========================================================= */
+/* =====================================================
+   SCROLLBAR
+===================================================== */
 
-button:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible,
-a:focus-visible {
-  outline:
-    2px solid var(--accent);
-
-  outline-offset: 3px;
+::-webkit-scrollbar {
+  width: 10px;
 }
 
 
-/* =========================================================
-   37. TABLET
-   ========================================================= */
+::-webkit-scrollbar-track {
+  background:
+    #080808;
+}
 
-@media (max-width: 1050px) {
+
+::-webkit-scrollbar-thumb {
+  border-radius:
+    10px;
+
+  background:
+    #303030;
+}
+
+
+::-webkit-scrollbar-thumb:hover {
+  background:
+    #454545;
+}
+
+
+/* =====================================================
+   TABLET
+===================================================== */
+
+@media (
+  max-width: 1050px
+) {
 
   .sports-grid {
     grid-template-columns:
@@ -1861,19 +1986,22 @@ a:focus-visible {
 
 
   .hero {
-    grid-template-columns: 1fr;
+    grid-template-columns:
+      1fr;
 
     gap: 40px;
 
-    padding-top: 60px;
-    padding-bottom: 60px;
+    padding-top:
+      60px;
+
+    padding-bottom:
+      60px;
   }
 
 
   .score-box {
-    min-height: 250px;
-
-    max-width: 600px;
+    min-height:
+      250px;
   }
 
 
@@ -1883,65 +2011,76 @@ a:focus-visible {
 
 
   .nav button {
-    padding: 9px;
+    padding:
+      9px 9px;
 
-    font-size: 12px;
+    font-size:
+      12px;
   }
 
 }
 
 
-/* =========================================================
-   38. MOBILE
-   ========================================================= */
+/* =====================================================
+   MOBILE
+===================================================== */
 
-@media (max-width: 760px) {
+@media (
+  max-width: 760px
+) {
 
   .container {
-    width: min(
-      calc(100% - 32px),
-      var(--container)
-    );
+    width:
+      min(
+        calc(100% - 32px),
+        var(--container)
+      );
   }
 
 
   .header {
-    min-height: 68px;
+    min-height:
+      68px;
 
-    gap: 12px;
+    padding:
+      0 16px;
 
-    padding: 0 16px;
+    gap:
+      14px;
   }
 
 
   .logo {
-    font-size: 24px;
+    font-size:
+      24px;
   }
 
 
   .hamburger {
     display: block;
 
-    margin-left: auto;
+    margin-left:
+      auto;
 
     order: 3;
   }
 
 
   .header-actions {
-    order: 2;
+    gap:
+      7px;
 
-    gap: 7px;
+    order: 2;
   }
 
 
   .header-actions .btn,
   .header-actions .login-btn {
-    min-height: 38px;
+    padding:
+      9px 12px;
 
-    padding: 8px 11px;
-
-    font-size: 11px;
+    font-size:
+      11px;
   }
 
 
@@ -1956,19 +2095,24 @@ a:focus-visible {
 
     display: none;
 
-    flex-direction: column;
+    flex-direction:
+      column;
 
-    align-items: stretch;
+    align-items:
+      stretch;
 
-    padding: 12px;
+    padding:
+      12px;
 
     background:
       rgba(10, 10, 10, 0.98);
 
     border-bottom:
-      1px solid var(--border);
+      1px solid
+      var(--border);
 
-    backdrop-filter: blur(18px);
+    backdrop-filter:
+      blur(18px);
   }
 
 
@@ -1980,50 +2124,32 @@ a:focus-visible {
   .nav button {
     width: 100%;
 
-    padding: 15px;
+    padding:
+      15px;
 
-    text-align: left;
+    text-align:
+      left;
 
-    font-size: 15px;
-  }
-
-
-  #home {
-    min-height: calc(100vh - 68px);
-  }
-
-
-  .hero-slideshow {
-    min-height: 100%;
-  }
-
-
-  .hero-slideshow::after {
-    background:
-      linear-gradient(
-        180deg,
-        rgba(5, 5, 5, 0.30) 0%,
-        rgba(5, 5, 5, 0.58) 42%,
-        rgba(5, 5, 5, 0.93) 100%
-      );
+    font-size:
+      15px;
   }
 
 
   .hero {
-    min-height: 700px;
+    min-height:
+      auto;
 
-    display: flex;
+    padding:
+      70px 0;
 
-    flex-direction: column;
+    gap:
+      30px;
+  }
 
-    align-items: flex-start;
 
-    justify-content: center;
-
-    gap: 30px;
-
-    padding-top: 60px;
-    padding-bottom: 60px;
+  .hero-slideshow {
+    min-height:
+      900px;
   }
 
 
@@ -2032,39 +2158,42 @@ a:focus-visible {
     font-size:
       clamp(
         52px,
-        16vw,
-        78px
+        17vw,
+        82px
       );
 
-    line-height: 0.9;
-
-    letter-spacing: -3px;
+    letter-spacing:
+      -4px;
   }
 
 
   .lead {
-    font-size: 15px;
+    font-size:
+      15px;
   }
 
 
   .score-box {
-    width: 100%;
+    min-height:
+      240px;
 
-    min-height: 220px;
-
-    padding: 26px;
+    padding:
+      28px;
   }
 
 
   .score {
-    font-size: 58px;
+    font-size:
+      58px;
 
-    letter-spacing: -3px;
+    letter-spacing:
+      -3px;
   }
 
 
   .section {
-    padding: 75px 0;
+    padding:
+      75px 0;
   }
 
 
@@ -2073,185 +2202,235 @@ a:focus-visible {
   #ranking,
   #match,
   #profile {
-    padding-top: 55px;
-    padding-bottom: 75px;
+    padding:
+      55px 0 75px;
   }
 
 
   .section-title {
-    font-size: 40px;
+    font-size:
+      40px;
 
-    letter-spacing: -2px;
+    letter-spacing:
+      -2px;
   }
 
 
   .sports-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
 
-    gap: 14px;
+    gap:
+      12px;
   }
 
 
   .sport-card {
-    min-height: 300px;
+    min-height:
+      210px;
+
+    padding:
+      16px;
+  }
+
+
+  .sport-card h3 {
+    font-size:
+      20px;
   }
 
 
   .coach-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns:
+      1fr;
   }
 
 
   .coach-image {
-    aspect-ratio: 4 / 5;
+    height:
+      320px;
   }
 
 
   .filters {
-    grid-template-columns: 1fr;
+    grid-template-columns:
+      1fr;
   }
 
 
   .category-banner {
-    min-height: 440px;
+    min-height:
+      420px;
   }
 
 
   .category-banner-overlay {
-    min-height: 440px;
+    min-height:
+      420px;
 
-    padding: 28px;
-
-    justify-content: flex-end;
+    padding:
+      28px 22px;
 
     background:
       linear-gradient(
         180deg,
-        rgba(0, 0, 0, 0.10) 0%,
-        rgba(0, 0, 0, 0.90) 100%
+        rgba(0, 0, 0, 0.35),
+        rgba(0, 0, 0, 0.88)
       );
   }
 
 
   .category-banner-title {
-    font-size: 52px;
+    font-size:
+      50px;
 
-    letter-spacing: -2px;
+    letter-spacing:
+      -2px;
   }
 
 
   .ranking-item {
     grid-template-columns:
       48px
-      minmax(0, 1fr);
+      1fr;
 
-    gap: 12px;
+    gap:
+      12px;
   }
 
 
   .ranking-item > :last-child {
-    grid-column: 2;
+    grid-column:
+      2;
   }
 
 
   .ranking-position {
-    font-size: 28px;
+    font-size:
+      28px;
   }
 
 
   .match-box {
-    padding: 22px;
+    padding:
+      22px;
   }
 
 
   #matchResults {
-    grid-template-columns: 1fr;
+    grid-template-columns:
+      1fr;
   }
 
 
   .coach-profile {
-    grid-template-columns: 1fr;
+    grid-template-columns:
+      1fr;
 
-    gap: 28px;
+    gap:
+      28px;
   }
 
 
   .coach-profile-image {
-    position: relative;
+    position:
+      relative;
 
-    top: auto;
+    top:
+      auto;
   }
 
 
   .coach-profile-image img {
-    min-height: 420px;
+    min-height:
+      420px;
 
-    max-height: 560px;
+    max-height:
+      520px;
   }
 
 
   .coach-profile-info {
-    padding: 0;
+    padding:
+      0;
   }
 
 
   .modal {
-    align-items: flex-end;
+    align-items:
+      flex-end;
 
-    padding: 0;
+    padding:
+      0;
   }
 
 
   .modal-content {
-    width: 100%;
+    width:
+      100%;
 
-    max-height: 92vh;
+    max-height:
+      92vh;
 
-    padding: 32px 20px;
-
-    border-bottom: 0;
+    padding:
+      32px 20px;
 
     border-radius:
       22px 22px 0 0;
+
+    border-bottom:
+      0;
   }
 
 
   .modal-content h2 {
-    padding-right: 40px;
+    padding-right:
+      35px;
 
-    font-size: 28px;
+    font-size:
+      28px;
   }
 
 
   .signup-section {
-    padding: 70px 0;
+    padding:
+      70px 0;
   }
 
 
   .signup-form {
-    padding: 25px 20px;
+    padding:
+      25px 20px;
   }
 
 
   .actions {
-    align-items: stretch;
+    align-items:
+      stretch;
   }
 
 
   .actions .btn {
-    flex: 1;
+    flex:
+      1;
 
-    min-width: 140px;
+    min-width:
+      140px;
   }
 
 }
 
 
-/* =========================================================
-   39. SMALL MOBILE
-   ========================================================= */
+/* =====================================================
+   SMALL MOBILE
+===================================================== */
 
-@media (max-width: 420px) {
+@media (
+  max-width: 420px
+) {
 
   .header-actions {
     display: none;
@@ -2259,88 +2438,92 @@ a:focus-visible {
 
 
   .hamburger {
-    margin-left: auto;
+    margin-left:
+      auto;
   }
 
 
   .hero h1,
   .page-title {
-    font-size: 52px;
+    font-size:
+      52px;
+  }
+
+
+  .sports-grid {
+    grid-template-columns:
+      1fr;
   }
 
 
   .sport-card {
-    min-height: 270px;
+    min-height:
+      240px;
   }
 
 
   .actions {
-    flex-direction: column;
+    flex-direction:
+      column;
   }
 
 
   .actions .btn {
-    width: 100%;
+    width:
+      100%;
   }
 
 
   .category-banner-title {
-    font-size: 42px;
+    font-size:
+      42px;
   }
 
 
   .coach-image {
-    aspect-ratio: 4 / 5;
+    height:
+      280px;
   }
 
 }
 
 
-/* =========================================================
-   40. REDUCED MOTION
-   ========================================================= */
+/* =====================================================
+   ACCESSIBILITY
+===================================================== */
 
-@media (prefers-reduced-motion: reduce) {
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline:
+    2px solid
+    var(--accent);
 
-  html {
-    scroll-behavior: auto;
-  }
+  outline-offset:
+    3px;
+}
 
+
+/* =====================================================
+   REDUCED MOTION
+===================================================== */
+
+@media (
+  prefers-reduced-motion: reduce
+) {
 
   *,
   *::before,
   *::after {
-    transition-duration: 0.01ms !important;
+    scroll-behavior:
+      auto !important;
 
-    animation-duration: 0.01ms !important;
+    transition-duration:
+      0.01ms !important;
 
-    animation-iteration-count: 1 !important;
+    animation-duration:
+      0.01ms !important;
   }
 
-}
-
-
-/* =========================================================
-   41. SCROLLBAR
-   ========================================================= */
-
-::-webkit-scrollbar {
-  width: 10px;
-}
-
-
-::-webkit-scrollbar-track {
-  background: #080808;
-}
-
-
-::-webkit-scrollbar-thumb {
-  border-radius: 10px;
-
-  background: #303030;
-}
-
-
-::-webkit-scrollbar-thumb:hover {
-  background: #454545;
 }
