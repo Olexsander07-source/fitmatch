@@ -1,16 +1,16 @@
-<!doctype html>
-<html lang="ru">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
 
   <meta
     name="viewport"
-    content="width=device-width, initial-scale=1"
+    content="width=device-width, initial-scale=1.0"
   >
 
   <meta
     name="description"
-    content="APLEX — платформа для поиска спортивных тренеров. Find your level."
+    content="APLEX — Find your level. Find the right coach for your goals."
   >
 
   <title>APLEX — Find your level.</title>
@@ -27,7 +27,7 @@
   >
 
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap"
     rel="stylesheet"
   >
 
@@ -37,106 +37,112 @@
   >
 </head>
 
+
 <body>
 
-  <!-- =========================
+  <!-- =====================================================
        HEADER
-  ========================== -->
+  ====================================================== -->
 
   <header class="header">
 
     <button
-      id="logo"
       class="logo"
       type="button"
-      aria-label="APLEX — Главная"
+      onclick="showPage('home')"
+      aria-label="Go to home"
     >
       AP<span>LEX</span>
     </button>
 
-    <button
-      id="hamburger"
-      class="hamburger"
-      type="button"
-      aria-label="Открыть меню"
-      aria-expanded="false"
-    >
-      ☰
-    </button>
 
     <nav
-      id="mainNav"
       class="nav"
-      aria-label="Главная навигация"
+      id="mainNav"
     >
-      <button
-        data-nav="home"
-        type="button"
-      >
-        Главная
-      </button>
 
       <button
-        data-nav="sports"
         type="button"
+        onclick="showPage('home')"
       >
-        Виды спорта
+        Home
       </button>
 
-      <button
-        data-nav="coaches"
-        type="button"
-      >
-        Тренеры
-      </button>
 
       <button
-        data-nav="ranking"
         type="button"
+        onclick="showPage('coaches')"
       >
-        Рейтинг
+        Coaches
       </button>
 
+
       <button
-        data-nav="match"
         type="button"
+        onclick="showPage('sports')"
       >
-        Подбор
+        Sports
       </button>
+
+
+      <button
+        type="button"
+        onclick="showPage('ranking')"
+      >
+        Ranking
+      </button>
+
+
+      <button
+        type="button"
+        onclick="showPage('match')"
+      >
+        Match
+      </button>
+
     </nav>
+
 
     <div class="header-actions">
 
       <button
-        id="authBtn"
-        class="btn"
-        type="button"
-      >
-        Войти
-      </button>
-
-      <button
-        id="createBtn"
         class="login-btn"
         type="button"
+        onclick="openLoginModal()"
       >
-        Стать тренером
+        Log in
+      </button>
+
+
+      <button
+        class="btn btn-primary"
+        type="button"
+        onclick="showPage('signup')"
+      >
+        Join APLEX
       </button>
 
     </div>
 
+
+    <button
+      class="hamburger"
+      type="button"
+      id="hamburger"
+      aria-label="Open menu"
+    >
+      ☰
+    </button>
+
   </header>
 
 
-  <!-- =========================
-       MAIN
-  ========================== -->
+
+  <!-- =====================================================
+       HOME
+  ====================================================== -->
 
   <main>
-
-    <!-- =========================
-         HOME
-    ========================== -->
 
     <section
       id="home"
@@ -144,47 +150,50 @@
     >
 
       <div
-        id="heroSlideshow"
         class="hero-slideshow"
-        aria-hidden="true"
+        id="heroSlideshow"
       ></div>
+
 
       <div class="container hero">
 
-        <div>
+        <div class="hero-content">
 
-          <p class="eyebrow">
-            APLEX
-          </p>
+          <div class="eyebrow">
+            FIND THE RIGHT COACH
+          </div>
+
 
           <h1>
-            FIND<br>
-            <em>YOUR</em><br>
-            LEVEL.
+            FIND YOUR<br>
+            <em>LEVEL.</em>
           </h1>
 
+
           <p class="lead">
-            APLEX помогает найти подходящего
-            спортивного тренера по виду спорта,
-            цели и формату тренировок.
+            APLEX helps you find the right coach for your goals,
+            sport and level. Real coaches. Real profiles.
+            A better match.
           </p>
+
 
           <div class="actions">
 
             <button
-              id="matchBtn"
               class="btn btn-primary"
               type="button"
+              onclick="showPage('match')"
             >
-              ПОДОБРАТЬ ТРЕНЕРА →
+              Find my coach
             </button>
 
+
             <button
-              id="chooseSportBtn"
               class="btn"
               type="button"
+              onclick="showPage('coaches')"
             >
-              ВЫБРАТЬ СПОРТ
+              Explore coaches
             </button>
 
           </div>
@@ -192,22 +201,26 @@
         </div>
 
 
-        <!-- APLEX -->
-
         <div class="score-box">
 
-          <p class="eyebrow">
-            APLEX
-          </p>
-
-          <div class="score">
-            LEVEL
+          <div class="eyebrow">
+            APLEX MATCH
           </div>
 
+
+          <div class="score">
+            01
+          </div>
+
+
+          <h3>
+            Your level starts here.
+          </h3>
+
+
           <p class="lead">
-            Find your level.
-            Найдите тренера, который подходит
-            именно вашим целям.
+            Tell us what you want to achieve.
+            We help you discover coaches that fit your goals.
           </p>
 
         </div>
@@ -215,40 +228,175 @@
       </div>
 
 
-      <!-- SPORTS -->
-
-      <section class="section dark">
-
-        <div class="container">
-
-          <h2 class="section-title">
-            ВИДЫ СПОРТА
-          </h2>
-
-          <div
-            id="homeSports"
-            class="sports-grid"
-          ></div>
-
-        </div>
-
-      </section>
-
-
-      <!-- TOP COACHES -->
+      <!-- =================================================
+           POPULAR SPORTS
+      ================================================== -->
 
       <section class="section">
 
         <div class="container">
 
+          <div class="eyebrow">
+            EXPLORE
+          </div>
+
+
           <h2 class="section-title">
-            ЛУЧШИЕ ТРЕНЕРЫ
+            Choose your sport.
           </h2>
 
+
           <div
-            id="topCoaches"
+            class="sports-grid"
+            id="popularSports"
+          >
+
+            <article
+              class="sport-card"
+              data-sport="Bodybuilding"
+              style="background-image:url('images/bodybuilding.jpg')"
+              onclick="openSport('Bodybuilding')"
+            >
+
+              <div class="sport-card-content">
+
+                <div class="sport-icon">
+                  💪
+                </div>
+
+                <h3>
+                  Bodybuilding
+                </h3>
+
+                <p>
+                  Build your level →
+                </p>
+
+              </div>
+
+            </article>
+
+
+            <article
+              class="sport-card"
+              data-sport="Fitness"
+              style="background-image:url('images/fitness.jpg')"
+              onclick="openSport('Fitness')"
+            >
+
+              <div class="sport-card-content">
+
+                <div class="sport-icon">
+                  ⚡
+                </div>
+
+                <h3>
+                  Fitness
+                </h3>
+
+                <p>
+                  Get stronger →
+                </p>
+
+              </div>
+
+            </article>
+
+
+            <article
+              class="sport-card"
+              data-sport="Cycling"
+              style="background-image:url('images/cycling.jpg')"
+              onclick="openSport('Cycling')"
+            >
+
+              <div class="sport-card-content">
+
+                <div class="sport-icon">
+                  🚴
+                </div>
+
+                <h3>
+                  Cycling
+                </h3>
+
+                <p>
+                  Ride further →
+                </p>
+
+              </div>
+
+            </article>
+
+
+            <article
+              class="sport-card"
+              data-sport="Boxing"
+              style="background-image:url('images/boxing.jpg')"
+              onclick="openSport('Boxing')"
+            >
+
+              <div class="sport-card-content">
+
+                <div class="sport-icon">
+                  🥊
+                </div>
+
+                <h3>
+                  Boxing
+                </h3>
+
+                <p>
+                  Train harder →
+                </p>
+
+              </div>
+
+            </article>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+
+      <!-- =================================================
+           TOP COACHES
+      ================================================== -->
+
+      <section class="section dark">
+
+        <div class="container">
+
+          <div class="eyebrow">
+            DISCOVER
+          </div>
+
+
+          <h2 class="section-title">
+            Coaches on APLEX.
+          </h2>
+
+
+          <div
             class="coach-grid"
+            id="featuredCoaches"
           ></div>
+
+
+          <div class="actions">
+
+            <button
+              class="btn"
+              type="button"
+              onclick="showPage('coaches')"
+            >
+              View all coaches
+            </button>
+
+          </div>
 
         </div>
 
@@ -257,35 +405,10 @@
     </section>
 
 
-    <!-- =========================
-         SPORTS
-    ========================== -->
 
-    <section
-      id="sports"
-      class="page"
-    >
-
-      <div class="container">
-
-        <h1 class="page-title">
-          ВЫБЕРИ<br>
-          <em>СВОЙ СПОРТ.</em>
-        </h1>
-
-        <div
-          id="sportsList"
-          class="sports-grid"
-        ></div>
-
-      </div>
-
-    </section>
-
-
-    <!-- =========================
+    <!-- =====================================================
          COACHES
-    ========================== -->
+    ====================================================== -->
 
     <section
       id="coaches"
@@ -294,97 +417,54 @@
 
       <div class="container">
 
-        <h1 class="page-title">
-          НАЙДИ<br>
-          <em>ТРЕНЕРА.</em>
-        </h1>
-
-
-        <!-- CATEGORY BANNER -->
-
-        <div
-          id="categoryBanner"
-          class="category-banner"
-          style="display:none"
-        >
-
-          <svg
-            id="categoryBannerGraphic"
-            class="category-banner-graphic"
-            viewBox="0 0 400 300"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-          ></svg>
-
-          <div class="category-banner-overlay">
-
-            <p class="eyebrow">
-              APLEX — FIND YOUR LEVEL
-            </p>
-
-            <h2
-              id="categoryBannerTitle"
-              class="category-banner-title"
-            ></h2>
-
-            <p
-              id="categoryBannerSubtitle"
-              class="lead"
-            ></p>
-
-            <div
-              id="categoryBannerStats"
-              class="category-banner-stats"
-            ></div>
-
-            <button
-              id="cyclingBannerCta"
-              class="btn btn-primary category-banner-cta"
-              type="button"
-            >
-              НАЙТИ ТРЕНЕРА →
-            </button>
-
-          </div>
-
+        <div class="eyebrow">
+          APLEX COACHES
         </div>
 
 
-        <!-- FILTERS -->
+        <h1 class="page-title">
+          FIND YOUR<br>
+          <em>COACH.</em>
+        </h1>
+
 
         <div class="filters">
 
           <input
-            id="searchInput"
+            id="coachSearch"
             type="search"
-            placeholder="Поиск тренера..."
+            placeholder="Search by name, sport or goal..."
             autocomplete="off"
           >
 
+
           <select
             id="sportFilter"
-            aria-label="Фильтр по виду спорта"
           >
             <option value="">
-              Все виды спорта
+              All sports
             </option>
           </select>
 
+
           <select
-            id="formatFilter"
-            aria-label="Фильтр по формату"
+            id="levelFilter"
           >
+
             <option value="">
-              Любой формат
+              All levels
             </option>
 
-            <option value="Онлайн">
-              Онлайн
+            <option value="Beginner">
+              Beginner
             </option>
 
-            <option value="Офлайн">
-              Офлайн
+            <option value="Intermediate">
+              Intermediate
+            </option>
+
+            <option value="Advanced">
+              Advanced
             </option>
 
           </select>
@@ -392,11 +472,9 @@
         </div>
 
 
-        <!-- COACHES LIST -->
-
         <div
-          id="coachesList"
           class="coach-grid"
+          id="coachGrid"
         ></div>
 
       </div>
@@ -404,9 +482,149 @@
     </section>
 
 
-    <!-- =========================
+
+    <!-- =====================================================
+         SPORTS
+    ====================================================== -->
+
+    <section
+      id="sports"
+      class="page"
+    >
+
+      <div class="container">
+
+        <div class="eyebrow">
+          TRAIN YOUR WAY
+        </div>
+
+
+        <h1 class="page-title">
+          CHOOSE YOUR<br>
+          <em>SPORT.</em>
+        </h1>
+
+
+        <div
+          class="sports-grid"
+          id="sportsGrid"
+        ></div>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- =====================================================
+         SPORT PAGE
+    ====================================================== -->
+
+    <section
+      id="sport"
+      class="page"
+    >
+
+      <div class="container">
+
+        <button
+          class="btn"
+          type="button"
+          onclick="showPage('sports')"
+        >
+          ← Back to sports
+        </button>
+
+
+        <div
+          class="category-banner"
+          id="sportBanner"
+        >
+
+          <div class="category-banner-overlay">
+
+            <div class="eyebrow">
+              APLEX SPORT
+            </div>
+
+
+            <h1
+              class="category-banner-title"
+              id="sportTitle"
+            >
+              Sport
+            </h1>
+
+
+            <p
+              class="lead"
+              id="sportDescription"
+            ></p>
+
+
+            <div
+              class="category-banner-stats"
+              id="sportStats"
+            ></div>
+
+          </div>
+
+
+          <div
+            class="category-banner-graphic"
+            id="sportGraphic"
+          >
+            💪
+          </div>
+
+        </div>
+
+
+        <div
+          class="coach-grid"
+          id="sportCoaches"
+        ></div>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- =====================================================
+         COACH PROFILE
+    ====================================================== -->
+
+    <section
+      id="profile"
+      class="page"
+    >
+
+      <div class="container">
+
+        <button
+          class="btn"
+          type="button"
+          onclick="showPage('coaches')"
+        >
+          ← Back to coaches
+        </button>
+
+
+        <div
+          class="coach-profile"
+          id="coachProfile"
+        ></div>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- =====================================================
          RANKING
-    ========================== -->
+    ====================================================== -->
 
     <section
       id="ranking"
@@ -415,21 +633,30 @@
 
       <div class="container">
 
+        <div class="eyebrow">
+          APLEX RANKING
+        </div>
+
+
         <h1 class="page-title">
-          РЕЙТИНГ<br>
-          <em>ТРЕНЕРОВ.</em>
+          TOP<br>
+          <em>LEVEL.</em>
         </h1>
 
-        <div id="rankingList"></div>
+
+        <div
+          id="rankingList"
+        ></div>
 
       </div>
 
     </section>
 
 
-    <!-- =========================
+
+    <!-- =====================================================
          MATCH
-    ========================== -->
+    ====================================================== -->
 
     <section
       id="match"
@@ -438,27 +665,39 @@
 
       <div class="container">
 
+        <div class="eyebrow">
+          APLEX MATCH
+        </div>
+
+
         <h1 class="page-title">
-          НАЙДЁМ<br>
-          <em>ТВОЙ MATCH.</em>
+          FIND YOUR<br>
+          <em>MATCH.</em>
         </h1>
 
+
         <p class="lead">
-          Выберите параметры,
-          и APLEX покажет наиболее подходящих
-          тренеров.
+          Answer a few questions.
+          APLEX will help you discover coaches that match your goals.
         </p>
 
-        <div class="match-box">
+
+        <form
+          class="match-form"
+          id="matchForm"
+        >
 
           <label>
 
-            Какой спорт?
+            Your sport
 
-            <select id="matchSport">
+            <select
+              id="matchSport"
+              required
+            >
 
               <option value="">
-                Не выбрано
+                Select a sport
               </option>
 
             </select>
@@ -468,12 +707,27 @@
 
           <label>
 
-            Какая цель?
+            Your current level
 
-            <select id="matchGoal">
+            <select
+              id="matchLevel"
+              required
+            >
 
               <option value="">
-                Любая цель
+                Select your level
+              </option>
+
+              <option value="Beginner">
+                Beginner
+              </option>
+
+              <option value="Intermediate">
+                Intermediate
+              </option>
+
+              <option value="Advanced">
+                Advanced
               </option>
 
             </select>
@@ -483,98 +737,268 @@
 
           <label>
 
-            Формат тренировок?
+            Your main goal
 
-            <select id="matchFormat">
-
-              <option value="">
-                Не важно
-              </option>
-
-              <option value="Онлайн">
-                Онлайн
-              </option>
-
-              <option value="Офлайн">
-                Офлайн
-              </option>
-
-            </select>
+            <input
+              id="matchGoal"
+              type="text"
+              placeholder="Example: Build muscle, lose weight, improve performance"
+              required
+            >
 
           </label>
 
 
           <button
-            id="findMatchBtn"
             class="btn btn-primary"
-            type="button"
+            type="submit"
           >
-            НАЙТИ МОЕГО ТРЕНЕРА →
+            Find my match
           </button>
 
+        </form>
 
-          <div
-            id="matchResults"
-            aria-live="polite"
-          ></div>
 
-        </div>
+        <div
+          id="matchResults"
+        ></div>
 
       </div>
 
     </section>
 
 
-    <!-- =========================
-         PROFILE
-    ========================== -->
+
+    <!-- =====================================================
+         COACH DASHBOARD
+    ====================================================== -->
 
     <section
-      id="profile"
+      id="dashboard"
       class="page"
     >
 
-      <div
-        id="profileContent"
-        class="container"
-      ></div>
+      <div class="container">
+
+        <div class="eyebrow">
+          COACH AREA
+        </div>
+
+
+        <h1 class="page-title">
+          MY<br>
+          <em>APLEX.</em>
+        </h1>
+
+
+        <div
+          id="dashboardContent"
+        ></div>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- =====================================================
+         CHAT
+    ====================================================== -->
+
+    <section
+      id="chat"
+      class="page"
+    >
+
+      <div class="container">
+
+        <div class="eyebrow">
+          APLEX MESSAGES
+        </div>
+
+
+        <h1 class="page-title">
+          YOUR<br>
+          <em>MESSAGES.</em>
+        </h1>
+
+
+        <div
+          id="chatContainer"
+        ></div>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- =====================================================
+         SIGN UP
+    ====================================================== -->
+
+    <section
+      id="signup"
+      class="page"
+    >
+
+      <section class="signup-section">
+
+        <div class="container">
+
+          <form
+            class="signup-form"
+            id="signupForm"
+          >
+
+            <div class="eyebrow">
+              JOIN APLEX
+            </div>
+
+
+            <h2>
+              Create your account.
+            </h2>
+
+
+            <label>
+
+              Full name
+
+              <input
+                id="signupName"
+                type="text"
+                placeholder="Your full name"
+                autocomplete="name"
+                required
+              >
+
+            </label>
+
+
+            <label>
+
+              Email
+
+              <input
+                id="signupEmail"
+                type="email"
+                placeholder="you@email.com"
+                autocomplete="email"
+                required
+              >
+
+            </label>
+
+
+            <label>
+
+              Password
+
+              <input
+                id="signupPassword"
+                type="password"
+                placeholder="Create a secure password"
+                autocomplete="new-password"
+                minlength="6"
+                required
+              >
+
+            </label>
+
+
+            <label>
+
+              I am
+
+              <select
+                id="signupRole"
+                required
+              >
+
+                <option value="">
+                  Select account type
+                </option>
+
+                <option value="client">
+                  Client
+                </option>
+
+                <option value="coach">
+                  Coach
+                </option>
+
+              </select>
+
+            </label>
+
+
+            <button
+              class="btn btn-primary"
+              type="submit"
+            >
+              Create account
+            </button>
+
+
+            <div
+              id="signupMessage"
+            ></div>
+
+
+            <button
+              class="forgot-password"
+              type="button"
+              onclick="openLoginModal()"
+            >
+              Already have an account? Log in
+            </button>
+
+          </form>
+
+        </div>
+
+      </section>
 
     </section>
 
   </main>
 
 
-  <!-- =========================
-       AUTH MODAL
-  ========================== -->
+
+  <!-- =====================================================
+       LOGIN MODAL
+  ====================================================== -->
 
   <div
-    id="modal"
     class="modal"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="authTitle"
+    id="loginModal"
   >
 
     <div class="modal-content">
 
       <button
-        id="authClose"
-        class="modal-close"
+        class="btn"
         type="button"
-        aria-label="Закрыть"
+        onclick="closeLoginModal()"
       >
-        ×
+        Close
       </button>
 
-      <h2 id="authTitle">
-        Войти в APLEX
+
+      <div class="eyebrow">
+        WELCOME BACK
+      </div>
+
+
+      <h2>
+        Log in to APLEX.
       </h2>
 
 
       <form
-        id="authForm"
         class="form"
+        id="loginForm"
       >
 
         <label>
@@ -582,9 +1006,9 @@
           Email
 
           <input
-            id="authEmail"
-            name="email"
+            id="loginEmail"
             type="email"
+            placeholder="you@email.com"
             autocomplete="email"
             required
           >
@@ -594,115 +1018,13 @@
 
         <label>
 
-          Пароль
+          Password
 
           <input
-            id="authPassword"
-            name="password"
+            id="loginPassword"
             type="password"
-            minlength="6"
+            placeholder="Your password"
             autocomplete="current-password"
-            required
-          >
-
-        </label>
-
-
-        <div class="actions">
-
-          <button
-            class="btn btn-primary"
-            type="submit"
-          >
-            ВОЙТИ
-          </button>
-
-
-          <button
-            id="signupBtn"
-            class="btn"
-            type="button"
-          >
-            РЕГИСТРАЦИЯ
-          </button>
-
-
-          <button
-            id="modalCancel"
-            class="btn"
-            type="button"
-          >
-            ОТМЕНА
-          </button>
-
-        </div>
-
-
-        <button
-          id="forgotPasswordBtn"
-          class="forgot-password"
-          type="button"
-        >
-          Забыли пароль?
-        </button>
-
-
-        <div
-          id="authMessage"
-          aria-live="polite"
-        ></div>
-
-      </form>
-
-    </div>
-
-  </div>
-
-
-  <!-- =========================
-       SIGNUP
-  ========================== -->
-
-  <section
-    id="signupSection"
-    class="signup-section"
-  >
-
-    <div class="container">
-
-      <form
-        id="signupForm"
-        class="form signup-form"
-      >
-
-        <h2>
-          СОЗДАТЬ АККАУНТ
-        </h2>
-
-
-        <label>
-
-          Email
-
-          <input
-            name="email"
-            type="email"
-            autocomplete="email"
-            required
-          >
-
-        </label>
-
-
-        <label>
-
-          Пароль
-
-          <input
-            name="password"
-            type="password"
-            minlength="6"
-            autocomplete="new-password"
             required
           >
 
@@ -713,114 +1035,21 @@
           class="btn btn-primary"
           type="submit"
         >
-          ЗАРЕГИСТРИРОВАТЬСЯ
+          Log in
+        </button>
+
+
+        <button
+          class="forgot-password"
+          type="button"
+          id="forgotPasswordButton"
+        >
+          Forgot password?
         </button>
 
 
         <div
-          id="signupMessage"
-          aria-live="polite"
-        ></div>
-
-      </form>
-
-    </div>
-
-  </section>
-
-
-  <!-- =========================
-       RESET PASSWORD MODAL
-  ========================== -->
-
-  <div
-    id="resetPasswordModal"
-    class="modal"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="resetTitle"
-  >
-
-    <div class="modal-content">
-
-      <button
-        id="resetClose"
-        class="modal-close"
-        type="button"
-        aria-label="Закрыть"
-      >
-        ×
-      </button>
-
-      <h2 id="resetTitle">
-        Создать новый пароль
-      </h2>
-
-      <p class="lead">
-        Введите и подтвердите новый пароль.
-      </p>
-
-
-      <form
-        id="resetPasswordForm"
-        class="form"
-      >
-
-        <label>
-
-          Новый пароль
-
-          <input
-            id="newPassword"
-            name="password"
-            type="password"
-            minlength="6"
-            autocomplete="new-password"
-            required
-          >
-
-        </label>
-
-
-        <label>
-
-          Повторите пароль
-
-          <input
-            id="confirmPassword"
-            type="password"
-            minlength="6"
-            autocomplete="new-password"
-            required
-          >
-
-        </label>
-
-
-        <div class="actions">
-
-          <button
-            class="btn btn-primary"
-            type="submit"
-          >
-            СОХРАНИТЬ ПАРОЛЬ
-          </button>
-
-
-          <button
-            id="resetCancel"
-            class="btn"
-            type="button"
-          >
-            ОТМЕНА
-          </button>
-
-        </div>
-
-
-        <div
-          id="resetMessage"
-          aria-live="polite"
+          id="loginMessage"
         ></div>
 
       </form>
@@ -830,209 +1059,103 @@
   </div>
 
 
-  <!-- =========================
-       CREATE COACH MODAL
-  ========================== -->
 
-  <div
-    id="coachModal"
-    class="modal"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="coachTitle"
-  >
-
-    <div class="modal-content">
-
-      <button
-        id="coachClose"
-        class="modal-close"
-        type="button"
-        aria-label="Закрыть"
-      >
-        ×
-      </button>
-
-      <h2 id="coachTitle">
-        Стать тренером
-      </h2>
-
-      <p class="lead">
-        Создайте свой профиль
-        и станьте доступным
-        для пользователей APLEX.
-      </p>
-
-
-      <form
-        id="createForm"
-        class="form"
-      >
-
-        <label>
-
-          Имя
-
-          <input
-            name="name"
-            autocomplete="name"
-            required
-          >
-
-        </label>
-
-
-        <label>
-
-          Вид спорта
-
-          <select
-            id="coachSport"
-            name="sport"
-            required
-          >
-
-            <option value="">
-              Выберите вид спорта
-            </option>
-
-          </select>
-
-        </label>
-
-
-        <label>
-
-          Цель / специализация
-
-          <input
-            name="goal"
-            placeholder="Например: похудение, сила, выносливость"
-          >
-
-        </label>
-
-
-        <label>
-
-          Формат тренировок
-
-          <select name="format">
-
-            <option value="Онлайн">
-              Онлайн
-            </option>
-
-            <option value="Офлайн">
-              Офлайн
-            </option>
-
-          </select>
-
-        </label>
-
-
-        <label>
-
-          Цена €
-
-          <input
-            name="price"
-            type="number"
-            min="0"
-            step="1"
-            required
-          >
-
-        </label>
-
-
-        <label>
-
-          Период оплаты
-
-          <select name="period">
-
-            <option value="месяц">
-              В месяц
-            </option>
-
-            <option value="занятие">
-              За занятие
-            </option>
-
-            <option value="программа">
-              За программу
-            </option>
-
-          </select>
-
-        </label>
-
-
-        <label>
-
-          О себе
-
-          <textarea
-            name="bio"
-            rows="5"
-            placeholder="Расскажите о своём опыте, достижениях и специализации"
-          ></textarea>
-
-        </label>
-
-
-        <div class="actions">
-
-          <button
-            class="btn btn-primary"
-            type="submit"
-          >
-            СОЗДАТЬ ПРОФИЛЬ
-          </button>
-
-
-          <button
-            id="coachCancel"
-            class="btn"
-            type="button"
-          >
-            ОТМЕНА
-          </button>
-
-        </div>
-
-
-        <div
-          id="coachMessage"
-          aria-live="polite"
-        ></div>
-
-      </form>
-
-    </div>
-
-  </div>
-
-
-  <!-- =========================
+  <!-- =====================================================
        FOOTER
-  ========================== -->
+  ====================================================== -->
 
   <footer>
-    © 2026 APLEX — Find your level.
+
+    <strong>
+      APLEX
+    </strong>
+
+    <span>
+      — Find your level.
+    </span>
+
+    <br>
+
+    <br>
+
+    © 2026 APLEX. All rights reserved.
+
   </footer>
 
 
-  <!-- =========================
-       JAVASCRIPT
-  ========================== -->
 
-  <script
-    type="module"
-    src="fitmatch.js"
-  ></script>
+  <!-- =====================================================
+       SUPABASE
+  ====================================================== -->
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+
+  <!-- =====================================================
+       APPLICATION
+  ====================================================== -->
+
+  <script src="fitmatch.js"></script>
+
+
+  <!-- =====================================================
+       MOBILE NAVIGATION
+  ====================================================== -->
+
+  <script>
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      function () {
+
+        const hamburger =
+          document.getElementById("hamburger");
+
+        const nav =
+          document.getElementById("mainNav");
+
+
+        if (hamburger && nav) {
+
+          hamburger.addEventListener(
+            "click",
+            function () {
+
+              nav.classList.toggle(
+                "mobile-open"
+              );
+
+            }
+          );
+
+        }
+
+
+        document
+          .querySelectorAll(
+            "#mainNav button"
+          )
+          .forEach(
+            function (button) {
+
+              button.addEventListener(
+                "click",
+                function () {
+
+                  nav.classList.remove(
+                    "mobile-open"
+                  );
+
+                }
+              );
+
+            }
+          );
+
+      }
+    );
+
+  </script>
 
 </body>
 </html>
