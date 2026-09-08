@@ -1,776 +1,2346 @@
-/* ========================================================= APLEX — FIND YOUR LEVEL. styles.css Professional responsive interface ========================================================= */
 /* =========================================================
-1. ROOT ========================================================= */
-{ --bg: #080808; --bg-secondary: #0d0d0d; --bg-card: #141414; --bg-card-hover: #1a1a1a;
---text: #ffffff; --text-secondary: #b5b5b5; --text-muted: #747474;
---accent: #d7ff00; --accent-hover: #c5e900; --accent-text: #080808;
---border: rgba(255, 255, 255, 0.12); --border-soft: rgba(255, 255, 255, 0.07);
---success: #5ee889; --danger: #ff6262;
---radius-small: 12px; --radius: 20px; --radius-large: 28px;
---shadow-small: 0 12px 30px rgba(0, 0, 0, 0.25);
---shadow: 0 25px 70px rgba(0, 0, 0, 0.45);
---container: 1240px; }
-/* ========================================================= 2. RESET ========================================================= */
-*, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-body { margin: 0; min-width: 320px;
-overflow-x: hidden;
-background: var(--bg);
-color: var(--text);
-font-family: Inter, Arial, sans-serif;
-line-height: 1.5; }
-body, button, input, select, textarea { font-family: Inter, Arial, sans-serif; }
-body.modal-open { overflow: hidden; }
-button, input, select, textarea { font: inherit; }
-button { cursor: pointer; }
-img { display: block;
-max-width: 100%; }
-a { color: inherit;
-text-decoration: none; }
-h1, h2, h3, h4, p { margin-top: 0; }
-h1, h2, h3, h4 { font-family: "Space Grotesk", Inter, Arial, sans-serif; }
-/* ========================================================= 3. GLOBAL CONTAINER ========================================================= */
-.container { width: min( calc(100% - 48px), var(--container) );
-margin-inline: auto; }
-/* ========================================================= 4. HEADER ========================================================= */
-.header { position: sticky;
-top: 0;
-z-index: 1000;
-width: 100%;
-min-height: 76px;
-display: flex;
-align-items: center;
-gap: 28px;
-padding: 0 28px;
-background: rgba(8, 8, 8, 0.88);
-border-bottom: 1px solid var(--border-soft);
-backdrop-filter: blur(18px);
--webkit-backdrop-filter: blur(18px); }
-/* ========================================================= 5. LOGO ========================================================= */
-.logo { flex-shrink: 0;
-margin: 0; padding: 0;
-border: 0;
-background: transparent;
-color: var(--text);
-font-family: "Space Grotesk", Inter, sans-serif;
-font-size: 28px;
-font-weight: 800;
-letter-spacing: -1.5px; }
-.logo span { color: var(--accent); }
-/* ========================================================= 6. NAVIGATION ========================================================= */
-.nav { flex: 1;
-display: flex;
-align-items: center;
-justify-content: center;
-gap: 4px; }
-.nav button { padding: 10px 14px;
-border: 0; border-radius: 10px;
-background: transparent;
-color: var(--text-secondary);
-font-size: 14px;
-font-weight: 600;
-transition: color 0.2s ease, background 0.2s ease; }
-.nav button, .nav button.active { color: var(--text);
-background: rgba(255, 255, 255, 0.07); }
-/* ========================================================= 7. HEADER ACTIONS ========================================================= */
-.header-actions { flex-shrink: 0;
-display: flex;
-align-items: center;
-gap: 10px; }
-/* ========================================================= 8. MOBILE MENU BUTTON ========================================================= */
-.hamburger { display: none;
-padding: 8px;
-border: 0;
-background: transparent;
-color: var(--text);
-font-size: 26px;
-line-height: 1; }
-/* ========================================================= 9. BUTTONS ========================================================= */
-.btn { display: inline-flex;
-align-items: center;
-justify-content: center;
-gap: 8px;
-min-height: 46px;
-padding: 11px 20px;
-border: 1px solid var(--border);
-border-radius: 999px;
-background: transparent;
-color: var(--text);
-font-size: 13px;
-font-weight: 700;
-letter-spacing: 0.2px;
-transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease; }
-.btn { transform: translateY(-2px);
-background: rgba(255, 255, 255, 0.08);
-border-color: rgba(255, 255, 255, 0.25); }
-.btn { transform: translateY(0); }
-.btn-primary { border-color: var(--accent);
-background: var(--accent);
-color: var(--accent-text); }
-.btn-primary { border-color: var(--accent-hover);
-background: var(--accent-hover); }
-.login-btn { min-height: 42px;
-padding: 10px 18px;
-border: 0;
-border-radius: 999px;
-background: #ffffff;
-color: #080808;
-font-size: 13px;
-font-weight: 800;
-transition: transform 0.2s ease, opacity 0.2s ease; }
-.login-btn { transform: translateY(-2px);
-opacity: 0.9; }
-/* ========================================================= 10. PAGE SYSTEM ========================================================= */
-.page { display: none;
-min-height: calc(100vh - 76px); }
-.page.active { display: block; }
-/* ========================================================= 11. HERO / HOME ========================================================= */
-#home { position: relative;
-overflow: hidden;
-min-height: calc(100vh - 76px); }
-/* Background image */
-.hero-slideshow { position: absolute;
-inset: 0;
-z-index: 0;
-width: 100%; height: 100%;
-min-height: 760px;
-background-color: #111111;
-background-position: center center;
-background-size: cover;
-background-repeat: no-repeat;
-transition: background-image 0.8s ease, transform 8s ease;
-transform: scale(1.01); }
-/* Professional contrast overlay */
-.hero-slideshow::after { content: "";
-position: absolute;
-inset: 0;
-background: linear-gradient( 90deg, rgba(5, 5, 5, 0.82) 0%, rgba(5, 5, 5, 0.63) 34%, rgba(5, 5, 5, 0.34) 58%, rgba(5, 5, 5, 0.12) 100% ); }
-/* Main hero content */
-.hero { position: relative;
-z-index: 1;
-min-height: 760px;
-display: grid;
-grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
-align-items: center;
-gap: 60px;
-padding-top: 70px; padding-bottom: 70px; }
-/* ========================================================= 12. HERO TEXT ========================================================= */
-.eyebrow { margin-bottom: 16px;
-color: var(--accent);
-font-size: 12px;
-font-weight: 800;
-letter-spacing: 2px;
-text-transform: uppercase; }
-.hero h1, .page-title { max-width: 900px;
-margin-bottom: 28px;
-color: var(--text);
-font-size: clamp( 58px, 8vw, 118px );
-font-weight: 800;
-line-height: 0.9;
-letter-spacing: -5px;
-text-transform: uppercase;
-text-shadow: 0 8px 35px rgba(0, 0, 0, 0.35); }
-.hero h1 em, .page-title em { color: var(--accent);
-font-style: normal; }
-.lead { max-width: 640px;
-margin-bottom: 30px;
-color: #e0e0e0;
-font-size: 17px;
-line-height: 1.7;
-text-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); }
-/* ========================================================= 13. HERO ACTIONS ========================================================= */
-.actions { display: flex;
-flex-wrap: wrap;
-align-items: center;
-gap: 12px; }
-/* ========================================================= 14. HERO LEVEL CARD ========================================================= */
-.score-box { position: relative;
-overflow: hidden;
-min-height: 300px;
-display: flex;
-flex-direction: column;
-justify-content: center;
-padding: 36px;
-border: 1px solid rgba(255, 255, 255, 0.16);
-border-radius: var(--radius-large);
-background: linear-gradient( 145deg, rgba(20, 20, 20, 0.80), rgba(10, 10, 10, 0.62) );
-box-shadow: var(--shadow);
-backdrop-filter: blur(18px);
--webkit-backdrop-filter: blur(18px); }
-.score-box::before { content: "";
-position: absolute;
-top: -130px; right: -110px;
-width: 270px; height: 270px;
-border-radius: 50%;
-background: var(--accent);
-opacity: 0.14;
-filter: blur(35px); }
-.score-box > * { position: relative;
-z-index: 1; }
-.score-box .lead { margin-bottom: 0; }
-.score { margin: 12px 0 24px;
-color: var(--text);
-font-family: "Space Grotesk", sans-serif;
-font-size: clamp( 54px, 6vw, 86px );
-font-weight: 800;
-line-height: 1;
-letter-spacing: -4px; }
-/* ========================================================= 15. SECTIONS ========================================================= */
-.section { position: relative;
-padding: 110px 0;
-background: var(--bg); }
-.section.dark { background: var(--bg-secondary); }
-.section-title { margin-bottom: 40px;
-color: var(--text);
-font-size: clamp( 38px, 5vw, 64px );
-font-weight: 800;
-line-height: 1;
-letter-spacing: -3px;
-text-transform: uppercase; }
-/* ========================================================= 16. SPORTS GRID ========================================================= */
-.sports-grid { display: grid;
-grid-template-columns: repeat( 4, minmax(0, 1fr) );
-gap: 18px; }
-/* ========================================================= 17. SPORT CARD ========================================================= */
-.sport-card { position: relative;
-isolation: isolate;
-overflow: hidden;
-min-height: 320px;
-display: flex;
-align-items: flex-end;
-padding: 24px;
-border: 1px solid rgba(255, 255, 255, 0.11);
-border-radius: 20px;
-background-color: #181818;
-background-position: center center;
-background-size: cover;
-background-repeat: no-repeat;
-cursor: pointer;
-transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease; }
-.sport-card { transform: translateY(-7px);
-border-color: rgba(215, 255, 0, 0.5);
-box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5); }
-/* Image overlay */
-.sport-card::before { content: "";
-position: absolute;
-inset: 0;
-z-index: -1;
-background: linear-gradient( 180deg, rgba(0, 0, 0, 0.02) 15%, rgba(0, 0, 0, 0.20) 45%, rgba(0, 0, 0, 0.92) 100% ); }
-.sport-card-content { position: relative;
-z-index: 2;
-width: 100%; }
-.sport-icon { width: 44px; height: 44px;
-display: grid;
-place-items: center;
-margin-bottom: 16px;
-border-radius: 50%;
-background: rgba(0, 0, 0, 0.48);
-font-size: 20px;
-backdrop-filter: blur(8px); }
-.sport-card h3 { margin-bottom: 7px;
-color: #ffffff;
-font-size: 26px;
-font-weight: 700;
-line-height: 1.05;
-letter-spacing: -1px;
-text-shadow: 0 4px 18px rgba(0, 0, 0, 0.8); }
-.sport-card p { margin: 0;
-color: var(--accent);
-font-size: 13px;
-font-weight: 700; }
-/* ========================================================= 18. PAGE CONTENT ========================================================= */
-#sports, #coaches, #ranking, #match, #profile { padding-top: 80px; padding-bottom: 110px; }
-/* ========================================================= 19. FILTERS ========================================================= */
-.filters { display: grid;
-grid-template-columns: 2fr 1fr 1fr;
-gap: 12px;
-margin-bottom: 32px; }
-.filters input, .filters select { width: 100%;
-min-height: 52px;
-padding: 0 16px;
-border: 1px solid var(--border);
-border-radius: 12px;
-outline: none;
-background: var(--bg-card);
-color: var(--text);
-transition: border-color 0.2s ease, background 0.2s ease; }
-.filters input::placeholder { color: var(--text-muted); }
-.filters input, .filters select { border-color: var(--accent);
-background: #191919; }
-/* ========================================================= 20. CATEGORY BANNER ========================================================= */
-.category-banner { position: relative;
-overflow: hidden;
-min-height: 480px;
-margin-bottom: 40px;
-border: 1px solid rgba(255, 255, 255, 0.12);
-border-radius: 24px;
-background-color: #151515;
-background-position: center center;
-background-size: cover;
-background-repeat: no-repeat;
-box-shadow: var(--shadow); }
-.category-banner-overlay { min-height: 480px;
-display: flex;
-flex-direction: column;
-justify-content: flex-end;
-align-items: flex-start;
-padding: 50px;
-background: linear-gradient( 90deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.52) 48%, rgba(0, 0, 0, 0.08) 100% ); }
-.category-banner-title { max-width: 900px;
-margin-bottom: 16px;
-color: var(--text);
-font-size: clamp( 48px, 7vw, 88px );
-font-weight: 800;
-line-height: 0.95;
-letter-spacing: -4px;
-text-transform: uppercase; }
-.category-banner-stats { display: flex;
-flex-wrap: wrap;
-gap: 10px;
-margin-bottom: 24px; }
-.category-banner-stat { padding: 9px 13px;
-border: 1px solid rgba(255, 255, 255, 0.16);
-border-radius: 999px;
-background: rgba(0, 0, 0, 0.38);
-color: var(--text);
-font-size: 13px;
-font-weight: 600;
-backdrop-filter: blur(8px); }
-.category-banner-graphic { display: none; }
-/* ========================================================= 21. COACH GRID ========================================================= */
-.coach-grid { display: grid;
-grid-template-columns: repeat( 3, minmax(0, 1fr) );
-gap: 20px; }
-/* ========================================================= 22. COACH CARD ========================================================= */
-.coach-card { position: relative;
-overflow: hidden;
-min-width: 0;
-border: 1px solid rgba(255, 255, 255, 0.10);
-border-radius: 20px;
-background: var(--bg-card);
-cursor: pointer;
-transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease; }
-.coach-card { transform: translateY(-7px);
-border-color: rgba(215, 255, 0, 0.4);
-box-shadow: 0 25px 70px rgba(0, 0, 0, 0.45); }
-/* ========================================================= 23. COACH IMAGE ========================================================= */
-.coach-image { position: relative;
-width: 100%;
-aspect-ratio: 4 / 5;
-overflow: hidden;
-background: #202020; }
-.coach-image img { width: 100%; height: 100%;
-object-fit: cover;
-object-position: center top;
-transition: transform 0.5s ease; }
-.coach-card .coach-image img { transform: scale(1.05); }
-.coach-image::after { content: "";
-position: absolute;
-inset: 0;
-pointer-events: none;
-background: linear-gradient( 180deg, transparent 60%, rgba(0, 0, 0, 0.30) ); }
-/* ========================================================= 24. COACH CONTENT ========================================================= */
-.coach-content { position: relative;
-padding: 22px; }
-.coach-score { position: absolute;
-top: -22px; right: 18px;
-width: 46px; height: 46px;
-display: grid;
-place-items: center;
-border-radius: 50%;
-background: var(--accent);
-color: #080808;
-font-size: 13px;
-font-weight: 800;
-box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4); }
-.coach-content h3 { margin-bottom: 7px;
-color: var(--text);
-font-size: 24px;
-line-height: 1.15; }
-.coach-sport { margin-bottom: 16px;
-color: var(--text-secondary);
-font-size: 14px; }
-/* ========================================================= 25. TAGS ========================================================= */
-.tags { display: flex;
-flex-wrap: wrap;
-gap: 7px;
-margin-bottom: 18px; }
-.tag { display: inline-flex;
-align-items: center;
-min-height: 28px;
-padding: 5px 10px;
-border-radius: 999px;
-background: rgba(255, 255, 255, 0.07);
-color: var(--text-secondary);
-font-size: 11px;
-font-weight: 600; }
-/* ========================================================= 26. CARD FOOTER ========================================================= */
-.card-footer { display: flex;
-align-items: center;
-justify-content: space-between;
-gap: 12px;
-padding-top: 16px;
-border-top: 1px solid var(--border-soft);
-color: var(--text-secondary);
-font-size: 13px;
-font-weight: 600; }
-.card-footer span { color: var(--accent);
-text-align: right; }
-/* ========================================================= 27. STATUS MESSAGES ========================================================= */
-.empty, .error, .success { padding: 22px;
-border-radius: 12px;
-background: rgba(255, 255, 255, 0.04); }
-.empty { color: var(--text-secondary); }
-.error { border: 1px solid rgba(255, 98, 98, 0.25);
-color: var(--danger); }
-.success { border: 1px solid rgba(94, 232, 137, 0.25);
-color: var(--success); }
-/* ========================================================= 28. RANKING ========================================================= */
-#rankingList { display: grid;
-gap: 12px; }
-.ranking-item { display: grid;
-grid-template-columns: 70px minmax(0, 1fr) auto;
-align-items: center;
-gap: 20px;
-padding: 22px;
-border: 1px solid var(--border-soft);
-border-radius: var(--radius-small);
-background: var(--bg-card);
-transition: transform 0.2s ease, border-color 0.2s ease; }
-.ranking-item { transform: translateX(5px);
-border-color: rgba(215, 255, 0, 0.30); }
-.ranking-position { color: var(--accent);
-font-family: "Space Grotesk", sans-serif;
-font-size: 36px;
-font-weight: 800; }
-.ranking-item strong { font-size: 18px; }
-.ranking-item p { margin: 4px 0 0;
-color: var(--text-secondary);
-font-size: 14px; }
-/* ========================================================= 29. MATCH ========================================================= */
-.match-box { max-width: 920px;
-margin-top: 35px;
-padding: 32px;
-border: 1px solid var(--border);
-border-radius: var(--radius);
-background: var(--bg-card);
-box-shadow: var(--shadow); }
-.match-box label, .form label { display: grid;
-gap: 9px;
-margin-bottom: 18px;
-color: var(--text-secondary);
-font-size: 13px;
-font-weight: 600; }
-.match-box select, .form input, .form select, .form textarea { width: 100%;
-min-height: 50px;
-padding: 12px 15px;
-border: 1px solid var(--border);
-border-radius: 10px;
-outline: none;
-background: #0d0d0d;
-color: var(--text);
-transition: border-color 0.2s ease, background 0.2s ease; }
-.match-box select, .form input, .form select, .form textarea { border-color: var(--accent);
-background: #141414; }
-.form textarea { min-height: 130px;
-resize: vertical; }
-#matchResults { display: grid;
-grid-template-columns: repeat( 2, minmax(0, 1fr) );
-gap: 18px;
-margin-top: 32px; }
-/* ========================================================= 30. PROFILE ========================================================= */
-.coach-profile { display: grid;
-grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.2fr);
-gap: 50px;
-align-items: start; }
-.coach-profile-image { position: sticky;
-top: 110px;
-overflow: hidden;
-border: 1px solid var(--border);
-border-radius: var(--radius); }
-.coach-profile-image img { width: 100%;
-min-height: 560px;
-object-fit: cover;
-object-position: center top; }
-.coach-profile-info { padding: 25px 0; }
-.coach-profile-info h1 { margin-bottom: 18px;
-font-size: clamp( 48px, 7vw, 85px );
-font-weight: 800;
-line-height: 0.9;
-letter-spacing: -4px; }
-.coach-profile-info p { margin-bottom: 15px;
-color: var(--text-secondary);
-font-size: 16px;
-line-height: 1.7; }
-/* ========================================================= 31. MODAL ========================================================= */
-.modal { position: fixed;
-inset: 0;
-z-index: 2000;
-display: none;
-align-items: center;
-justify-content: center;
-padding: 20px;
-background: rgba(0, 0, 0, 0.78);
-backdrop-filter: blur(10px);
--webkit-backdrop-filter: blur(10px); }
-.modal.show { display: flex; }
-.modal-content { position: relative;
-width: min(100%, 560px);
-max-height: 90vh;
-overflow-y: auto;
-padding: 38px;
-border: 1px solid var(--border);
-border-radius: var(--radius);
-background: #111111;
-box-shadow: 0 30px 100px rgba(0, 0, 0, 0.7); }
-.modal-content h2 { margin-bottom: 22px;
-font-size: 34px;
-letter-spacing: -1.5px; }
-.modal-close { position: absolute;
-top: 15px; right: 18px;
-width: 38px; height: 38px;
-display: grid;
-place-items: center;
-padding: 0;
-border: 0;
-border-radius: 50%;
-background: rgba(255, 255, 255, 0.07);
-color: var(--text);
-font-size: 26px;
-line-height: 1;
-transition: transform 0.2s ease, background 0.2s ease; }
-.modal-close { transform: rotate(90deg);
-background: rgba(255, 255, 255, 0.14); }
-/* ========================================================= 32. FORMS ========================================================= */
-.form { width: 100%; }
-.form .actions { margin-top: 20px; }
-.forgot-password { padding: 0;
-border: 0;
-background: transparent;
-color: var(--accent);
-font-size: 13px;
-font-weight: 600; }
-#authMessage, #signupMessage, #coachMessage, #resetMessage { margin-top: 18px;
-font-size: 14px; }
-/* ========================================================= 33. SIGNUP ========================================================= */
-.signup-section { padding: 100px 0;
-border-top: 1px solid var(--border-soft);
-background: var(--bg-secondary); }
-.signup-form { width: min(100%, 560px);
-margin: 0 auto;
-padding: 36px;
-border: 1px solid var(--border);
-border-radius: var(--radius);
-background: var(--bg-card); }
-.signup-form h2 { margin-bottom: 30px;
-font-size: 32px;
-letter-spacing: -1px; }
-/* ========================================================= 34. FOOTER ========================================================= */
-footer { padding: 35px 24px;
-border-top: 1px solid var(--border-soft);
-background: #050505;
-color: var(--text-muted);
-text-align: center;
-font-size: 13px; }
-/* ========================================================= 35. SELECT OPTIONS ========================================================= */
-option { background: #111111;
-color: #ffffff; }
-/* ========================================================= 36. ACCESSIBILITY ========================================================= */
-button, input, select, textarea, a { outline: 2px solid var(--accent);
-outline-offset: 3px; }
-/* ========================================================= 37. TABLET ========================================================= */
-@media (max-width: 1050px) {
-.sports-grid { grid-template-columns: repeat( 3, minmax(0, 1fr) ); }
-.coach-grid { grid-template-columns: repeat( 2, minmax(0, 1fr) ); }
-.hero { grid-template-columns: 1fr;
-gap: 40px;
+   APLEX — FIND YOUR LEVEL.
+   styles.css
+   Professional responsive interface
+   ========================================================= */
 
-padding-top: 60px;
-padding-bottom: 60px;
+
+/* =========================================================
+   1. ROOT
+   ========================================================= */
+
+:root {
+  --bg: #080808;
+  --bg-secondary: #0d0d0d;
+  --bg-card: #141414;
+  --bg-card-hover: #1a1a1a;
+
+  --text: #ffffff;
+  --text-secondary: #b5b5b5;
+  --text-muted: #747474;
+
+  --accent: #d7ff00;
+  --accent-hover: #c5e900;
+  --accent-text: #080808;
+
+  --border: rgba(255, 255, 255, 0.12);
+  --border-soft: rgba(255, 255, 255, 0.07);
+
+  --success: #5ee889;
+  --danger: #ff6262;
+
+  --radius-small: 12px;
+  --radius: 20px;
+  --radius-large: 28px;
+
+  --shadow-small:
+    0 12px 30px rgba(0, 0, 0, 0.25);
+
+  --shadow:
+    0 25px 70px rgba(0, 0, 0, 0.45);
+
+  --container: 1240px;
 }
-.score-box { min-height: 250px;
-max-width: 600px;
+
+
+/* =========================================================
+   2. RESET
+   ========================================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
-.nav { gap: 0; }
-.nav button { padding: 9px;
-font-size: 12px;
+
+
+html {
+  scroll-behavior: smooth;
 }
+
+
+body {
+  margin: 0;
+  min-width: 320px;
+
+  overflow-x: hidden;
+
+  background: var(--bg);
+
+  color: var(--text);
+
+  font-family:
+    Inter,
+    Arial,
+    sans-serif;
+
+  line-height: 1.5;
 }
-/* ========================================================= 38. MOBILE ========================================================= */
-@media (max-width: 760px) {
-.container { width: min( calc(100% - 32px), var(--container) ); }
-.header { min-height: 68px;
-gap: 12px;
 
-padding: 0 16px;
+
+body,
+button,
+input,
+select,
+textarea {
+  font-family:
+    Inter,
+    Arial,
+    sans-serif;
 }
-.logo { font-size: 24px; }
-.hamburger { display: block;
-margin-left: auto;
 
-order: 3;
+
+body.modal-open {
+  overflow: hidden;
 }
-.header-actions { order: 2;
-gap: 7px;
+
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
-.header-actions .btn, .header-actions .login-btn { min-height: 38px;
-padding: 8px 11px;
 
-font-size: 11px;
+
+button {
+  cursor: pointer;
 }
-.nav { position: fixed;
-top: 68px;
-left: 0;
-right: 0;
 
-z-index: 999;
 
-display: none;
+img {
+  display: block;
 
-flex-direction: column;
-
-align-items: stretch;
-
-padding: 12px;
-
-background:
-  rgba(10, 10, 10, 0.98);
-
-border-bottom:
-  1px solid var(--border);
-
-backdrop-filter: blur(18px);
+  max-width: 100%;
 }
-.nav.mobile-open { display: flex; }
-.nav button { width: 100%;
-padding: 15px;
 
-text-align: left;
 
-font-size: 15px;
+a {
+  color: inherit;
+
+  text-decoration: none;
 }
-#home { min-height: calc(100vh - 68px); }
-.hero-slideshow { min-height: 100%; }
-.hero-slideshow::after { background: linear-gradient( 180deg, rgba(5, 5, 5, 0.30) 0%, rgba(5, 5, 5, 0.58) 42%, rgba(5, 5, 5, 0.93) 100% ); }
-.hero { min-height: 700px;
-display: flex;
 
-flex-direction: column;
 
-align-items: flex-start;
-
-justify-content: center;
-
-gap: 30px;
-
-padding-top: 60px;
-padding-bottom: 60px;
+h1,
+h2,
+h3,
+h4,
+p {
+  margin-top: 0;
 }
-.hero h1, .page-title { font-size: clamp( 52px, 16vw, 78px );
-line-height: 0.9;
 
-letter-spacing: -3px;
-}
-.lead { font-size: 15px; }
-.score-box { width: 100%;
-min-height: 220px;
 
-padding: 26px;
+h1,
+h2,
+h3,
+h4 {
+  font-family:
+    "Space Grotesk",
+    Inter,
+    Arial,
+    sans-serif;
 }
-.score { font-size: 58px;
-letter-spacing: -3px;
-}
-.section { padding: 75px 0; }
-#sports, #coaches, #ranking, #match, #profile { padding-top: 55px; padding-bottom: 75px; }
-.section-title { font-size: 40px;
-letter-spacing: -2px;
-}
-.sports-grid { grid-template-columns: 1fr;
-gap: 14px;
-}
-.sport-card { min-height: 300px; }
-.coach-grid { grid-template-columns: 1fr; }
-.coach-image { aspect-ratio: 4 / 5; }
-.filters { grid-template-columns: 1fr; }
-.category-banner { min-height: 440px; }
-.category-banner-overlay { min-height: 440px;
-padding: 28px;
 
-justify-content: flex-end;
 
-background:
-  linear-gradient(
-    180deg,
-    rgba(0, 0, 0, 0.10) 0%,
-    rgba(0, 0, 0, 0.90) 100%
+/* =========================================================
+   3. GLOBAL CONTAINER
+   ========================================================= */
+
+.container {
+  width: min(
+    calc(100% - 48px),
+    var(--container)
   );
-}
-.category-banner-title { font-size: 52px;
-letter-spacing: -2px;
-}
-.ranking-item { grid-template-columns: 48px minmax(0, 1fr);
-gap: 12px;
-}
-.ranking-item > { grid-column: 2; }
-.ranking-position { font-size: 28px; }
-.match-box { padding: 22px; }
-#matchResults { grid-template-columns: 1fr; }
-.coach-profile { grid-template-columns: 1fr;
-gap: 28px;
-}
-.coach-profile-image { position: relative;
-top: auto;
-}
-.coach-profile-image img { min-height: 420px;
-max-height: 560px;
-}
-.coach-profile-info { padding: 0; }
-.modal { align-items: flex-end;
-padding: 0;
-}
-.modal-content { width: 100%;
-max-height: 92vh;
 
-padding: 32px 20px;
+  margin-inline: auto;
+}
 
-border-bottom: 0;
 
-border-radius:
-  22px 22px 0 0;
+/* =========================================================
+   4. HEADER
+   ========================================================= */
+
+.header {
+  position: sticky;
+
+  top: 0;
+
+  z-index: 1000;
+
+  width: 100%;
+
+  min-height: 76px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 28px;
+
+  padding: 0 28px;
+
+  background:
+    rgba(8, 8, 8, 0.88);
+
+  border-bottom:
+    1px solid var(--border-soft);
+
+  backdrop-filter:
+    blur(18px);
+
+  -webkit-backdrop-filter:
+    blur(18px);
 }
-.modal-content h2 { padding-right: 40px;
-font-size: 28px;
+
+
+/* =========================================================
+   5. LOGO
+   ========================================================= */
+
+.logo {
+  flex-shrink: 0;
+
+  margin: 0;
+  padding: 0;
+
+  border: 0;
+
+  background: transparent;
+
+  color: var(--text);
+
+  font-family:
+    "Space Grotesk",
+    Inter,
+    sans-serif;
+
+  font-size: 28px;
+
+  font-weight: 800;
+
+  letter-spacing: -1.5px;
 }
-.signup-section { padding: 70px 0; }
-.signup-form { padding: 25px 20px; }
-.actions { align-items: stretch; }
-.actions .btn { flex: 1;
-min-width: 140px;
+
+
+.logo span {
+  color: var(--accent);
 }
+
+
+/* =========================================================
+   6. NAVIGATION
+   ========================================================= */
+
+.nav {
+  flex: 1;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 4px;
 }
-/* ========================================================= 39. SMALL MOBILE ========================================================= */
+
+
+.nav button {
+  padding: 10px 14px;
+
+  border: 0;
+  border-radius: 10px;
+
+  background: transparent;
+
+  color: var(--text-secondary);
+
+  font-size: 14px;
+
+  font-weight: 600;
+
+  transition:
+    color 0.2s ease,
+    background 0.2s ease;
+}
+
+
+.nav button:hover,
+.nav button.active {
+  color: var(--text);
+
+  background:
+    rgba(255, 255, 255, 0.07);
+}
+
+
+/* =========================================================
+   7. HEADER ACTIONS
+   ========================================================= */
+
+.header-actions {
+  flex-shrink: 0;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+}
+
+
+/* =========================================================
+   8. MOBILE MENU BUTTON
+   ========================================================= */
+
+.hamburger {
+  display: none;
+
+  padding: 8px;
+
+  border: 0;
+
+  background: transparent;
+
+  color: var(--text);
+
+  font-size: 26px;
+
+  line-height: 1;
+}
+
+
+/* =========================================================
+   9. BUTTONS
+   ========================================================= */
+
+.btn {
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 8px;
+
+  min-height: 46px;
+
+  padding: 11px 20px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius: 999px;
+
+  background: transparent;
+
+  color: var(--text);
+
+  font-size: 13px;
+
+  font-weight: 700;
+
+  letter-spacing: 0.2px;
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+
+.btn:hover {
+  transform: translateY(-2px);
+
+  background:
+    rgba(255, 255, 255, 0.08);
+
+  border-color:
+    rgba(255, 255, 255, 0.25);
+}
+
+
+.btn:active {
+  transform: translateY(0);
+}
+
+
+.btn-primary {
+  border-color: var(--accent);
+
+  background: var(--accent);
+
+  color: var(--accent-text);
+}
+
+
+.btn-primary:hover {
+  border-color: var(--accent-hover);
+
+  background: var(--accent-hover);
+}
+
+
+.login-btn {
+  min-height: 42px;
+
+  padding: 10px 18px;
+
+  border: 0;
+
+  border-radius: 999px;
+
+  background: #ffffff;
+
+  color: #080808;
+
+  font-size: 13px;
+
+  font-weight: 800;
+
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+
+
+.login-btn:hover {
+  transform: translateY(-2px);
+
+  opacity: 0.9;
+}
+
+
+/* =========================================================
+   10. PAGE SYSTEM
+   ========================================================= */
+
+.page {
+  display: none;
+
+  min-height:
+    calc(100vh - 76px);
+}
+
+
+.page.active {
+  display: block;
+}
+
+
+/* =========================================================
+   11. HERO / HOME
+   ========================================================= */
+
+#home {
+  position: relative;
+
+  overflow: hidden;
+
+  min-height:
+    calc(100vh - 76px);
+}
+
+
+/* Background image */
+
+.hero-slideshow {
+  position: absolute;
+
+  inset: 0;
+
+  z-index: 0;
+
+  width: 100%;
+  height: 100%;
+
+  min-height: 760px;
+
+  background-color: #111111;
+
+  background-position: center center;
+
+  background-size: cover;
+
+  background-repeat: no-repeat;
+
+  transition:
+    background-image 0.8s ease,
+    transform 8s ease;
+
+  transform: scale(1.01);
+}
+
+
+/* Professional contrast overlay */
+
+.hero-slideshow::after {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(5, 5, 5, 0.82) 0%,
+      rgba(5, 5, 5, 0.63) 34%,
+      rgba(5, 5, 5, 0.34) 58%,
+      rgba(5, 5, 5, 0.12) 100%
+    );
+}
+
+
+/* Main hero content */
+
+.hero {
+  position: relative;
+
+  z-index: 1;
+
+  min-height: 760px;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1.15fr)
+    minmax(300px, 0.85fr);
+
+  align-items: center;
+
+  gap: 60px;
+
+  padding-top: 70px;
+  padding-bottom: 70px;
+}
+
+
+/* =========================================================
+   12. HERO TEXT
+   ========================================================= */
+
+.eyebrow {
+  margin-bottom: 16px;
+
+  color: var(--accent);
+
+  font-size: 12px;
+
+  font-weight: 800;
+
+  letter-spacing: 2px;
+
+  text-transform: uppercase;
+}
+
+
+.hero h1,
+.page-title {
+  max-width: 900px;
+
+  margin-bottom: 28px;
+
+  color: var(--text);
+
+  font-size:
+    clamp(
+      58px,
+      8vw,
+      118px
+    );
+
+  font-weight: 800;
+
+  line-height: 0.9;
+
+  letter-spacing: -5px;
+
+  text-transform: uppercase;
+
+  text-shadow:
+    0 8px 35px
+    rgba(0, 0, 0, 0.35);
+}
+
+
+.hero h1 em,
+.page-title em {
+  color: var(--accent);
+
+  font-style: normal;
+}
+
+
+.lead {
+  max-width: 640px;
+
+  margin-bottom: 30px;
+
+  color: #e0e0e0;
+
+  font-size: 17px;
+
+  line-height: 1.7;
+
+  text-shadow:
+    0 3px 15px
+    rgba(0, 0, 0, 0.35);
+}
+
+
+/* =========================================================
+   13. HERO ACTIONS
+   ========================================================= */
+
+.actions {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  align-items: center;
+
+  gap: 12px;
+}
+
+
+/* =========================================================
+   14. HERO LEVEL CARD
+   ========================================================= */
+
+.score-box {
+  position: relative;
+
+  overflow: hidden;
+
+  min-height: 300px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: center;
+
+  padding: 36px;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.16);
+
+  border-radius: var(--radius-large);
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(20, 20, 20, 0.80),
+      rgba(10, 10, 10, 0.62)
+    );
+
+  box-shadow: var(--shadow);
+
+  backdrop-filter: blur(18px);
+
+  -webkit-backdrop-filter: blur(18px);
+}
+
+
+.score-box::before {
+  content: "";
+
+  position: absolute;
+
+  top: -130px;
+  right: -110px;
+
+  width: 270px;
+  height: 270px;
+
+  border-radius: 50%;
+
+  background: var(--accent);
+
+  opacity: 0.14;
+
+  filter: blur(35px);
+}
+
+
+.score-box > * {
+  position: relative;
+
+  z-index: 1;
+}
+
+
+.score-box .lead {
+  margin-bottom: 0;
+}
+
+
+.score {
+  margin: 12px 0 24px;
+
+  color: var(--text);
+
+  font-family:
+    "Space Grotesk",
+    sans-serif;
+
+  font-size:
+    clamp(
+      54px,
+      6vw,
+      86px
+    );
+
+  font-weight: 800;
+
+  line-height: 1;
+
+  letter-spacing: -4px;
+}
+
+
+/* =========================================================
+   15. SECTIONS
+   ========================================================= */
+
+.section {
+  position: relative;
+
+  padding: 110px 0;
+
+  background: var(--bg);
+}
+
+
+.section.dark {
+  background: var(--bg-secondary);
+}
+
+
+.section-title {
+  margin-bottom: 40px;
+
+  color: var(--text);
+
+  font-size:
+    clamp(
+      38px,
+      5vw,
+      64px
+    );
+
+  font-weight: 800;
+
+  line-height: 1;
+
+  letter-spacing: -3px;
+
+  text-transform: uppercase;
+}
+
+
+/* =========================================================
+   16. SPORTS GRID
+   ========================================================= */
+
+.sports-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      4,
+      minmax(0, 1fr)
+    );
+
+  gap: 18px;
+}
+
+
+/* =========================================================
+   17. SPORT CARD
+   ========================================================= */
+
+.sport-card {
+  position: relative;
+
+  isolation: isolate;
+
+  overflow: hidden;
+
+  min-height: 320px;
+
+  display: flex;
+
+  align-items: flex-end;
+
+  padding: 24px;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.11);
+
+  border-radius: 20px;
+
+  background-color: #181818;
+
+  background-position: center center;
+
+  background-size: cover;
+
+  background-repeat: no-repeat;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+
+.sport-card:hover {
+  transform: translateY(-7px);
+
+  border-color:
+    rgba(215, 255, 0, 0.5);
+
+  box-shadow:
+    0 25px 60px
+    rgba(0, 0, 0, 0.5);
+}
+
+
+/* Image overlay */
+
+.sport-card::before {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  z-index: -1;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.02) 15%,
+      rgba(0, 0, 0, 0.20) 45%,
+      rgba(0, 0, 0, 0.92) 100%
+    );
+}
+
+
+.sport-card-content {
+  position: relative;
+
+  z-index: 2;
+
+  width: 100%;
+}
+
+
+.sport-icon {
+  width: 44px;
+  height: 44px;
+
+  display: grid;
+
+  place-items: center;
+
+  margin-bottom: 16px;
+
+  border-radius: 50%;
+
+  background:
+    rgba(0, 0, 0, 0.48);
+
+  font-size: 20px;
+
+  backdrop-filter: blur(8px);
+}
+
+
+.sport-card h3 {
+  margin-bottom: 7px;
+
+  color: #ffffff;
+
+  font-size: 26px;
+
+  font-weight: 700;
+
+  line-height: 1.05;
+
+  letter-spacing: -1px;
+
+  text-shadow:
+    0 4px 18px
+    rgba(0, 0, 0, 0.8);
+}
+
+
+.sport-card p {
+  margin: 0;
+
+  color: var(--accent);
+
+  font-size: 13px;
+
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   18. PAGE CONTENT
+   ========================================================= */
+
+#sports,
+#coaches,
+#ranking,
+#match,
+#profile {
+  padding-top: 80px;
+  padding-bottom: 110px;
+}
+
+
+/* =========================================================
+   19. FILTERS
+   ========================================================= */
+
+.filters {
+  display: grid;
+
+  grid-template-columns:
+    2fr 1fr 1fr;
+
+  gap: 12px;
+
+  margin-bottom: 32px;
+}
+
+
+.filters input,
+.filters select {
+  width: 100%;
+
+  min-height: 52px;
+
+  padding: 0 16px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius: 12px;
+
+  outline: none;
+
+  background: var(--bg-card);
+
+  color: var(--text);
+
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+
+.filters input::placeholder {
+  color: var(--text-muted);
+}
+
+
+.filters input:focus,
+.filters select:focus {
+  border-color: var(--accent);
+
+  background: #191919;
+}
+
+
+/* =========================================================
+   20. CATEGORY BANNER
+   ========================================================= */
+
+.category-banner {
+  position: relative;
+
+  overflow: hidden;
+
+  min-height: 480px;
+
+  margin-bottom: 40px;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.12);
+
+  border-radius: 24px;
+
+  background-color: #151515;
+
+  background-position: center center;
+
+  background-size: cover;
+
+  background-repeat: no-repeat;
+
+  box-shadow: var(--shadow);
+}
+
+
+.category-banner-overlay {
+  min-height: 480px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: flex-end;
+
+  align-items: flex-start;
+
+  padding: 50px;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.85) 0%,
+      rgba(0, 0, 0, 0.52) 48%,
+      rgba(0, 0, 0, 0.08) 100%
+    );
+}
+
+
+.category-banner-title {
+  max-width: 900px;
+
+  margin-bottom: 16px;
+
+  color: var(--text);
+
+  font-size:
+    clamp(
+      48px,
+      7vw,
+      88px
+    );
+
+  font-weight: 800;
+
+  line-height: 0.95;
+
+  letter-spacing: -4px;
+
+  text-transform: uppercase;
+}
+
+
+.category-banner-stats {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 10px;
+
+  margin-bottom: 24px;
+}
+
+
+.category-banner-stat {
+  padding: 9px 13px;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.16);
+
+  border-radius: 999px;
+
+  background:
+    rgba(0, 0, 0, 0.38);
+
+  color: var(--text);
+
+  font-size: 13px;
+
+  font-weight: 600;
+
+  backdrop-filter: blur(8px);
+}
+
+
+.category-banner-graphic {
+  display: none;
+}
+
+
+/* =========================================================
+   21. COACH GRID
+   ========================================================= */
+
+.coach-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(0, 1fr)
+    );
+
+  gap: 20px;
+}
+
+
+/* =========================================================
+   22. COACH CARD
+   ========================================================= */
+
+.coach-card {
+  position: relative;
+
+  overflow: hidden;
+
+  min-width: 0;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.10);
+
+  border-radius: 20px;
+
+  background: var(--bg-card);
+
+  cursor: pointer;
+
+  transition:
+    transform 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+
+.coach-card:hover {
+  transform: translateY(-7px);
+
+  border-color:
+    rgba(215, 255, 0, 0.4);
+
+  box-shadow:
+    0 25px 70px
+    rgba(0, 0, 0, 0.45);
+}
+
+
+/* =========================================================
+   23. COACH IMAGE
+   ========================================================= */
+
+.coach-image {
+  position: relative;
+
+  width: 100%;
+
+  aspect-ratio: 4 / 5;
+
+  overflow: hidden;
+
+  background: #202020;
+}
+
+
+.coach-image img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+
+  object-position: center top;
+
+  transition:
+    transform 0.5s ease;
+}
+
+
+.coach-card:hover .coach-image img {
+  transform: scale(1.05);
+}
+
+
+.coach-image::after {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      180deg,
+      transparent 60%,
+      rgba(0, 0, 0, 0.30)
+    );
+}
+
+
+/* =========================================================
+   24. COACH CONTENT
+   ========================================================= */
+
+.coach-content {
+  position: relative;
+
+  padding: 22px;
+}
+
+
+.coach-score {
+  position: absolute;
+
+  top: -22px;
+  right: 18px;
+
+  width: 46px;
+  height: 46px;
+
+  display: grid;
+
+  place-items: center;
+
+  border-radius: 50%;
+
+  background: var(--accent);
+
+  color: #080808;
+
+  font-size: 13px;
+
+  font-weight: 800;
+
+  box-shadow:
+    0 10px 25px
+    rgba(0, 0, 0, 0.4);
+}
+
+
+.coach-content h3 {
+  margin-bottom: 7px;
+
+  color: var(--text);
+
+  font-size: 24px;
+
+  line-height: 1.15;
+}
+
+
+.coach-sport {
+  margin-bottom: 16px;
+
+  color: var(--text-secondary);
+
+  font-size: 14px;
+}
+
+
+/* =========================================================
+   25. TAGS
+   ========================================================= */
+
+.tags {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 7px;
+
+  margin-bottom: 18px;
+}
+
+
+.tag {
+  display: inline-flex;
+
+  align-items: center;
+
+  min-height: 28px;
+
+  padding: 5px 10px;
+
+  border-radius: 999px;
+
+  background:
+    rgba(255, 255, 255, 0.07);
+
+  color: var(--text-secondary);
+
+  font-size: 11px;
+
+  font-weight: 600;
+}
+
+
+/* =========================================================
+   26. CARD FOOTER
+   ========================================================= */
+
+.card-footer {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 12px;
+
+  padding-top: 16px;
+
+  border-top:
+    1px solid var(--border-soft);
+
+  color: var(--text-secondary);
+
+  font-size: 13px;
+
+  font-weight: 600;
+}
+
+
+.card-footer span:last-child {
+  color: var(--accent);
+
+  text-align: right;
+}
+
+
+/* =========================================================
+   27. STATUS MESSAGES
+   ========================================================= */
+
+.empty,
+.error,
+.success {
+  padding: 22px;
+
+  border-radius: 12px;
+
+  background:
+    rgba(255, 255, 255, 0.04);
+}
+
+
+.empty {
+  color: var(--text-secondary);
+}
+
+
+.error {
+  border:
+    1px solid
+    rgba(255, 98, 98, 0.25);
+
+  color: var(--danger);
+}
+
+
+.success {
+  border:
+    1px solid
+    rgba(94, 232, 137, 0.25);
+
+  color: var(--success);
+}
+
+
+/* =========================================================
+   28. RANKING
+   ========================================================= */
+
+#rankingList {
+  display: grid;
+
+  gap: 12px;
+}
+
+
+.ranking-item {
+  display: grid;
+
+  grid-template-columns:
+    70px
+    minmax(0, 1fr)
+    auto;
+
+  align-items: center;
+
+  gap: 20px;
+
+  padding: 22px;
+
+  border:
+    1px solid var(--border-soft);
+
+  border-radius: var(--radius-small);
+
+  background: var(--bg-card);
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease;
+}
+
+
+.ranking-item:hover {
+  transform: translateX(5px);
+
+  border-color:
+    rgba(215, 255, 0, 0.30);
+}
+
+
+.ranking-position {
+  color: var(--accent);
+
+  font-family:
+    "Space Grotesk",
+    sans-serif;
+
+  font-size: 36px;
+
+  font-weight: 800;
+}
+
+
+.ranking-item strong {
+  font-size: 18px;
+}
+
+
+.ranking-item p {
+  margin: 4px 0 0;
+
+  color: var(--text-secondary);
+
+  font-size: 14px;
+}
+
+
+/* =========================================================
+   29. MATCH
+   ========================================================= */
+
+.match-box {
+  max-width: 920px;
+
+  margin-top: 35px;
+
+  padding: 32px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius: var(--radius);
+
+  background: var(--bg-card);
+
+  box-shadow: var(--shadow);
+}
+
+
+.match-box label,
+.form label {
+  display: grid;
+
+  gap: 9px;
+
+  margin-bottom: 18px;
+
+  color: var(--text-secondary);
+
+  font-size: 13px;
+
+  font-weight: 600;
+}
+
+
+.match-box select,
+.form input,
+.form select,
+.form textarea {
+  width: 100%;
+
+  min-height: 50px;
+
+  padding: 12px 15px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius: 10px;
+
+  outline: none;
+
+  background: #0d0d0d;
+
+  color: var(--text);
+
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+
+.match-box select:focus,
+.form input:focus,
+.form select:focus,
+.form textarea:focus {
+  border-color: var(--accent);
+
+  background: #141414;
+}
+
+
+.form textarea {
+  min-height: 130px;
+
+  resize: vertical;
+}
+
+
+#matchResults {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(0, 1fr)
+    );
+
+  gap: 18px;
+
+  margin-top: 32px;
+}
+
+
+/* =========================================================
+   30. PROFILE
+   ========================================================= */
+
+.coach-profile {
+  display: grid;
+
+  grid-template-columns:
+    minmax(280px, 0.8fr)
+    minmax(0, 1.2fr);
+
+  gap: 50px;
+
+  align-items: start;
+}
+
+
+.coach-profile-image {
+  position: sticky;
+
+  top: 110px;
+
+  overflow: hidden;
+
+  border:
+    1px solid var(--border);
+
+  border-radius: var(--radius);
+}
+
+
+.coach-profile-image img {
+  width: 100%;
+
+  min-height: 560px;
+
+  object-fit: cover;
+
+  object-position: center top;
+}
+
+
+.coach-profile-info {
+  padding: 25px 0;
+}
+
+
+.coach-profile-info h1 {
+  margin-bottom: 18px;
+
+  font-size:
+    clamp(
+      48px,
+      7vw,
+      85px
+    );
+
+  font-weight: 800;
+
+  line-height: 0.9;
+
+  letter-spacing: -4px;
+}
+
+
+.coach-profile-info p {
+  margin-bottom: 15px;
+
+  color: var(--text-secondary);
+
+  font-size: 16px;
+
+  line-height: 1.7;
+}
+
+
+/* =========================================================
+   31. MODAL
+   ========================================================= */
+
+.modal {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 2000;
+
+  display: none;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding: 20px;
+
+  background:
+    rgba(0, 0, 0, 0.78);
+
+  backdrop-filter: blur(10px);
+
+  -webkit-backdrop-filter: blur(10px);
+}
+
+
+.modal.show {
+  display: flex;
+}
+
+
+.modal-content {
+  position: relative;
+
+  width: min(100%, 560px);
+
+  max-height: 90vh;
+
+  overflow-y: auto;
+
+  padding: 38px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius: var(--radius);
+
+  background: #111111;
+
+  box-shadow:
+    0 30px 100px
+    rgba(0, 0, 0, 0.7);
+}
+
+
+.modal-content h2 {
+  margin-bottom: 22px;
+
+  font-size: 34px;
+
+  letter-spacing: -1.5px;
+}
+
+
+.modal-close {
+  position: absolute;
+
+  top: 15px;
+  right: 18px;
+
+  width: 38px;
+  height: 38px;
+
+  display: grid;
+
+  place-items: center;
+
+  padding: 0;
+
+  border: 0;
+
+  border-radius: 50%;
+
+  background:
+    rgba(255, 255, 255, 0.07);
+
+  color: var(--text);
+
+  font-size: 26px;
+
+  line-height: 1;
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+
+.modal-close:hover {
+  transform: rotate(90deg);
+
+  background:
+    rgba(255, 255, 255, 0.14);
+}
+
+
+/* =========================================================
+   32. FORMS
+   ========================================================= */
+
+.form {
+  width: 100%;
+}
+
+
+.form .actions {
+  margin-top: 20px;
+}
+
+
+.forgot-password {
+  padding: 0;
+
+  border: 0;
+
+  background: transparent;
+
+  color: var(--accent);
+
+  font-size: 13px;
+
+  font-weight: 600;
+}
+
+
+#authMessage,
+#signupMessage,
+#coachMessage,
+#resetMessage {
+  margin-top: 18px;
+
+  font-size: 14px;
+}
+
+
+/* =========================================================
+   33. SIGNUP
+   ========================================================= */
+
+.signup-section {
+  padding: 100px 0;
+
+  border-top:
+    1px solid var(--border-soft);
+
+  background: var(--bg-secondary);
+}
+
+
+.signup-form {
+  width: min(100%, 560px);
+
+  margin: 0 auto;
+
+  padding: 36px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius: var(--radius);
+
+  background: var(--bg-card);
+}
+
+
+.signup-form h2 {
+  margin-bottom: 30px;
+
+  font-size: 32px;
+
+  letter-spacing: -1px;
+}
+
+
+/* =========================================================
+   34. FOOTER
+   ========================================================= */
+
+footer {
+  padding: 35px 24px;
+
+  border-top:
+    1px solid var(--border-soft);
+
+  background: #050505;
+
+  color: var(--text-muted);
+
+  text-align: center;
+
+  font-size: 13px;
+}
+
+
+/* =========================================================
+   35. SELECT OPTIONS
+   ========================================================= */
+
+option {
+  background: #111111;
+
+  color: #ffffff;
+}
+
+
+/* =========================================================
+   36. ACCESSIBILITY
+   ========================================================= */
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible {
+  outline:
+    2px solid var(--accent);
+
+  outline-offset: 3px;
+}
+
+
+/* =========================================================
+   37. TABLET
+   ========================================================= */
+
+@media (max-width: 1050px) {
+
+  .sports-grid {
+    grid-template-columns:
+      repeat(
+        3,
+        minmax(0, 1fr)
+      );
+  }
+
+
+  .coach-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+
+
+  .hero {
+    grid-template-columns: 1fr;
+
+    gap: 40px;
+
+    padding-top: 60px;
+    padding-bottom: 60px;
+  }
+
+
+  .score-box {
+    min-height: 250px;
+
+    max-width: 600px;
+  }
+
+
+  .nav {
+    gap: 0;
+  }
+
+
+  .nav button {
+    padding: 9px;
+
+    font-size: 12px;
+  }
+
+}
+
+
+/* =========================================================
+   38. MOBILE
+   ========================================================= */
+
+@media (max-width: 760px) {
+
+  .container {
+    width: min(
+      calc(100% - 32px),
+      var(--container)
+    );
+  }
+
+
+  .header {
+    min-height: 68px;
+
+    gap: 12px;
+
+    padding: 0 16px;
+  }
+
+
+  .logo {
+    font-size: 24px;
+  }
+
+
+  .hamburger {
+    display: block;
+
+    margin-left: auto;
+
+    order: 3;
+  }
+
+
+  .header-actions {
+    order: 2;
+
+    gap: 7px;
+  }
+
+
+  .header-actions .btn,
+  .header-actions .login-btn {
+    min-height: 38px;
+
+    padding: 8px 11px;
+
+    font-size: 11px;
+  }
+
+
+  .nav {
+    position: fixed;
+
+    top: 68px;
+    left: 0;
+    right: 0;
+
+    z-index: 999;
+
+    display: none;
+
+    flex-direction: column;
+
+    align-items: stretch;
+
+    padding: 12px;
+
+    background:
+      rgba(10, 10, 10, 0.98);
+
+    border-bottom:
+      1px solid var(--border);
+
+    backdrop-filter: blur(18px);
+  }
+
+
+  .nav.mobile-open {
+    display: flex;
+  }
+
+
+  .nav button {
+    width: 100%;
+
+    padding: 15px;
+
+    text-align: left;
+
+    font-size: 15px;
+  }
+
+
+  #home {
+    min-height: calc(100vh - 68px);
+  }
+
+
+  .hero-slideshow {
+    min-height: 100%;
+  }
+
+
+  .hero-slideshow::after {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(5, 5, 5, 0.30) 0%,
+        rgba(5, 5, 5, 0.58) 42%,
+        rgba(5, 5, 5, 0.93) 100%
+      );
+  }
+
+
+  .hero {
+    min-height: 700px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: flex-start;
+
+    justify-content: center;
+
+    gap: 30px;
+
+    padding-top: 60px;
+    padding-bottom: 60px;
+  }
+
+
+  .hero h1,
+  .page-title {
+    font-size:
+      clamp(
+        52px,
+        16vw,
+        78px
+      );
+
+    line-height: 0.9;
+
+    letter-spacing: -3px;
+  }
+
+
+  .lead {
+    font-size: 15px;
+  }
+
+
+  .score-box {
+    width: 100%;
+
+    min-height: 220px;
+
+    padding: 26px;
+  }
+
+
+  .score {
+    font-size: 58px;
+
+    letter-spacing: -3px;
+  }
+
+
+  .section {
+    padding: 75px 0;
+  }
+
+
+  #sports,
+  #coaches,
+  #ranking,
+  #match,
+  #profile {
+    padding-top: 55px;
+    padding-bottom: 75px;
+  }
+
+
+  .section-title {
+    font-size: 40px;
+
+    letter-spacing: -2px;
+  }
+
+
+  .sports-grid {
+    grid-template-columns: 1fr;
+
+    gap: 14px;
+  }
+
+
+  .sport-card {
+    min-height: 300px;
+  }
+
+
+  .coach-grid {
+    grid-template-columns: 1fr;
+  }
+
+
+  .coach-image {
+    aspect-ratio: 4 / 5;
+  }
+
+
+  .filters {
+    grid-template-columns: 1fr;
+  }
+
+
+  .category-banner {
+    min-height: 440px;
+  }
+
+
+  .category-banner-overlay {
+    min-height: 440px;
+
+    padding: 28px;
+
+    justify-content: flex-end;
+
+    background:
+      linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0.10) 0%,
+        rgba(0, 0, 0, 0.90) 100%
+      );
+  }
+
+
+  .category-banner-title {
+    font-size: 52px;
+
+    letter-spacing: -2px;
+  }
+
+
+  .ranking-item {
+    grid-template-columns:
+      48px
+      minmax(0, 1fr);
+
+    gap: 12px;
+  }
+
+
+  .ranking-item > :last-child {
+    grid-column: 2;
+  }
+
+
+  .ranking-position {
+    font-size: 28px;
+  }
+
+
+  .match-box {
+    padding: 22px;
+  }
+
+
+  #matchResults {
+    grid-template-columns: 1fr;
+  }
+
+
+  .coach-profile {
+    grid-template-columns: 1fr;
+
+    gap: 28px;
+  }
+
+
+  .coach-profile-image {
+    position: relative;
+
+    top: auto;
+  }
+
+
+  .coach-profile-image img {
+    min-height: 420px;
+
+    max-height: 560px;
+  }
+
+
+  .coach-profile-info {
+    padding: 0;
+  }
+
+
+  .modal {
+    align-items: flex-end;
+
+    padding: 0;
+  }
+
+
+  .modal-content {
+    width: 100%;
+
+    max-height: 92vh;
+
+    padding: 32px 20px;
+
+    border-bottom: 0;
+
+    border-radius:
+      22px 22px 0 0;
+  }
+
+
+  .modal-content h2 {
+    padding-right: 40px;
+
+    font-size: 28px;
+  }
+
+
+  .signup-section {
+    padding: 70px 0;
+  }
+
+
+  .signup-form {
+    padding: 25px 20px;
+  }
+
+
+  .actions {
+    align-items: stretch;
+  }
+
+
+  .actions .btn {
+    flex: 1;
+
+    min-width: 140px;
+  }
+
+}
+
+
+/* =========================================================
+   39. SMALL MOBILE
+   ========================================================= */
+
 @media (max-width: 420px) {
-.header-actions { display: none; }
-.hamburger { margin-left: auto; }
-.hero h1, .page-title { font-size: 52px; }
-.sport-card { min-height: 270px; }
-.actions { flex-direction: column; }
-.actions .btn { width: 100%; }
-.category-banner-title { font-size: 42px; }
-.coach-image { aspect-ratio: 4 / 5; }
-}
-/* ========================================================= 40. REDUCED MOTION ========================================================= */
-@media (prefers-reduced-motion: reduce) {
-html { scroll-behavior: auto; }
-*, *::before, *::after { transition-duration: 0.01ms !important;
-animation-duration: 0.01ms !important;
 
-animation-iteration-count: 1 !important;
+  .header-actions {
+    display: none;
+  }
+
+
+  .hamburger {
+    margin-left: auto;
+  }
+
+
+  .hero h1,
+  .page-title {
+    font-size: 52px;
+  }
+
+
+  .sport-card {
+    min-height: 270px;
+  }
+
+
+  .actions {
+    flex-direction: column;
+  }
+
+
+  .actions .btn {
+    width: 100%;
+  }
+
+
+  .category-banner-title {
+    font-size: 42px;
+  }
+
+
+  .coach-image {
+    aspect-ratio: 4 / 5;
+  }
+
 }
+
+
+/* =========================================================
+   40. REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  html {
+    scroll-behavior: auto;
+  }
+
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+
+    animation-duration: 0.01ms !important;
+
+    animation-iteration-count: 1 !important;
+  }
+
 }
-/* ========================================================= 41. SCROLLBAR ========================================================= */
-::-webkit-scrollbar { width: 10px; }
-::-webkit-scrollbar-track { background: #080808; }
-::-webkit-scrollbar-thumb { border-radius: 10px;
-background: #303030; }
-::-webkit-scrollbar-thumb { background: #454545; }
+
+
+/* =========================================================
+   41. SCROLLBAR
+   ========================================================= */
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+
+::-webkit-scrollbar-track {
+  background: #080808;
+}
+
+
+::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+
+  background: #303030;
+}
+
+
+::-webkit-scrollbar-thumb:hover {
+  background: #454545;
+}
