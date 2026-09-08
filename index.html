@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="ru">
 <head>
+
   <meta charset="utf-8">
 
   <meta
@@ -8,14 +9,20 @@
     content="width=device-width, initial-scale=1"
   >
 
-  <title>FITMATCH — Найди своего тренера</title>
-
   <meta
     name="description"
-    content="FITMATCH — современная платформа для поиска спортивных тренеров."
+    content="FITMATCH — платформа для поиска спортивных тренеров."
   >
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <title>
+    FITMATCH — Найди своего тренера
+  </title>
+
+
+  <link
+    rel="preconnect"
+    href="https://fonts.googleapis.com"
+  >
 
   <link
     rel="preconnect"
@@ -24,28 +31,39 @@
   >
 
   <link
-    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="styles.css">
+  <link
+    rel="stylesheet"
+    href="styles.css"
+  >
+
 </head>
+
 
 <body>
 
-  <!-- =========================
+
+  <!-- =========================================
        HEADER
-  ========================== -->
+  ========================================== -->
 
   <header class="header">
 
+
     <button
-      class="logo"
       id="logo"
+      class="logo"
       type="button"
+      aria-label="FITMATCH — Главная"
     >
+
       FIT<span>MATCH</span>
+
     </button>
+
 
 
     <button
@@ -55,8 +73,11 @@
       aria-label="Открыть меню"
       aria-expanded="false"
     >
+
       ☰
+
     </button>
+
 
 
     <nav
@@ -65,53 +86,78 @@
       aria-label="Главная навигация"
     >
 
+
       <button
         data-nav="home"
         type="button"
       >
+
         Главная
+
       </button>
+
+
 
       <button
         data-nav="sports"
         type="button"
       >
+
         Виды спорта
+
       </button>
+
+
 
       <button
         data-nav="coaches"
         type="button"
       >
+
         Тренеры
+
       </button>
+
+
 
       <button
         data-nav="ranking"
         type="button"
       >
+
         Рейтинг
+
       </button>
+
+
 
       <button
         data-nav="match"
         type="button"
       >
+
         Подбор
+
       </button>
+
 
     </nav>
 
 
+
     <div class="header-actions">
+
 
       <button
         id="authBtn"
         class="btn"
         type="button"
       >
+
         Войти
+
       </button>
+
 
 
       <button
@@ -119,30 +165,35 @@
         class="login-btn"
         type="button"
       >
+
         Стать тренером
+
       </button>
 
+
     </div>
+
 
   </header>
 
 
 
-  <!-- =========================
+  <!-- =========================================
        MAIN
-  ========================== -->
+  ========================================== -->
 
   <main>
 
 
-    <!-- =========================
+    <!-- =========================================
          HOME
-    ========================== -->
+    ========================================== -->
 
     <section
       id="home"
       class="page active"
     >
+
 
       <div
         id="heroSlideshow"
@@ -151,48 +202,71 @@
       ></div>
 
 
+
       <div class="container hero">
+
 
         <div>
 
+
           <p class="eyebrow">
+
             GLOBAL COACHING PLATFORM
+
           </p>
+
 
 
           <h1>
+
             НАЙДИ<br>
+
             <em>СВОЕГО</em><br>
+
             ТРЕНЕРА.
+
           </h1>
 
 
+
           <p class="lead">
-            FITMATCH помогает найти подходящего тренера
-            по виду спорта, вашей цели и формату тренировок.
+
+            FITMATCH помогает найти подходящего
+            тренера по виду спорта,
+            цели и формату тренировок.
+
           </p>
+
 
 
           <div class="actions">
 
+
             <button
-              class="btn btn-primary"
               id="matchBtn"
+              class="btn btn-primary"
               type="button"
             >
+
               ПОДОБРАТЬ ТРЕНЕРА →
+
             </button>
+
 
 
             <button
-              class="btn"
               id="chooseSportBtn"
+              class="btn"
               type="button"
             >
+
               ВЫБРАТЬ СПОРТ
+
             </button>
+
 
           </div>
+
 
         </div>
 
@@ -200,22 +274,34 @@
 
         <div class="score-box">
 
+
           <p class="eyebrow">
+
             FITMATCH SCORE
+
           </p>
+
 
 
           <div class="score">
-            96
+
+            MATCH
+
           </div>
 
 
+
           <p class="lead">
-            Индекс тренера на основе рейтинга,
-            опыта и активности.
+
+            Подбор тренера
+            на основе спорта,
+            цели и формата тренировок.
+
           </p>
 
+
         </div>
+
 
       </div>
 
@@ -223,258 +309,293 @@
 
       <!-- SPORTS -->
 
-      <div class="section dark">
+      <section class="section dark">
+
 
         <div class="container">
 
+
           <h2 class="section-title">
+
             ВИДЫ СПОРТА
+
           </h2>
 
 
+
           <div
-            class="sports-grid"
             id="homeSports"
+            class="sports-grid"
           ></div>
+
 
         </div>
 
-      </div>
+
+      </section>
 
 
 
       <!-- TOP COACHES -->
 
-      <div class="section">
+      <section class="section">
+
 
         <div class="container">
 
+
           <h2 class="section-title">
+
             ЛУЧШИЕ ТРЕНЕРЫ
+
           </h2>
 
 
+
           <div
-            class="coach-grid"
             id="topCoaches"
+            class="coach-grid"
           ></div>
+
 
         </div>
 
-      </div>
+
+      </section>
+
 
     </section>
 
 
 
-    <!-- =========================
+    <!-- =========================================
          SPORTS
-    ========================== -->
+    ========================================== -->
 
     <section
       id="sports"
       class="page"
     >
 
+
       <div class="container">
 
+
         <h1 class="page-title">
+
           ВЫБЕРИ<br>
+
           <em>СВОЙ СПОРТ.</em>
+
         </h1>
 
 
+
+        <p class="lead">
+
+          Выберите направление
+          и найдите подходящего тренера.
+
+        </p>
+
+
+
         <div
-          class="sports-grid"
           id="sportsList"
+          class="sports-grid"
         ></div>
 
+
       </div>
+
 
     </section>
 
 
 
-    <!-- =========================
+    <!-- =========================================
          COACHES
-    ========================== -->
+    ========================================== -->
 
     <section
       id="coaches"
       class="page"
     >
 
+
       <div class="container">
 
+
         <h1 class="page-title">
+
           НАЙДИ<br>
+
           <em>ТРЕНЕРА.</em>
+
         </h1>
 
 
 
-        <!-- CATEGORY BANNER -->
+        <p class="lead">
 
-        <div
-          id="categoryBanner"
-          class="category-banner"
-          style="display:none"
-        >
+          Используйте поиск и фильтры,
+          чтобы найти подходящего специалиста.
 
-          <svg
-            id="categoryBannerGraphic"
-            class="category-banner-graphic"
-            viewBox="0 0 400 300"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-          ></svg>
+        </p>
 
 
-          <div class="category-banner-overlay">
-
-            <p class="eyebrow">
-              GLOBAL COACHING PLATFORM
-            </p>
-
-
-            <h2
-              id="categoryBannerTitle"
-              class="category-banner-title"
-            ></h2>
-
-
-            <p
-              id="categoryBannerSubtitle"
-              class="lead"
-            ></p>
-
-
-            <div
-              id="categoryBannerStats"
-              class="category-banner-stats"
-            ></div>
-
-
-            <button
-              id="cyclingBannerCta"
-              class="btn btn-primary category-banner-cta"
-              type="button"
-            >
-              НАЙТИ ТРЕНЕРА →
-            </button>
-
-          </div>
-
-        </div>
-
-
-
-        <!-- FILTERS -->
 
         <div class="filters">
 
-          <select id="sportFilter">
+
+          <input
+            id="searchInput"
+            type="search"
+            placeholder="Поиск тренера..."
+            autocomplete="off"
+            aria-label="Поиск тренера"
+          >
+
+
+
+          <select
+            id="sportFilter"
+            aria-label="Фильтр по виду спорта"
+          >
 
             <option value="">
+
               Все виды спорта
+
             </option>
 
           </select>
 
 
-          <select id="formatFilter">
+
+          <select
+            id="formatFilter"
+            aria-label="Фильтр по формату"
+          >
 
             <option value="">
+
               Любой формат
+
             </option>
+
 
             <option value="Онлайн">
+
               Онлайн
+
             </option>
+
 
             <option value="Офлайн">
+
               Офлайн
+
             </option>
 
+
           </select>
+
 
         </div>
 
 
 
         <div
-          class="coach-grid"
           id="coachesList"
+          class="coach-grid"
+          aria-live="polite"
         ></div>
 
 
-        <div
-          id="coachesEmpty"
-          class="empty-state"
-          style="display:none"
-        >
-          Тренеры по выбранным параметрам пока не найдены.
-        </div>
-
       </div>
+
 
     </section>
 
 
 
-    <!-- =========================
+    <!-- =========================================
          RANKING
-    ========================== -->
+    ========================================== -->
 
     <section
       id="ranking"
       class="page"
     >
 
+
       <div class="container">
 
+
         <h1 class="page-title">
+
           РЕЙТИНГ<br>
+
           <em>ТРЕНЕРОВ.</em>
+
         </h1>
+
+
+
+        <p class="lead">
+
+          Тренеры с наиболее сильными
+          профилями и рейтингом.
+
+        </p>
+
 
 
         <div
           id="rankingList"
-          class="ranking-list"
+          aria-live="polite"
         ></div>
 
 
-        <div
-          id="rankingEmpty"
-          class="empty-state"
-          style="display:none"
-        >
-          Пока нет тренеров для формирования рейтинга.
-        </div>
-
       </div>
+
 
     </section>
 
 
 
-    <!-- =========================
+    <!-- =========================================
          MATCH
-    ========================== -->
+    ========================================== -->
 
     <section
       id="match"
       class="page"
     >
 
+
       <div class="container">
 
+
         <h1 class="page-title">
+
           НАЙДЁМ<br>
+
           <em>ТВОЙ MATCH.</em>
+
         </h1>
+
+
+
+        <p class="lead">
+
+          Выберите параметры,
+          и FITMATCH покажет
+          наиболее подходящих тренеров.
+
+        </p>
+
 
 
         <div class="match-box">
@@ -484,13 +605,19 @@
 
             Какой спорт?
 
-            <select id="matchSport">
+
+            <select
+              id="matchSport"
+            >
 
               <option value="">
+
                 Не выбрано
+
               </option>
 
             </select>
+
 
           </label>
 
@@ -500,13 +627,19 @@
 
             Какая цель?
 
-            <select id="matchGoal">
+
+            <select
+              id="matchGoal"
+            >
 
               <option value="">
-                Не выбрано
+
+                Любая цель
+
               </option>
 
             </select>
+
 
           </label>
 
@@ -514,35 +647,51 @@
 
           <label>
 
-            Формат?
+            Формат тренировок?
 
-            <select id="matchFormat">
+
+            <select
+              id="matchFormat"
+            >
 
               <option value="">
+
                 Не важно
+
               </option>
+
 
               <option value="Онлайн">
+
                 Онлайн
+
               </option>
+
 
               <option value="Офлайн">
+
                 Офлайн
+
               </option>
 
+
             </select>
+
 
           </label>
 
 
 
           <button
-            class="btn btn-primary"
             id="findMatchBtn"
+            class="btn btn-primary"
             type="button"
           >
+
             НАЙТИ МОЕГО ТРЕНЕРА →
+
           </button>
+
 
 
           <div
@@ -550,27 +699,32 @@
             aria-live="polite"
           ></div>
 
+
         </div>
 
+
       </div>
+
 
     </section>
 
 
 
-    <!-- =========================
+    <!-- =========================================
          PROFILE
-    ========================== -->
+    ========================================== -->
 
     <section
       id="profile"
       class="page"
     >
 
+
       <div
-        class="container"
         id="profileContent"
+        class="container"
       ></div>
+
 
     </section>
 
@@ -579,9 +733,9 @@
 
 
 
-  <!-- =========================
-       AUTH MODAL
-  ========================== -->
+  <!-- =========================================
+       LOGIN MODAL
+  ========================================== -->
 
   <div
     id="modal"
@@ -591,22 +745,16 @@
     aria-labelledby="authTitle"
   >
 
+
     <div class="modal-content">
 
 
-      <button
-        id="authClose"
-        class="modal-close"
-        type="button"
-        aria-label="Закрыть"
-      >
-        ×
-      </button>
-
-
       <h2 id="authTitle">
+
         Войти в FITMATCH
+
       </h2>
+
 
 
       <form
@@ -619,12 +767,14 @@
 
           Email
 
+
           <input
-            id="authEmail"
+            name="email"
             type="email"
             autocomplete="email"
             required
           >
+
 
         </label>
 
@@ -634,13 +784,15 @@
 
           Пароль
 
+
           <input
-            id="authPassword"
+            name="password"
             type="password"
             minlength="6"
             autocomplete="current-password"
             required
           >
+
 
         </label>
 
@@ -648,21 +800,16 @@
 
         <div class="actions">
 
+
           <button
             class="btn btn-primary"
             type="submit"
           >
+
             ВОЙТИ
+
           </button>
 
-
-          <button
-            id="signupBtn"
-            class="btn"
-            type="button"
-          >
-            РЕГИСТРАЦИЯ
-          </button>
 
 
           <button
@@ -670,20 +817,13 @@
             class="btn"
             type="button"
           >
+
             ОТМЕНА
+
           </button>
 
+
         </div>
-
-
-
-        <button
-          id="forgotPasswordBtn"
-          class="forgot-password"
-          type="button"
-        >
-          Забыли пароль?
-        </button>
 
 
 
@@ -695,15 +835,118 @@
 
       </form>
 
+
+
+      <button
+        id="forgotPasswordBtn"
+        class="forgot-password"
+        type="button"
+      >
+
+        Забыли пароль?
+
+      </button>
+
+
     </div>
+
 
   </div>
 
 
 
-  <!-- =========================
-       RESET PASSWORD MODAL
-  ========================== -->
+  <!-- =========================================
+       SIGNUP
+  ========================================== -->
+
+  <section
+    id="signupSection"
+    class="signup-section"
+  >
+
+
+    <div class="container">
+
+
+      <form
+        id="signupForm"
+        class="form signup-form"
+      >
+
+
+        <h2>
+
+          СОЗДАТЬ АККАУНТ
+
+        </h2>
+
+
+
+        <label>
+
+          Email
+
+
+          <input
+            name="email"
+            type="email"
+            autocomplete="email"
+            required
+          >
+
+
+        </label>
+
+
+
+        <label>
+
+          Пароль
+
+
+          <input
+            name="password"
+            type="password"
+            minlength="6"
+            autocomplete="new-password"
+            required
+          >
+
+
+        </label>
+
+
+
+        <button
+          class="btn btn-primary"
+          type="submit"
+        >
+
+          ЗАРЕГИСТРИРОВАТЬСЯ
+
+        </button>
+
+
+
+        <div
+          id="signupMessage"
+          aria-live="polite"
+        ></div>
+
+
+      </form>
+
+
+    </div>
+
+
+  </section>
+
+
+
+  <!-- =========================================
+       RESET PASSWORD
+  ========================================== -->
 
   <div
     id="resetPasswordModal"
@@ -713,27 +956,16 @@
     aria-labelledby="resetTitle"
   >
 
+
     <div class="modal-content">
 
 
-      <button
-        id="resetClose"
-        class="modal-close"
-        type="button"
-        aria-label="Закрыть"
-      >
-        ×
-      </button>
-
-
       <h2 id="resetTitle">
-        Создать новый пароль
+
+        Новый пароль
+
       </h2>
 
-
-      <p class="lead">
-        Введите и подтвердите новый пароль.
-      </p>
 
 
       <form
@@ -746,29 +978,15 @@
 
           Новый пароль
 
+
           <input
-            id="newPassword"
+            name="password"
             type="password"
             minlength="6"
             autocomplete="new-password"
             required
           >
 
-        </label>
-
-
-
-        <label>
-
-          Повторите пароль
-
-          <input
-            id="confirmPassword"
-            type="password"
-            minlength="6"
-            autocomplete="new-password"
-            required
-          >
 
         </label>
 
@@ -776,12 +994,16 @@
 
         <div class="actions">
 
+
           <button
             class="btn btn-primary"
             type="submit"
           >
+
             СОХРАНИТЬ ПАРОЛЬ
+
           </button>
+
 
 
           <button
@@ -789,8 +1011,11 @@
             class="btn"
             type="button"
           >
+
             ОТМЕНА
+
           </button>
+
 
         </div>
 
@@ -804,15 +1029,17 @@
 
       </form>
 
+
     </div>
+
 
   </div>
 
 
 
-  <!-- =========================
-       CREATE COACH MODAL
-  ========================== -->
+  <!-- =========================================
+       CREATE COACH
+  ========================================== -->
 
   <div
     id="coachModal"
@@ -822,27 +1049,24 @@
     aria-labelledby="coachTitle"
   >
 
+
     <div class="modal-content">
 
 
-      <button
-        id="coachClose"
-        class="modal-close"
-        type="button"
-        aria-label="Закрыть"
-      >
-        ×
-      </button>
-
-
       <h2 id="coachTitle">
+
         Стать тренером
+
       </h2>
 
 
+
       <p class="lead">
-        Создайте свой профиль и станьте доступным
+
+        Создайте свой профиль
+        и станьте доступным
         для пользователей FITMATCH.
+
       </p>
 
 
@@ -857,11 +1081,13 @@
 
           Имя
 
+
           <input
             name="name"
             autocomplete="name"
             required
           >
+
 
         </label>
 
@@ -871,6 +1097,7 @@
 
           Вид спорта
 
+
           <select
             id="coachSport"
             name="sport"
@@ -878,10 +1105,13 @@
           >
 
             <option value="">
+
               Выберите вид спорта
+
             </option>
 
           </select>
+
 
         </label>
 
@@ -889,12 +1119,14 @@
 
         <label>
 
-          Цель / специализация
+          Цель
+
 
           <input
             name="goal"
             placeholder="Например: похудение, сила, выносливость"
           >
+
 
         </label>
 
@@ -904,17 +1136,26 @@
 
           Формат тренировок
 
+
           <select name="format">
 
+
             <option value="Онлайн">
+
               Онлайн
+
             </option>
+
 
             <option value="Офлайн">
+
               Офлайн
+
             </option>
 
+
           </select>
+
 
         </label>
 
@@ -924,6 +1165,7 @@
 
           Цена €
 
+
           <input
             name="price"
             type="number"
@@ -931,6 +1173,7 @@
             step="1"
             required
           >
+
 
         </label>
 
@@ -940,21 +1183,33 @@
 
           Период оплаты
 
+
           <select name="period">
 
+
             <option value="месяц">
+
               В месяц
+
             </option>
+
 
             <option value="занятие">
+
               За занятие
+
             </option>
+
 
             <option value="программа">
+
               За программу
+
             </option>
 
+
           </select>
+
 
         </label>
 
@@ -964,11 +1219,13 @@
 
           О себе
 
+
           <textarea
             name="bio"
             rows="5"
-            placeholder="Расскажите о своём опыте, достижениях и специализации"
+            placeholder="Расскажите о своём опыте и специализации"
           ></textarea>
+
 
         </label>
 
@@ -976,12 +1233,16 @@
 
         <div class="actions">
 
+
           <button
             class="btn btn-primary"
             type="submit"
           >
+
             СОЗДАТЬ ПРОФИЛЬ
+
           </button>
+
 
 
           <button
@@ -989,8 +1250,11 @@
             class="btn"
             type="button"
           >
+
             ОТМЕНА
+
           </button>
+
 
         </div>
 
@@ -1004,25 +1268,29 @@
 
       </form>
 
+
     </div>
+
 
   </div>
 
 
 
-  <!-- =========================
+  <!-- =========================================
        FOOTER
-  ========================== -->
+  ========================================== -->
 
   <footer>
+
     © 2026 FITMATCH
+
   </footer>
 
 
 
-  <!-- =========================
+  <!-- =========================================
        JAVASCRIPT
-  ========================== -->
+  ========================================== -->
 
   <script
     type="module"
@@ -1031,4 +1299,5 @@
 
 
 </body>
+
 </html>
