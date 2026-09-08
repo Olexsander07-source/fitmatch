@@ -103,6 +103,20 @@
       >
         Подбор
       </button>
+
+      <button
+        data-nav="bookings"
+        type="button"
+      >
+        Бронирования
+      </button>
+
+      <button
+        data-nav="messages"
+        type="button"
+      >
+        Сообщения
+      </button>
     </nav>
 
     <div class="header-actions">
@@ -307,15 +321,6 @@
           class="category-banner"
           style="display:none"
         >
-
-          <svg
-            id="categoryBannerGraphic"
-            class="category-banner-graphic"
-            viewBox="0 0 400 300"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-          ></svg>
 
           <div class="category-banner-overlay">
 
@@ -541,6 +546,99 @@
 
     </section>
 
+
+    <!-- =========================
+         BOOKINGS
+    ========================== -->
+
+    <section
+      id="bookings"
+      class="page"
+    >
+
+      <div class="container">
+
+        <h1 class="page-title">
+          МОИ<br>
+          <em>БРОНИРОВАНИЯ.</em>
+        </h1>
+
+        <div class="bookings-block">
+
+          <h2 class="section-subtitle">
+            Как клиент
+          </h2>
+
+          <div
+            id="clientBookingsList"
+            class="bookings-list"
+          ></div>
+
+        </div>
+
+        <div
+          id="bookingsAsCoachSection"
+          class="bookings-block"
+          style="display:none"
+        >
+
+          <h2 class="section-subtitle">
+            Как тренер
+          </h2>
+
+          <div
+            id="coachBookingsList"
+            class="bookings-list"
+          ></div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =========================
+         MESSAGES
+    ========================== -->
+
+    <section
+      id="messages"
+      class="page"
+    >
+
+      <div class="container">
+
+        <h1 class="page-title">
+          СООБЩЕНИЯ<br>
+          <em>И ЧАТЫ.</em>
+        </h1>
+
+        <div
+          id="messagesLayout"
+          class="messages-layout"
+        >
+
+          <aside
+            id="conversationsList"
+            class="conversations-list"
+          ></aside>
+
+          <div
+            id="chatThread"
+            class="chat-thread"
+          >
+            <p class="empty">
+              Выберите диалог слева.
+            </p>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
   </main>
 
 
@@ -712,327 +810,3 @@
         <button
           class="btn btn-primary"
           type="submit"
-        >
-          ЗАРЕГИСТРИРОВАТЬСЯ
-        </button>
-
-
-        <div
-          id="signupMessage"
-          aria-live="polite"
-        ></div>
-
-      </form>
-
-    </div>
-
-  </section>
-
-
-  <!-- =========================
-       RESET PASSWORD MODAL
-  ========================== -->
-
-  <div
-    id="resetPasswordModal"
-    class="modal"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="resetTitle"
-  >
-
-    <div class="modal-content">
-
-      <button
-        id="resetClose"
-        class="modal-close"
-        type="button"
-        aria-label="Закрыть"
-      >
-        ×
-      </button>
-
-      <h2 id="resetTitle">
-        Создать новый пароль
-      </h2>
-
-      <p class="lead">
-        Введите и подтвердите новый пароль.
-      </p>
-
-
-      <form
-        id="resetPasswordForm"
-        class="form"
-      >
-
-        <label>
-
-          Новый пароль
-
-          <input
-            id="newPassword"
-            name="password"
-            type="password"
-            minlength="6"
-            autocomplete="new-password"
-            required
-          >
-
-        </label>
-
-
-        <label>
-
-          Повторите пароль
-
-          <input
-            id="confirmPassword"
-            type="password"
-            minlength="6"
-            autocomplete="new-password"
-            required
-          >
-
-        </label>
-
-
-        <div class="actions">
-
-          <button
-            class="btn btn-primary"
-            type="submit"
-          >
-            СОХРАНИТЬ ПАРОЛЬ
-          </button>
-
-
-          <button
-            id="resetCancel"
-            class="btn"
-            type="button"
-          >
-            ОТМЕНА
-          </button>
-
-        </div>
-
-
-        <div
-          id="resetMessage"
-          aria-live="polite"
-        ></div>
-
-      </form>
-
-    </div>
-
-  </div>
-
-
-  <!-- =========================
-       CREATE COACH MODAL
-  ========================== -->
-
-  <div
-    id="coachModal"
-    class="modal"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="coachTitle"
-  >
-
-    <div class="modal-content">
-
-      <button
-        id="coachClose"
-        class="modal-close"
-        type="button"
-        aria-label="Закрыть"
-      >
-        ×
-      </button>
-
-      <h2 id="coachTitle">
-        Стать тренером
-      </h2>
-
-      <p class="lead">
-        Создайте свой профиль
-        и станьте доступным
-        для пользователей APLEX.
-      </p>
-
-
-      <form
-        id="createForm"
-        class="form"
-      >
-
-        <label>
-
-          Имя
-
-          <input
-            name="name"
-            autocomplete="name"
-            required
-          >
-
-        </label>
-
-
-        <label>
-
-          Вид спорта
-
-          <select
-            id="coachSport"
-            name="sport"
-            required
-          >
-
-            <option value="">
-              Выберите вид спорта
-            </option>
-
-          </select>
-
-        </label>
-
-
-        <label>
-
-          Цель / специализация
-
-          <input
-            name="goal"
-            placeholder="Например: похудение, сила, выносливость"
-          >
-
-        </label>
-
-
-        <label>
-
-          Формат тренировок
-
-          <select name="format">
-
-            <option value="Онлайн">
-              Онлайн
-            </option>
-
-            <option value="Офлайн">
-              Офлайн
-            </option>
-
-          </select>
-
-        </label>
-
-
-        <label>
-
-          Цена €
-
-          <input
-            name="price"
-            type="number"
-            min="0"
-            step="1"
-            required
-          >
-
-        </label>
-
-
-        <label>
-
-          Период оплаты
-
-          <select name="period">
-
-            <option value="месяц">
-              В месяц
-            </option>
-
-            <option value="занятие">
-              За занятие
-            </option>
-
-            <option value="программа">
-              За программу
-            </option>
-
-          </select>
-
-        </label>
-
-
-        <label>
-
-          О себе
-
-          <textarea
-            name="bio"
-            rows="5"
-            placeholder="Расскажите о своём опыте, достижениях и специализации"
-          ></textarea>
-
-        </label>
-
-
-        <div class="actions">
-
-          <button
-            class="btn btn-primary"
-            type="submit"
-          >
-            СОЗДАТЬ ПРОФИЛЬ
-          </button>
-
-
-          <button
-            id="coachCancel"
-            class="btn"
-            type="button"
-          >
-            ОТМЕНА
-          </button>
-
-        </div>
-
-
-        <div
-          id="coachMessage"
-          aria-live="polite"
-        ></div>
-
-      </form>
-
-    </div>
-
-  </div>
-
-
-  <!-- =========================
-       FOOTER
-  ========================== -->
-
-  <footer>
-    © 2026 APLEX — Find your level.
-  </footer>
-
-
-  <!-- =========================
-       JAVASCRIPT
-  ========================== -->
-
-  <script
-    type="module"
-    src="fitmatch.js"
-  ></script>
-
-</body>
-</html>
