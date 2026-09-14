@@ -2,7 +2,7 @@
    Здесь используется только публичный ключ. Никогда не вставляйте service_role или Stripe secret key. */
 const CONFIG = Object.freeze({
   url: 'https://ypbhcgcwkpiujcakvaji.supabase.co',
-  key: 'sb_publishable_Lsrk07A5aXJH7YypVR8QGQ_TQPwhfOV',
+  key: sb_publishable_nTFEIL9TZgkqbue1Eu46JA_tndRELM6,
   sdk: 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/+esm',
   bucket: 'fgi-media'
 });
