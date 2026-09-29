@@ -1,0 +1,15 @@
+{
+  "name": "FitGoIn",
+  "short_name": "FitGoIn",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#101310",
+  "theme_color": "#101310",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

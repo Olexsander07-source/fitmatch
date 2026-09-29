@@ -1,7 +1,7 @@
 import { access, readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 
-const files = ['index.html', 'fitmatch.js', 'styles.css'];
+const files = ['index.html', 'fitmatch.js', 'styles.css', 'robots.txt', 'sitemap.xml', 'favicon.svg', 'site.webmanifest', 'privacy.html', 'terms.html', 'legal.html', 'support.html'];
 const migrations = new Map([
   ['20260927144002_fitgoin_stage1_foundation.sql', '0033aacf37052dc6ce150b0dca9669e9'],
   ['20260929062004_add_fgi_messages_sender_index.sql', '38fe7f22d0fac6cf8e667fc80842f7bd'],
@@ -23,6 +23,15 @@ if ((html.match(/minlength="12"/g) || []).length !== 3) throw new Error('Strong 
 if (!js.includes('function assertStrongPassword')) throw new Error('Strong password validation is missing');
 if (!js.includes('b.updated_at||b.created_at')) throw new Error('Inbox is not ordered by latest thread activity');
 if (js.includes('FITGOIN_SETUP_SQL_BEGIN')) throw new Error('Database setup SQL must not be embedded in frontend JavaScript');
+if (html.includes('max="100000"')) throw new Error('Frontend price limit must not exceed €100');
+if ((html.match(/max="100"/g) || []).length < 2) throw new Error('€100 price/budget limits are missing');
+if (!html.includes('rel="canonical"') || !html.includes('property="og:title"')) throw new Error('SEO canonical/OpenGraph metadata is missing');
+if (!html.includes('privacy.html') || !html.includes('terms.html') || !html.includes('legal.html') || !html.includes('support.html')) throw new Error('Legal/support footer links are missing');
+if (!js.includes("searchParams.set('trainer',id)")) throw new Error('Shareable trainer profile routing is missing');
+if (js.includes("allRows('sports')") || js.includes("allRows('coaches')")) throw new Error('Legacy catalogue reads must not return');
+if (!html.includes('name="website"')) throw new Error('Signup honeypot is missing');
+if (!js.includes("rateGate('signup'")) throw new Error('Signup cooldown is missing');
+if (js.includes("c.image_url || c.avatar_url")) throw new Error('External coach image fallback must not return');
 
 const openSelects = (html.match(/<select\b/gi) || []).length;
 const closeSelects = (html.match(/<\/select\s*>/gi) || []).length;

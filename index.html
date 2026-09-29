@@ -6,9 +6,21 @@
   <meta name="description" content="FitGoIn — глобальная платформа поиска спортивных тренеров. Find the one who fits you.">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="theme-color" content="#101310">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://fitgoin.com/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="FitGoIn">
+  <meta property="og:title" content="FitGoIn — Find the one who fits you.">
+  <meta property="og:description" content="Глобальная платформа поиска спортивных тренеров онлайн и офлайн.">
+  <meta property="og:url" content="https://fitgoin.com/">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="FitGoIn — Find the one who fits you.">
+  <meta name="twitter:description" content="Найди спортивного тренера, который подходит именно тебе.">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="./site.webmanifest">
   <title>FitGoIn — Find the one who fits you.</title>
-  <link rel="stylesheet" href="./styles.css?v=20260913">
-  <script type="module" src="./fitmatch.js?v=20260913"></script>
+  <link rel="stylesheet" href="./styles.css?v=20260929">
+  <script type="module" src="./fitmatch.js?v=20260929"></script>
 </head>
 <body>
 <a class="skip" href="#main">К содержимому</a>
@@ -52,7 +64,7 @@
   <section id="match" class="page container section"><p class="eyebrow">FITGOIN MATCH</p><h1>Начнём с <em>тебя.</em></h1><p class="lead">Выбери важные параметры. Процент показывает совпадение с анкетой тренера, а не гарантию результата.</p>
     <form id="matchForm" class="panel form-grid"><label>Спорт<select id="matchSport" name="sport" required></select></label><label>Цель<select id="matchGoal" name="goal"><option value="">Любая цель</option></select></label>
       <label>Формат<select name="format"><option value="">Любой</option><option value="Онлайн">Онлайн</option><option value="Офлайн">Офлайн</option></select></label><label>Язык<select id="matchLanguage" name="language"><option value="">Любой</option></select></label>
-      <label>Город для очных занятий<input name="city" maxlength="100" placeholder="Например, Nice"></label><label>Максимальный бюджет, €<input name="budget" type="number" min="0" max="100000" step="0.01" placeholder="Не ограничен"></label>
+      <label>Город для очных занятий<input name="city" maxlength="100" placeholder="Например, Nice"></label><label>Максимальный бюджет, €<input name="budget" type="number" min="0" max="100" step="0.01" placeholder="Не ограничен"></label>
       <label>Бюджет за<select name="period"><option value="занятие">Занятие</option><option value="месяц">Месяц</option><option value="программа">Программу</option></select></label>
       <div class="full"><button class="btn primary" type="submit">Показать мой MATCH ↗</button><p class="hint">Спорт — обязательное условие. Баллы за выбранные параметры: цель 30, формат 25, язык 20, город 15, бюджет 10. Пустые параметры не учитываются; спорт даёт 40 баллов.</p></div>
     </form><div id="matchResults" class="coach-grid section-small" aria-live="polite"></div>
@@ -66,7 +78,7 @@
       <label>Цели клиентов / специализация<input name="goal" list="goals" maxlength="300" placeholder="Похудение, сила, выносливость"></label><datalist id="goals"></datalist>
       <label>Формат<select name="format"><option>Онлайн</option><option>Офлайн</option><option>Онлайн и офлайн</option></select></label>
       <label>Город<input name="city" maxlength="100" autocomplete="address-level2"></label><label>Страна<input name="country" maxlength="100" autocomplete="country-name"></label>
-      <label>Опыт, лет<input name="experience_years" type="number" min="0" max="80" step="1"></label><label>Цена, €<input name="price" type="number" min="0" max="100000" step="0.01" placeholder="Пусто — по запросу"></label>
+      <label>Опыт, лет<input name="experience_years" type="number" min="0" max="80" step="1"></label><label>Цена, €<input name="price" type="number" min="0" max="100" step="0.01" placeholder="Пусто — по запросу"></label>
       <label>Стоимость за<select name="period"><option value="занятие">Занятие</option><option value="месяц">Месяц</option><option value="программа">Программу</option></select></label>
       <fieldset class="full"><legend>Языки общения с клиентами</legend><div id="coachLanguages" class="checks"></div></fieldset>
       <label class="full">О себе<textarea name="bio" maxlength="4000" rows="5"></textarea></label><label>Образование и сертификаты<textarea name="education" maxlength="2000" rows="3"></textarea></label>
@@ -88,10 +100,10 @@
         <form id="messageForm" hidden><label>Сообщение<textarea name="body" maxlength="4000" rows="3" required placeholder="Обсудите цель, расписание и стоимость"></textarea></label><button class="btn primary" type="submit">Отправить ↗</button></form><p id="chatMessage" role="status"></p>
       </div></div>
   </section>
-  <section id="signup" class="page container section"><div class="narrow panel"><p class="eyebrow">ДОБРО ПОЖАЛОВАТЬ В FITGOIN</p><h1>Начни <em>здесь.</em></h1><form id="signupForm"><label>Имя<input name="name" maxlength="100" autocomplete="name" required></label><label>Email<input name="email" type="email" autocomplete="email" required></label><label>Пароль<input name="password" type="password" autocomplete="new-password" minlength="12" maxlength="128" required></label><button class="btn primary" type="submit">Создать аккаунт</button><p id="signupMessage" role="status"></p></form><button id="resend" class="text-btn">Повторить письмо подтверждения</button><button data-action="login" class="text-btn">Уже есть аккаунт? Войти</button></div></section>
+  <section id="signup" class="page container section"><div class="narrow panel"><p class="eyebrow">ДОБРО ПОЖАЛОВАТЬ В FITGOIN</p><h1>Начни <em>здесь.</em></h1><form id="signupForm"><label hidden aria-hidden="true">Website<input name="website" type="text" tabindex="-1" autocomplete="off"></label><label>Имя<input name="name" maxlength="100" autocomplete="name" required></label><label>Email<input name="email" type="email" autocomplete="email" required></label><label>Пароль<input name="password" type="password" autocomplete="new-password" minlength="12" maxlength="128" required></label><button class="btn primary" type="submit">Создать аккаунт</button><p id="signupMessage" role="status"></p></form><button id="resend" class="text-btn">Повторить письмо подтверждения</button><button data-action="login" class="text-btn">Уже есть аккаунт? Войти</button></div></section>
 </main>
 <dialog id="authDialog" aria-labelledby="authTitle"><form id="authForm"><button class="close" type="button" data-close aria-label="Закрыть">×</button><p class="eyebrow">FITGOIN</p><h2 id="authTitle">С возвращением.</h2><label>Email<input name="email" type="email" autocomplete="email" required></label><label>Пароль<input name="password" type="password" autocomplete="current-password" required></label><button class="btn primary" type="submit">Войти</button><p id="authMessage" role="status"></p></form><div class="stack"><button id="forgot" class="text-btn">Забыли пароль?</button><button data-page="signup" class="text-btn">Создать аккаунт</button></div></dialog>
 <dialog id="resetDialog" aria-labelledby="resetTitle"><form id="resetForm"><button class="close" data-close type="button" aria-label="Закрыть">×</button><h2 id="resetTitle">Новый пароль</h2><label>Пароль<input name="password" type="password" minlength="12" maxlength="128" autocomplete="new-password" required></label><label>Повтори пароль<input name="confirm" type="password" minlength="12" maxlength="128" autocomplete="new-password" required></label><button class="btn primary" type="submit">Сохранить</button><p id="resetMessage" role="status"></p></form></dialog>
-<footer><div class="container"><span class="logo">Fit<span>Go</span>In</span><p>GLOBAL TRAINER PLATFORM<br>Find the one who fits you.</p><span class="muted">© 2026 FitGoIn</span></div></footer>
+<footer><div class="container"><span class="logo">Fit<span>Go</span>In</span><p>GLOBAL TRAINER PLATFORM<br>Find the one who fits you.</p><div class="actions"><a class="text-btn" href="./privacy.html">Конфиденциальность</a><a class="text-btn" href="./terms.html">Условия</a><a class="text-btn" href="./legal.html">Правовая информация</a><a class="text-btn" href="./support.html">Поддержка</a></div><span class="muted">© 2026 FitGoIn</span></div></footer>
 </body>
 </html>
