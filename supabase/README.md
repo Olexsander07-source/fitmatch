@@ -17,3 +17,7 @@ The historical foundation file is byte-for-byte matched to the SQL recorded by S
 5. Keep service-role and database secrets out of the repository.
 - `20260929104742_add_chat_presence` — tracks chat participant online/last-seen state with participant-only RLS.
 - `20260929105457_add_chat_media` — adds private participant-only chat attachments and message media metadata.
+
+- `20260929110708_add_audio_call_signaling` — adds participant-only WebRTC call records and SDP/ICE signaling.
+- `20260929111114_harden_call_stale_recovery` — expires abandoned ringing/accepted calls so they cannot block future calls.
+- `20260929111231_index_call_foreign_keys` — adds covering indexes for caller/signal sender foreign keys.
