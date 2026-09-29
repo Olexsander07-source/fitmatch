@@ -1,3 +1,4 @@
+
 create table if not exists public.fgi_calls (
   id uuid primary key default gen_random_uuid(),
   thread_id uuid not null references public.fgi_threads(id) on delete cascade,
