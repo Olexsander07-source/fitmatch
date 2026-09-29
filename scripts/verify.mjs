@@ -8,6 +8,7 @@ const migrations = new Map([
   ['20260929062127_track_fgi_thread_activity.sql', '35d115737d8f41ec3d90d1a8f63da45b'],
   ['20260929080940_tighten_fgi_storage_policies.sql', 'df85b11aa2289dee956104069d642cb6'],
   ['20260929081241_harden_fgi_data_integrity.sql', 'd994e020f1d3540df5fb2832ba46a7fd'],
+  ['20260929102250_support_phone_auth_profiles.sql', '4920ed23d70898d91cd59a9f6376180a'],
 ]);
 for (const file of files) await access(new URL(`../${file}`, import.meta.url));
 for (const file of migrations.keys()) await access(new URL(`../supabase/migrations/${file}`, import.meta.url));
@@ -32,6 +33,11 @@ if (js.includes("allRows('sports')") || js.includes("allRows('coaches')")) throw
 if (!html.includes('name="website"')) throw new Error('Signup honeypot is missing');
 if (!js.includes("rateGate('signup'")) throw new Error('Signup cooldown is missing');
 if (js.includes("c.image_url || c.avatar_url")) throw new Error('External coach image fallback must not return');
+if (!html.includes('id="phoneDialog"') || !html.includes('id="phoneSignupOpen"') || !html.includes('id="phoneLoginOpen"')) throw new Error('Phone auth UI is missing');
+if (!js.includes('db.auth.signInWithOtp({phone,options})')) throw new Error('Phone OTP request flow is missing');
+if (!js.includes("db.auth.verifyOtp({phone:pendingPhone,token,type:'sms'})")) throw new Error('Phone OTP verification flow is missing');
+if (!js.includes("shouldCreateUser:phoneMode==='signup'")) throw new Error('Phone login/signup account creation guard is missing');
+if (!js.includes('function normalizePhone')) throw new Error('Phone E.164 validation is missing');
 
 const openSelects = (html.match(/<select\b/gi) || []).length;
 const closeSelects = (html.match(/<\/select\s*>/gi) || []).length;

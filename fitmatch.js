@@ -27,6 +27,7 @@ const directions = [
 let db, user = null, own = null, sports = [], coaches = [], threads = [], activeThread = null;
 let currentPage = 'home', pendingAction = '', authEpoch = 0, catalogueEpoch = 0, threadEpoch = 0;
 let chatRows = [], pendingMessage = null, chatBusy = false, inboxBusy = false, signupEmail = '';
+let phoneMode = 'login', pendingPhone = '', pendingPhoneName = '', phoneResendUntil = 0, phoneTimer = 0;
 let catalogueError = '', setupReady = false, visibleProfile = '', galleryEpoch = 0, accountVersion = 0;
 const publicOnly = c => c.published !== false;
 const sportName = id => sports.find(s => String(s.id) === String(id))?.name || String(id || 'Спорт не указан');
@@ -62,6 +63,10 @@ function explain(e) {
   if (/email not confirmed/i.test(raw)) return 'Сначала подтверди email. На странице регистрации можно запросить письмо повторно.';
   if (/rate.limit|too many|over_email_send_rate_limit/i.test(raw + code)) return 'Превышен лимит запросов. Подожди перед повторной попыткой.';
   if (/email_address_not_authorized|email address not authorized/i.test(raw + code)) return 'Отправка на этот email не настроена. Владельцу сайта нужно подключить SMTP в Supabase.';
+  if (/phone.*(disabled|not enabled)|sms.*provider|unsupported.*phone/i.test(raw + code)) return 'Вход по телефону пока не активирован. Владельцу FitGoIn нужно включить Phone Auth и SMS-провайдера в Supabase.';
+  if (/invalid.*phone|phone.*invalid/i.test(raw + code)) return 'Проверь номер телефона и используй международный формат, например +33612345678.';
+  if (/otp.*expired|token.*expired|invalid.*otp|token.*invalid/i.test(raw + code)) return 'Код неверный или уже истёк. Запроси новый SMS-код.';
+  if (/signups.*not.*allowed.*otp|user.*not.*found/i.test(raw + code)) return 'Не удалось отправить код для входа. Проверь номер или выбери регистрацию по телефону.';
   if (/PGRST205|42P01/.test(code)) return 'Схема базы FitGoIn не готова. Владельцу сайта нужно проверить миграции Supabase.';
   if (/23505/.test(code)) return 'Такая запись уже существует. Обнови данные и повтори действие.';
   if (/42501|row.level.security|permission denied/i.test(code + raw)) return 'Нет доступа к операции. Проверь вход и правила доступа Supabase.';
@@ -197,7 +202,7 @@ async function openProfile(id, push = true) {
     catch(e){if(visibleProfile===id && $('profileGallery')) $('profileGallery').textContent=explain(e);}
   }
 }
-function authUI() { $('authOpen').textContent=user?'Кабинет':'Войти'; $('accountOpen').textContent=user?'Мой профиль':'Стать тренером'; $('accountEmail').textContent=user?.email || ''; }
+function authUI() { $('authOpen').textContent=user?'Кабинет':'Войти'; $('accountOpen').textContent=user?'Мой профиль':'Стать тренером'; $('accountEmail').textContent=user?.email || user?.phone || ''; }
 function authChanged(event, session) {
   const next=session?.user || null, changed=user?.id!==next?.id; user=next; authUI();
   if(changed){authEpoch++;threadEpoch++;catalogueEpoch++;own=null;activeThread=null;threads=[];chatRows=[];pendingMessage=null;visibleProfile='';
@@ -242,7 +247,75 @@ function assertStrongPassword(value) {
   if(!strong) throw Error('Пароль: минимум 12 символов, строчная и заглавная буква, цифра и специальный знак.');
   return password;
 }
+function normalizePhone(value) {
+  const phone=String(value || '').trim().replace(/[()\s.-]/g,'');
+  if(!/^\+[1-9]\d{7,14}$/.test(phone)) throw Error('Введи номер в международном формате, например +33612345678.');
+  return phone;
+}
+function updatePhoneResendButton() {
+  const button=$('phoneResend'); if(!button)return;
+  const seconds=Math.max(0,Math.ceil((phoneResendUntil-Date.now())/1000));
+  button.disabled=seconds>0;
+  button.textContent=seconds>0?`Отправить код повторно (${seconds})`:'Отправить код повторно';
+  if(!seconds && phoneTimer){clearInterval(phoneTimer);phoneTimer=0;}
+}
+function startPhoneResendTimer() {
+  phoneResendUntil=Date.now()+60000;
+  if(phoneTimer)clearInterval(phoneTimer);
+  updatePhoneResendButton();
+  phoneTimer=setInterval(updatePhoneResendButton,1000);
+}
+function openPhoneAuth(mode) {
+  phoneMode=mode==='signup'?'signup':'login';pendingPhone='';pendingPhoneName='';
+  const request=$('phoneRequestForm'),otp=$('phoneOtpForm');
+  request.reset();otp.reset();request.hidden=false;otp.hidden=true;
+  $('phoneTitle').textContent=phoneMode==='signup'?'Регистрация по телефону':'Вход по телефону';
+  $('phoneNameWrap').hidden=phoneMode!=='signup';
+  request.elements.name.required=phoneMode==='signup';
+  $('phoneSend').textContent=phoneMode==='signup'?'Получить код и зарегистрироваться':'Получить код для входа';
+  message('phoneMessage','');message('phoneOtpMessage','');
+  updatePhoneResendButton();closeDialogs();$('phoneDialog').showModal();
+}
+async function requestPhoneOtp(phone,name='') {
+  if(Date.now()<phoneResendUntil) throw Error('Подожди до повторной отправки SMS-кода.');
+  const options={channel:'sms',shouldCreateUser:phoneMode==='signup'};
+  if(phoneMode==='signup') options.data={full_name:name};
+  unwrap(await db.auth.signInWithOtp({phone,options}));
+  startPhoneResendTimer();
+}
 function bindAuth() {
+  $('phoneSignupOpen').onclick=()=>openPhoneAuth('signup');
+  $('phoneLoginOpen').onclick=()=>openPhoneAuth('login');
+  bindForm('phoneRequestForm','phoneMessage',async(f,form)=>{
+    const phone=normalizePhone(f.get('phone'));
+    const name=String(f.get('name')||'').trim();
+    if(phoneMode==='signup' && !name)throw Error('Введи имя.');
+    await requestPhoneOtp(phone,name);
+    pendingPhone=phone;pendingPhoneName=name;
+    form.hidden=true;$('phoneOtpForm').hidden=false;$('phoneOtpForm').reset();
+    message('phoneOtpMessage',`Код отправлен на ${phone}. Введи 6 цифр из SMS.`);
+    $('phoneOtpForm').elements.token.focus();
+  });
+  bindForm('phoneOtpForm','phoneOtpMessage',async(f,form)=>{
+    if(!pendingPhone)throw Error('Сначала запроси SMS-код.');
+    const token=String(f.get('token')||'').trim();
+    if(!/^\d{6}$/.test(token))throw Error('Введи 6 цифр из SMS.');
+    const data=unwrap(await db.auth.verifyOtp({phone:pendingPhone,token,type:'sms'}));
+    if(!data?.session || !data?.user)throw Error('Не удалось подтвердить код. Запроси новый SMS-код.');
+    if(phoneTimer){clearInterval(phoneTimer);phoneTimer=0;}phoneResendUntil=0;
+    user=data.user;authUI();form.reset();message('phoneOtpMessage','');await afterLogin();
+  });
+  $('phoneResend').onclick=()=>run($('phoneOtpForm'),'phoneOtpMessage',async()=>{
+    if(!pendingPhone)throw Error('Сначала введи номер телефона.');
+    await requestPhoneOtp(pendingPhone,pendingPhoneName);
+    message('phoneOtpMessage',`Новый код отправлен на ${pendingPhone}.`);
+  });
+  $('phoneChange').onclick=()=>{
+    $('phoneOtpForm').hidden=true;$('phoneRequestForm').hidden=false;
+    $('phoneRequestForm').elements.phone.value=pendingPhone;
+    if(phoneMode==='signup')$('phoneRequestForm').elements.name.value=pendingPhoneName;
+    message('phoneMessage','');message('phoneOtpMessage','');
+  };
   bindForm('authForm','authMessage',async(f,form)=>{
     const data=unwrap(await db.auth.signInWithPassword({email:String(f.get('email')).trim(),password:f.get('password')}));
     user=data.user;authUI();form.reset();message('authMessage','');await afterLogin();
