@@ -30,6 +30,8 @@ let currentPage = 'home', pendingAction = '', authEpoch = 0, catalogueEpoch = 0,
 let chatRows = [], pendingMessage = null, chatBusy = false, inboxBusy = false, signupEmail = '';
 let pendingChatAttachment = null, pendingChatPreviewURL = '', pendingChatDurationMs = null, pendingMessageFile = null, chatMediaURLs = new Map();
 let voiceRecorder = null, voiceStream = null, voiceChunks = [], voiceStartedAt = 0, voiceTick = 0, voiceCancelled = false, voiceContext = null;
+let currentCall = null, incomingCall = null, callPeer = null, callLocalStream = null, callSignalLastId = 0, callPollBusy = false, callMuted = false, callClock = 0, callRemoteIce = [], lastIncomingCallPoll = 0, lastCallHeartbeat = 0;
+const CALL_ICE_SERVERS=[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302']}];
 let presence = new Map(), presenceFetchedAt = 0, presenceTimer = 0;
 const PRESENCE_ONLINE_MS = 75000;
 let phoneMode = 'login', pendingPhone = '', pendingPhoneName = '', phoneResendUntil = 0, phoneTimer = 0;
@@ -94,7 +96,7 @@ function requireUser(action = '') {
   if (user) return true;
   pendingAction = action; $('authDialog').showModal(); return false;
 }
-function closeDialogs() { document.querySelectorAll('dialog[open]').forEach(d => d.close()); }
+function closeDialogs() { document.querySelectorAll('dialog[open]:not(#callDialog):not(#incomingCallDialog)').forEach(d => d.close()); }
 function page(id, push = true) {
   if (!$(id)?.classList.contains('page')) id = 'home';
   if (['account','inbox'].includes(id) && !requireUser(id)) return;
@@ -214,7 +216,7 @@ function authChanged(event, session) {
   const previous=user,next=session?.user || null, changed=user?.id!==next?.id;
   user=next; authUI();
   if(changed){authEpoch++;threadEpoch++;catalogueEpoch++;own=null;activeThread=null;threads=[];chatRows=[];pendingMessage=null;visibleProfile='';presence.clear();presenceFetchedAt=0;
-    cancelVoiceRecording();$('threads').replaceChildren();$('messages').replaceChildren();$('myGallery').replaceChildren();$('profileContent').replaceChildren();$('chatTitle').textContent='Выбери диалог';$('chatPresence').textContent='';$('messageForm').hidden=true;$('messageForm').reset();clearChatAttachment();chatMediaURLs.clear();$('coachForm').reset();delete $('coachForm').dataset.dirty;$('mediaEditor').hidden=true;
+    cancelVoiceRecording();cleanupCallLocal();$('threads').replaceChildren();$('messages').replaceChildren();$('myGallery').replaceChildren();$('profileContent').replaceChildren();$('chatTitle').textContent='Выбери диалог';$('chatPresence').textContent='';$('messageForm').hidden=true;$('messageForm').reset();clearChatAttachment();chatMediaURLs.clear();$('coachForm').reset();delete $('coachForm').dataset.dirty;$('mediaEditor').hidden=true;
     stopPresenceHeartbeat();if(user)setTimeout(startPresenceHeartbeat,0);
     if(!user){coaches=coaches.filter(publicOnly);if(['account','inbox','profile'].includes(currentPage)) page('home');}
     setTimeout(()=>{loadCatalogue().then(()=>user?loadAccount():null).catch(e=>notice(explain(e)));},0);
@@ -355,7 +357,7 @@ function bindAuth() {
     if(f.get('password')!==f.get('confirm')) throw Error('Пароли не совпадают.');
     unwrap(await db.auth.updateUser({password:assertStrongPassword(f.get('password'))})); form.reset();message('resetMessage','Пароль изменён.');$('resetDialog').close();notice('Пароль изменён.');
   });
-  $('signOut').onclick=()=>run($('signOut'),'coachMessage',async()=>{try{await touchPresence(false);}catch{}unwrap(await db.auth.signOut());authChanged('SIGNED_OUT',null);page('home');});
+  $('signOut').onclick=()=>run($('signOut'),'coachMessage',async()=>{try{await endCurrentCall(true);}catch{}try{await touchPresence(false);}catch{}unwrap(await db.auth.signOut());authChanged('SIGNED_OUT',null);page('home');});
 }
 function bindCoach() {
   $('coachForm').addEventListener('input',()=>{$('coachForm').dataset.dirty='1';});
@@ -605,6 +607,168 @@ function chatMediaHTML(m) {
   if(m.kind==='audio')return `<audio class="chat-message-audio" src="${esc(url)}" controls preload="metadata"></audio>`;
   return '';
 }
+function callThread(call){return threads.find(t=>t.id===call?.thread_id) || null;}
+function callPartnerName(call){const t=callThread(call);return t?threadTitle(t):'Пользователь FitGoIn';}
+function callSupported(){return typeof RTCPeerConnection!=='undefined' && Boolean(navigator.mediaDevices?.getUserMedia);}
+function stopCallClock(){if(callClock){clearInterval(callClock);callClock=0;}}
+function updateCallDuration(){
+  if(!currentCall?.answered_at){$('callDuration').textContent='0:00';return;}
+  const ms=Math.max(0,Date.now()-new Date(currentCall.answered_at).getTime());
+  $('callDuration').textContent=formatVoiceTime(ms);
+}
+function startCallClock(){stopCallClock();updateCallDuration();callClock=setInterval(updateCallDuration,1000);}
+function setCallStatus(text,error=false){$('callStatus').textContent=text;$('callStatus').className=error?'error':'muted';}
+function stopCallMedia(){
+  callLocalStream?.getTracks().forEach(t=>t.stop());callLocalStream=null;
+  if(callPeer){callPeer.onicecandidate=null;callPeer.ontrack=null;callPeer.onconnectionstatechange=null;try{callPeer.close();}catch{}callPeer=null;}
+  const audio=$('callRemoteAudio');if(audio){audio.srcObject=null;}
+  callRemoteIce=[];callSignalLastId=0;callMuted=false;lastCallHeartbeat=0;stopCallClock();
+}
+function closeCallUI(){
+  if($('callDialog')?.open)$('callDialog').close();
+  if($('incomingCallDialog')?.open)$('incomingCallDialog').close();
+  $('muteCall').textContent='🎙️ Выключить микрофон';$('callDuration').textContent='0:00';
+}
+function cleanupCallLocal(){
+  stopCallMedia();currentCall=null;incomingCall=null;closeCallUI();
+}
+async function sendCallSignal(type,payload,call=currentCall){
+  if(!user || !call)throw Error('Звонок уже завершён.');
+  unwrap(await db.from('fgi_call_signals').insert({call_id:call.id,sender_id:user.id,signal_type:type,payload}));
+}
+async function flushCallIce(){
+  if(!callPeer?.remoteDescription || !callRemoteIce.length)return;
+  const pending=callRemoteIce.splice(0);
+  for(const candidate of pending){try{await callPeer.addIceCandidate(candidate);}catch{}}
+}
+async function processCallSignal(signal){
+  if(!currentCall || signal.call_id!==currentCall.id || signal.sender_id===user?.id)return;
+  if(signal.signal_type==='answer' && currentCall.caller_id===user.id && !callPeer?.remoteDescription){
+    await callPeer.setRemoteDescription(signal.payload);await flushCallIce();return;
+  }
+  if(signal.signal_type==='offer' && currentCall.callee_id===user.id && !callPeer?.remoteDescription){
+    await callPeer.setRemoteDescription(signal.payload);await flushCallIce();return;
+  }
+  if(signal.signal_type==='ice'){
+    if(callPeer?.remoteDescription)await callPeer.addIceCandidate(signal.payload);
+    else callRemoteIce.push(signal.payload);
+  }
+}
+async function pollCallSignals(){
+  if(!currentCall || !user)return;
+  const rows=unwrap(await db.from('fgi_call_signals').select('*').eq('call_id',currentCall.id).gt('id',callSignalLastId).order('id',{ascending:true}).limit(100));
+  for(const signal of rows){callSignalLastId=Math.max(callSignalLastId,Number(signal.id)||0);await processCallSignal(signal);}
+}
+async function waitForCallOffer(callId){
+  for(let i=0;i<12;i++){
+    const row=unwrap(await db.from('fgi_call_signals').select('*').eq('call_id',callId).eq('signal_type','offer').order('id',{ascending:false}).limit(1).maybeSingle());
+    if(row)return row;
+    await new Promise(resolve=>setTimeout(resolve,250));
+  }
+  throw Error('Не удалось получить данные звонка. Попроси собеседника позвонить ещё раз.');
+}
+function createCallPeer(call){
+  if(callPeer)try{callPeer.close();}catch{}
+  const peer=new RTCPeerConnection({iceServers:CALL_ICE_SERVERS});callPeer=peer;callRemoteIce=[];
+  callLocalStream?.getTracks().forEach(track=>peer.addTrack(track,callLocalStream));
+  peer.ontrack=event=>{
+    const stream=event.streams?.[0] || new MediaStream([event.track]);
+    const audio=$('callRemoteAudio');audio.srcObject=stream;audio.play().catch(()=>{});
+  };
+  peer.onicecandidate=event=>{if(event.candidate && currentCall?.id===call.id)sendCallSignal('ice',event.candidate.toJSON?event.candidate.toJSON():event.candidate,call).catch(()=>{});};
+  peer.onconnectionstatechange=()=>{
+    if(peer.connectionState==='connected')setCallStatus('Разговор');
+    else if(peer.connectionState==='connecting')setCallStatus('Соединение…');
+    else if(peer.connectionState==='failed')setCallStatus('Не удалось установить прямое соединение. Заверши звонок и попробуй снова.',true);
+  };
+  return peer;
+}
+function showActiveCall(call,status='Соединение…'){
+  $('callName').textContent=callPartnerName(call);$('callTitle').textContent=call.kind==='video'?'Видеозвонок':'Аудиозвонок';setCallStatus(status);
+  if(!$('callDialog').open)$('callDialog').showModal();
+}
+async function startAudioCall(){
+  if(!callSupported())throw Error('Аудиозвонки не поддерживаются этим браузером.');
+  if(!user || !activeThread)throw Error('Сначала выбери диалог.');
+  if(currentCall || incomingCall)throw Error('Сначала заверши текущий звонок.');
+  cancelVoiceRecording();
+  const actor=user.id,thread=activeThread,callee=counterpartId(thread);
+  const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false});
+  try{
+    const call=unwrap(await db.from('fgi_calls').insert({thread_id:thread.id,caller_id:actor,callee_id:callee,kind:'audio'}).select().single());
+    if(user?.id!==actor){stream.getTracks().forEach(t=>t.stop());return;}
+    currentCall=call;callLocalStream=stream;callSignalLastId=0;callMuted=false;lastCallHeartbeat=Date.now();showActiveCall(call,'Вызов…');
+    const peer=createCallPeer(call),offer=await peer.createOffer({offerToReceiveAudio:true});await peer.setLocalDescription(offer);
+    await sendCallSignal('offer',{type:peer.localDescription.type,sdp:peer.localDescription.sdp},call);
+  }catch(e){stream.getTracks().forEach(t=>t.stop());cleanupCallLocal();throw e;}
+}
+async function acceptIncomingCall(){
+  const call=incomingCall;if(!call || !user)throw Error('Вызов уже завершён.');
+  if(!callSupported())throw Error('Аудиозвонки не поддерживаются этим браузером.');
+  const actor=user.id,stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false});
+  try{
+    currentCall=call;incomingCall=null;callLocalStream=stream;callSignalLastId=0;callMuted=false;lastCallHeartbeat=Date.now();
+    if($('incomingCallDialog').open)$('incomingCallDialog').close();showActiveCall(call,'Подключаемся…');
+    const peer=createCallPeer(call),offerSignal=await waitForCallOffer(call.id);
+    await peer.setRemoteDescription(offerSignal.payload);await flushCallIce();
+    currentCall=unwrap(await db.from('fgi_calls').update({status:'accepted'}).eq('id',call.id).select().single());
+    const answer=await peer.createAnswer();await peer.setLocalDescription(answer);
+    await sendCallSignal('answer',{type:peer.localDescription.type,sdp:peer.localDescription.sdp},currentCall);
+    startCallClock();await pollCallSignals();
+  }catch(e){
+    stream.getTracks().forEach(t=>t.stop());
+    try{await db.from('fgi_calls').update({status:'declined'}).eq('id',call.id);}catch{}
+    cleanupCallLocal();throw e;
+  }
+}
+async function declineIncomingCall(){
+  const call=incomingCall;if(!call)return;
+  incomingCall=null;if($('incomingCallDialog').open)$('incomingCallDialog').close();
+  const result=await db.from('fgi_calls').update({status:'declined'}).eq('id',call.id);if(result.error && result.error.code!=='PGRST116')throw result.error;
+}
+async function endCurrentCall(silent=false){
+  const call=currentCall;
+  if(call && user && ['ringing','accepted'].includes(call.status)){
+    const result=await db.from('fgi_calls').update({status:'ended'}).eq('id',call.id);
+    if(result.error && !silent)throw result.error;
+  }
+  cleanupCallLocal();
+}
+async function checkIncomingCall(){
+  if(!user || currentCall)return;
+  if(incomingCall){
+    const row=unwrap(await db.from('fgi_calls').select('*').eq('id',incomingCall.id).maybeSingle());
+    if(!row || row.status!=='ringing'){incomingCall=null;if($('incomingCallDialog').open)$('incomingCallDialog').close();}
+    return;
+  }
+  if(Date.now()-lastIncomingCallPoll<3000)return;lastIncomingCallPoll=Date.now();
+  const since=new Date(Date.now()-90000).toISOString();
+  const call=unwrap(await db.from('fgi_calls').select('*').eq('callee_id',user.id).eq('status','ringing').gte('created_at',since).order('created_at',{ascending:false}).limit(1).maybeSingle());
+  if(!call)return;
+  incomingCall=call;$('incomingCallTitle').textContent=call.kind==='video'?'Входящий видеозвонок':'Входящий аудиозвонок';$('incomingCallName').textContent=callPartnerName(call);
+  message('incomingCallMessage','');if(!$('incomingCallDialog').open)$('incomingCallDialog').showModal();
+}
+async function refreshCurrentCall(){
+  if(!currentCall || !user)return;
+  const row=unwrap(await db.from('fgi_calls').select('*').eq('id',currentCall.id).maybeSingle());
+  if(!row || ['declined','ended','missed'].includes(row.status)){
+    const text=row?.status==='declined'?'Звонок отклонён.':row?.status==='missed'?'Нет ответа.':'Звонок завершён.';
+    cleanupCallLocal();notice(text);return;
+  }
+  const was=currentCall.status;currentCall=row;
+  if(row.status==='accepted' && was!=='accepted'){setCallStatus('Соединение…');startCallClock();}
+  await pollCallSignals();
+  if(Date.now()-lastCallHeartbeat>20000){
+    lastCallHeartbeat=Date.now();
+    const heartbeat=await db.from('fgi_calls').update({status:row.status}).eq('id',row.id).select().single();
+    if(!heartbeat.error)currentCall=heartbeat.data;
+  }
+}
+async function pollCallState(){
+  if(callPollBusy || !user || !db)return;callPollBusy=true;
+  try{if(currentCall)await refreshCurrentCall();else await checkIncomingCall();}catch(e){if(currentCall)message('callMessage',explain(e),true);}
+  finally{callPollBusy=false;}
+}
 async function contact(id) {
   if(!requireUser('contact:'+id))return;
   if(id===user.id){page('inbox');return;}
@@ -673,7 +837,7 @@ async function loadThreads() {
 }
 async function openThread(t) {
   cancelVoiceRecording();activeThread=t;chatRows=[];pendingMessage=null;threadEpoch++;clearChatAttachment();
-  $('messages').replaceChildren();$('messageForm').hidden=false;$('messageForm').reset();$('chatTitle').textContent=threadTitle(t);message('chatMessage','');
+  $('messages').replaceChildren();$('messageForm').hidden=false;$('messageForm').reset();$('audioCall').hidden=false;$('chatTitle').textContent=threadTitle(t);message('chatMessage','');
   try{await loadPresence(true);}catch{} updateActivePresence();
   $('olderMessages').hidden=true;await pollMessages(true);await loadThreads();
 }
@@ -707,6 +871,11 @@ async function pollMessages(initial = false, older = false) {
 }
 function bindChat() {
   $('refreshThreads').onclick=()=>loadThreads().catch(e=>message('chatMessage',explain(e),true));
+  $('audioCall').onclick=()=>startAudioCall().catch(e=>message('chatMessage',explain(e),true));
+  $('acceptCall').onclick=async()=>{const b=$('acceptCall');b.disabled=true;try{await acceptIncomingCall();}catch(e){message('incomingCallMessage',explain(e),true);}finally{b.disabled=false;}};
+  $('declineCall').onclick=()=>declineIncomingCall().catch(e=>message('incomingCallMessage',explain(e),true));
+  $('endCall').onclick=()=>endCurrentCall().catch(e=>message('callMessage',explain(e),true));
+  $('muteCall').onclick=()=>{if(!callLocalStream)return;callMuted=!callMuted;callLocalStream.getAudioTracks().forEach(t=>t.enabled=!callMuted);$('muteCall').textContent=callMuted?'🎙️ Включить микрофон':'🎙️ Выключить микрофон';};
   $('olderMessages').onclick=()=>pollMessages(false,true);
   $('chatFile').addEventListener('change',e=>{try{showChatAttachment(e.target.files?.[0]);message('chatMessage','');}catch(err){clearChatAttachment();message('chatMessage',explain(err),true);}});
   $('clearChatFile').onclick=()=>clearChatAttachment();
@@ -749,6 +918,7 @@ function bindChat() {
     await pollMessages(chatRows.length===0); if(!chatRows.some(m=>m.id===row.id))await pollMessages();
   });
   setInterval(()=>{if(document.visibilityState==='visible' && currentPage==='inbox' && user){pollMessages();loadThreads().catch(e=>message('chatMessage',explain(e),true));}},4000);
+  setInterval(()=>{if(document.visibilityState==='visible' && user)pollCallState();},800);
 }
 function bindUI() {
   $('menu').onclick=()=>{$('nav').classList.toggle('open');$('menu').setAttribute('aria-expanded',String($('nav').classList.contains('open')));};
