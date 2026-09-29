@@ -49,7 +49,7 @@ function safeURL(value, payment = false) {
 }
 function mediaURL(path) { return path ? db.storage.from(CONFIG.bucket).getPublicUrl(path).data.publicUrl : ''; }
 function photoHTML(c, cls = 'coach-photo') {
-  const url = c.avatar_path ? mediaURL(c.avatar_path) : safeURL(c.image_url || c.avatar_url);
+  const url = c.avatar_path ? mediaURL(c.avatar_path) : '';
   const initials = String(c.name || '?').trim().split(/\s+/).slice(0,2).map(s=>s[0]).join('').toUpperCase();
   return url ? `<img class="${cls}" src="${esc(url)}" alt="${esc(c.name)}" loading="lazy" decoding="async">` : `<div class="initials" aria-label="Фото не добавлено">${esc(initials)}</div>`;
 }
@@ -351,7 +351,7 @@ function bindMedia() {
   $('removeAvatar').onclick=()=>run($('avatarForm'),'avatarMessage',async()=>{
     if(!own || !user) throw Error('Сначала сохрани профиль.');
     const actor=user.id; await cleanupPhoto(own.avatar_path);
-    const saved=unwrap(await db.from('fgi_coaches').update({avatar_path:null,image_url:null}).eq('id',actor).select().single());
+    const saved=unwrap(await db.from('fgi_coaches').update({avatar_path:null}).eq('id',actor).select().single());
     if(user?.id!==actor)return;accountVersion++;own=saved;
     message('avatarMessage','Аватар удалён.');await loadCatalogue();
   });
