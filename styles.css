@@ -7,3 +7,11 @@
 @media(max-width:370px){.header-actions #accountOpen{display:none}#accountOpen:focus{display:block}.hero h1{font-size:48px}.logo{font-size:24px}.sport-card strong{font-size:18px}.sport-card{min-height:190px}}
 @media(prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}.btn,.sport-card{transition:border-color .2s,background .2s}.coach-card:hover{border-color:#6d7c5b}}
 h1,h2,h3,.muted{overflow-wrap:anywhere}
+
+.cookie-banner{position:fixed;left:0;right:0;bottom:0;z-index:1200;padding:16px;background:linear-gradient(180deg,transparent,rgba(5,7,5,.75))}
+.cookie-card{max-width:1100px;margin:auto;background:#151915;border:1px solid #49513f;border-radius:18px;padding:20px;display:grid;grid-template-columns:1fr auto;gap:24px;align-items:end;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+.cookie-card h2{margin:.2rem 0 .6rem}
+.cookie-card p{margin:.35rem 0}
+.cookie-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.cookie-card a{color:inherit;text-decoration:underline}
+@media(max-width:720px){.cookie-card{grid-template-columns:1fr}.cookie-actions{justify-content:stretch}.cookie-actions .btn{flex:1}}
