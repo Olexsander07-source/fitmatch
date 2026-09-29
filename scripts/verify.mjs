@@ -6,6 +6,8 @@ const migrations = new Map([
   ['20260927144002_fitgoin_stage1_foundation.sql', '0033aacf37052dc6ce150b0dca9669e9'],
   ['20260929062004_add_fgi_messages_sender_index.sql', '38fe7f22d0fac6cf8e667fc80842f7bd'],
   ['20260929062127_track_fgi_thread_activity.sql', '35d115737d8f41ec3d90d1a8f63da45b'],
+  ['20260929080940_tighten_fgi_storage_policies.sql', 'df85b11aa2289dee956104069d642cb6'],
+  ['20260929081241_harden_fgi_data_integrity.sql', 'd994e020f1d3540df5fb2832ba46a7fd'],
 ]);
 for (const file of files) await access(new URL(`../${file}`, import.meta.url));
 for (const file of migrations.keys()) await access(new URL(`../supabase/migrations/${file}`, import.meta.url));
