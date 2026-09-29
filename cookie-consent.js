@@ -51,3 +51,9 @@ document.addEventListener('click',event=>{
 });
 document.addEventListener('DOMContentLoaded',()=>showBanner(false));
 applyChoice(readChoice()||'necessary');
+
+if(location.pathname==='/' || /\/index\.html$/.test(location.pathname)){
+  const payments=document.createElement('script');
+  payments.type='module';payments.src='./payments.js?v=20260929';
+  document.head.append(payments);
+}
