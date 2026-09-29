@@ -16,3 +16,4 @@ The historical foundation file is byte-for-byte matched to the SQL recorded by S
 4. Re-run security and performance advisors after DDL changes.
 5. Keep service-role and database secrets out of the repository.
 - `20260929104742_add_chat_presence` — tracks chat participant online/last-seen state with participant-only RLS.
+- `20260929105457_add_chat_media` — adds private participant-only chat attachments and message media metadata.
