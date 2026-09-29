@@ -45,13 +45,13 @@
   <section id="sports" class="page container section"><p class="eyebrow">ВЫБЕРИ НАПРАВЛЕНИЕ</p><h1>Найди свой <em>спорт.</em></h1><div id="sportsList" class="sports-grid"></div></section>
   <section id="coaches" class="page container section"><p class="eyebrow">ЛЮДИ, КОТОРЫЕ ПОМОГАЮТ РАСТИ</p><h1>Твой следующий <em>тренер.</em></h1>
     <div id="categoryBanner" class="category" hidden></div>
-    <div class="filters"><label>Поиск<input id="search" type="search" placeholder="Имя, город, специализация"></label><label>Спорт<select id="sportFilter"></select></label><label>Формат<select id="formatFilter"><option value="">Любой формат</option>Онлайн</option>Офлайн</option></select></label></div>
+    <div class="filters"><label>Поиск<input id="search" type="search" placeholder="Имя, город, специализация"></label><label>Спорт<select id="sportFilter"></select></label><label>Формат<select id="formatFilter"><option value="">Любой формат</option><option value="Онлайн">Онлайн</option><option value="Офлайн">Офлайн</option></select></label></div>
     <p id="coachCount" class="muted" aria-live="polite"></p><div id="coachesList" class="coach-grid"></div>
   </section>
   <section id="ranking" class="page container section"><p class="eyebrow">РЕЙТИНГ</p><h1>Тренеры и <em>их опыт.</em></h1><p class="muted">Сортировка по сохранённому рейтингу. Для новых профилей рейтинг ещё не сформирован.</p><div id="rankingList" class="stack"></div></section>
   <section id="match" class="page container section"><p class="eyebrow">FITGOIN MATCH</p><h1>Начнём с <em>тебя.</em></h1><p class="lead">Выбери важные параметры. Процент показывает совпадение с анкетой тренера, а не гарантию результата.</p>
     <form id="matchForm" class="panel form-grid"><label>Спорт<select id="matchSport" name="sport" required></select></label><label>Цель<select id="matchGoal" name="goal"><option value="">Любая цель</option></select></label>
-      <label>Формат<select name="format"><option value="">Любой</option>Онлайн</option>Офлайн</option></select></label><label>Язык<select id="matchLanguage" name="language"><option value="">Любой</option></select></label>
+      <label>Формат<select name="format"><option value="">Любой</option><option value="Онлайн">Онлайн</option><option value="Офлайн">Офлайн</option></select></label><label>Язык<select id="matchLanguage" name="language"><option value="">Любой</option></select></label>
       <label>Город для очных занятий<input name="city" maxlength="100" placeholder="Например, Nice"></label><label>Максимальный бюджет, €<input name="budget" type="number" min="0" max="100000" step="0.01" placeholder="Не ограничен"></label>
       <label>Бюджет за<select name="period"><option value="занятие">Занятие</option><option value="месяц">Месяц</option><option value="программа">Программу</option></select></label>
       <div class="full"><button class="btn primary" type="submit">Показать мой MATCH ↗</button><p class="hint">Спорт — обязательное условие. Баллы за выбранные параметры: цель 30, формат 25, язык 20, город 15, бюджет 10. Пустые параметры не учитываются; спорт даёт 40 баллов.</p></div>
