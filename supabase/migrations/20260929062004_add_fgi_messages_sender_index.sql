@@ -1,0 +1,1 @@
+create index if not exists fgi_messages_sender_id_idx on public.fgi_messages(sender_id);

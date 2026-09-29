@@ -62,7 +62,7 @@ function explain(e) {
   if (/email not confirmed/i.test(raw)) return 'Сначала подтверди email. На странице регистрации можно запросить письмо повторно.';
   if (/rate.limit|too many|over_email_send_rate_limit/i.test(raw + code)) return 'Превышен лимит запросов. Подожди перед повторной попыткой.';
   if (/email_address_not_authorized|email address not authorized/i.test(raw + code)) return 'Отправка на этот email не настроена. Владельцу сайта нужно подключить SMTP в Supabase.';
-  if (/PGRST205|42P01/.test(code)) return 'Новые таблицы ещё не настроены. Владельцу сайта нужно выполнить SQL из конца fitmatch.js.';
+  if (/PGRST205|42P01/.test(code)) return 'Схема базы FitGoIn не готова. Владельцу сайта нужно проверить миграции Supabase.';
   if (/23505/.test(code)) return 'Такая запись уже существует. Обнови данные и повтори действие.';
   if (/42501|row.level.security|permission denied/i.test(code + raw)) return 'Нет доступа к операции. Проверь вход и правила доступа Supabase.';
   if (/Failed to fetch|NetworkError|fetch failed|AbortError|timed out/i.test(raw)) return 'Нет ответа сервера. Проверь интернет и повтори действие; результат предыдущего запроса мог сохраниться.';
@@ -225,6 +225,12 @@ async function loadAccount() {
   $('mediaEditor').hidden=!record; $('myProfile').hidden=!record;
   if(record) await loadMyGallery();
 }
+function assertStrongPassword(value) {
+  const password=String(value || '');
+  const strong=password.length>=12 && /\p{Ll}/u.test(password) && /\p{Lu}/u.test(password) && /\p{N}/u.test(password) && /[\p{P}\p{S}]/u.test(password);
+  if(!strong) throw Error('Пароль: минимум 12 символов, строчная и заглавная буква, цифра и специальный знак.');
+  return password;
+}
 function bindAuth() {
   bindForm('authForm','authMessage',async(f,form)=>{
     const data=unwrap(await db.auth.signInWithPassword({email:String(f.get('email')).trim(),password:f.get('password')}));
@@ -233,7 +239,7 @@ function bindAuth() {
   bindForm('signupForm','signupMessage',async(f,form)=>{
     signupEmail=String(f.get('email')).trim();
     const name=String(f.get('name')).trim();if(!name)throw Error('Введи имя.');
-    const data=unwrap(await db.auth.signUp({email:signupEmail,password:f.get('password'),options:{emailRedirectTo:redirectURL(),data:{full_name:name}}}));
+    const data=unwrap(await db.auth.signUp({email:signupEmail,password:assertStrongPassword(f.get('password')),options:{emailRedirectTo:redirectURL(),data:{full_name:name}}}));
     form.elements.password.value='';
     if(data.session){user=data.user;authUI();message('signupMessage','Аккаунт создан.');await afterLogin();}
     else message('signupMessage','Запрос принят. Если адрес можно зарегистрировать, придёт письмо со ссылкой подтверждения. Проверь входящие и спам. Если аккаунт уже есть — войди или восстанови пароль.');
@@ -252,7 +258,7 @@ function bindAuth() {
   bindForm('resetForm','resetMessage',async(f,form)=>{
     if(!user) throw Error('Ссылка недействительна или истекла. Запроси восстановление ещё раз.');
     if(f.get('password')!==f.get('confirm')) throw Error('Пароли не совпадают.');
-    unwrap(await db.auth.updateUser({password:f.get('password')})); form.reset();message('resetMessage','Пароль изменён.');$('resetDialog').close();notice('Пароль изменён.');
+    unwrap(await db.auth.updateUser({password:assertStrongPassword(f.get('password'))})); form.reset();message('resetMessage','Пароль изменён.');$('resetDialog').close();notice('Пароль изменён.');
   });
   $('signOut').onclick=()=>run($('signOut'),'coachMessage',async()=>{unwrap(await db.auth.signOut());authChanged('SIGNED_OUT',null);page('home');});
 }
@@ -260,7 +266,7 @@ function bindCoach() {
   $('coachForm').addEventListener('input',()=>{$('coachForm').dataset.dirty='1';});
   bindForm('coachForm','coachMessage',async(f)=>{
     if(!requireUser('account')) return;
-    if(!setupReady) throw Error('Сначала выполни однократную настройку SQL из конца файла.');
+    if(!setupReady) throw Error('Схема базы FitGoIn не готова. Проверь миграции Supabase.');
     const actor=user.id,epoch=authEpoch;
     const payload={id:actor};
     for(const name of ['name','sport','goal','format','city','country','period','bio','education','titles','achievements','payment_url']) payload[name]=String(f.get(name)||'').trim();
@@ -383,7 +389,7 @@ function threadTitle(t) {return t.coach_id===user?.id?`${t.client_name || 'Кл�
 async function loadThreads() {
   if(!user || !db || inboxBusy)return;inboxBusy=true;const epoch=authEpoch;
   try {
-    const data=(await allRows('fgi_threads')).sort((a,b)=>b.created_at.localeCompare(a.created_at));
+    const data=(await allRows('fgi_threads')).sort((a,b)=>(b.updated_at||b.created_at).localeCompare(a.updated_at||a.created_at));
     if(epoch!==authEpoch)return;threads=data;
     $('threads').innerHTML=data.map(t=>`<button class="thread ${activeThread?.id===t.id?'active':''}" data-thread="${esc(t.id)}">${esc(threadTitle(t))}</button>`).join('') || '<p class="muted">Диалогов пока нет. Открой тренера и нажми «Написать».</p>';
   } finally {inboxBusy=false;}
@@ -488,181 +494,5 @@ async function init() {
 }
 init();
 
-/* FITGOIN_SETUP_SQL_BEGIN
-ОДНОКРАТНАЯ НАСТРОЙКА В SUPABASE → SQL EDITOR → NEW QUERY → RUN.
-Скопируйте только SQL между строками BEGIN; и COMMIT; включительно.
-Скрипт добавляет таблицы fgi_*. Старые sports/coaches не удаляет и не изменяет.
-Перед выполнением сохраните резервную копию базы. Настройки SMTP этим SQL не меняются.
-SQL импортирует доступные старые анкеты с существующим владельцем Auth, по одной на аккаунт.
-Исходные записи остаются в coaches. Для переноса анкет без владельца сначала назначьте им user_id.
 
-BEGIN;
-CREATE TABLE IF NOT EXISTS public.fgi_sports (
-  id text PRIMARY KEY, name text NOT NULL CHECK(length(name) BETWEEN 1 AND 120)
-);
-CREATE TABLE IF NOT EXISTS public.fgi_coaches (
-  id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  name text NOT NULL CHECK(length(trim(name)) BETWEEN 1 AND 100),
-  sport text NOT NULL CHECK(length(sport) BETWEEN 1 AND 150),
-  goal text NOT NULL DEFAULT '' CHECK(length(goal)<=300),
-  format text NOT NULL DEFAULT 'Онлайн' CHECK(format IN ('Онлайн','Офлайн','Онлайн и офлайн')),
-  price numeric(10,2) CHECK(price BETWEEN 0 AND 100000),
-  period text NOT NULL DEFAULT 'занятие' CHECK(period IN ('занятие','месяц','программа')),
-  bio text NOT NULL DEFAULT '' CHECK(length(bio)<=4000),
-  city text NOT NULL DEFAULT '' CHECK(length(city)<=100),
-  country text NOT NULL DEFAULT '' CHECK(length(country)<=100),
-  languages text[] NOT NULL DEFAULT '{}' CHECK(cardinality(languages)<=30),
-  experience_years integer CHECK(experience_years BETWEEN 0 AND 80),
-  education text NOT NULL DEFAULT '' CHECK(length(education)<=2000),
-  titles text NOT NULL DEFAULT '' CHECK(length(titles)<=2000),
-  achievements text NOT NULL DEFAULT '' CHECK(length(achievements)<=3000),
-  avatar_path text CHECK(avatar_path IS NULL OR avatar_path LIKE id::text || '/%'),
-  image_url text,
-  payment_url text NOT NULL DEFAULT '' CHECK(payment_url='' OR payment_url ~ '^https://buy[.]stripe[.]com/(test_)?[a-zA-Z0-9]+$'),
-  published boolean NOT NULL DEFAULT true,
-  rating numeric(3,2) NOT NULL DEFAULT 0 CHECK(rating BETWEEN 0 AND 5),
-  score numeric NOT NULL DEFAULT 0,
-  verified boolean NOT NULL DEFAULT false,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-CREATE TABLE IF NOT EXISTS public.fgi_media (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  coach_id uuid NOT NULL REFERENCES public.fgi_coaches(id) ON DELETE CASCADE,
-  path text NOT NULL UNIQUE CHECK(path LIKE coach_id::text || '/%'),
-  kind text NOT NULL CHECK(kind IN ('coach','client','achievement')),
-  caption text NOT NULL DEFAULT '' CHECK(length(caption)<=300),
-  consent boolean NOT NULL DEFAULT false CHECK(kind<>'client' OR consent),
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-CREATE TABLE IF NOT EXISTS public.fgi_threads (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  coach_id uuid NOT NULL REFERENCES public.fgi_coaches(id) ON DELETE CASCADE,
-  client_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  client_name text NOT NULL DEFAULT 'Клиент' CHECK(length(client_name) BETWEEN 1 AND 100),
-  created_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE(coach_id,client_id), CHECK(coach_id<>client_id)
-);
-CREATE TABLE IF NOT EXISTS public.fgi_messages (
-  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  client_nonce uuid NOT NULL UNIQUE,
-  thread_id uuid NOT NULL REFERENCES public.fgi_threads(id) ON DELETE CASCADE,
-  sender_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  body text NOT NULL CHECK(length(trim(body)) BETWEEN 1 AND 4000),
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-CREATE INDEX IF NOT EXISTS fgi_media_owner ON public.fgi_media(coach_id);
-CREATE INDEX IF NOT EXISTS fgi_threads_client ON public.fgi_threads(client_id);
-CREATE INDEX IF NOT EXISTS fgi_messages_thread ON public.fgi_messages(thread_id,id);
-
--- Копирование старых sports/coaches без изменения их схемы и без удаления записей.
-DO $migration$
-DECLARE r jsonb; owner_id uuid; sport_id text;
-BEGIN
-  IF to_regclass('public.sports') IS NOT NULL THEN
-    FOR r IN EXECUTE 'SELECT to_jsonb(s) FROM public.sports s' LOOP
-      IF coalesce(r->>'id','')<>'' AND coalesce(r->>'name','')<>'' THEN
-        INSERT INTO public.fgi_sports(id,name) VALUES(r->>'id',left(r->>'name',120)) ON CONFLICT DO NOTHING;
-      END IF;
-    END LOOP;
-  END IF;
-  IF to_regclass('public.coaches') IS NOT NULL THEN
-    FOR r IN EXECUTE 'SELECT to_jsonb(c) FROM public.coaches c ORDER BY to_jsonb(c)->>''id''' LOOP
-      owner_id:=NULL;
-      SELECT u.id INTO owner_id FROM auth.users u WHERE u.id::text=r->>'user_id';
-      IF owner_id IS NULL THEN CONTINUE; END IF;
-      sport_id:=coalesce(nullif(r->>'sport',''),nullif(r->>'sport_id',''),'fitness');
-      INSERT INTO public.fgi_coaches(id,name,sport,goal,format,price,period,bio,city,country,languages,experience_years,education,titles,achievements,image_url,rating,score,verified)
-      VALUES(owner_id,left(coalesce(nullif(trim(r->>'name'),''),'Тренер'),100),left(sport_id,150),left(coalesce(r->>'goal',''),300),
-        CASE WHEN r->>'format' IN ('Онлайн','Офлайн','Онлайн и офлайн') THEN r->>'format' ELSE 'Онлайн' END,
-        CASE WHEN r->>'price' ~ '^[0-9]+([.][0-9]+)?$' THEN least((r->>'price')::numeric,100000) ELSE NULL END,
-        CASE WHEN r->>'period' IN ('занятие','месяц','программа') THEN r->>'period' ELSE 'месяц' END,
-        left(coalesce(r->>'bio',''),4000),left(coalesce(r->>'city',''),100),left(coalesce(r->>'country',''),100),
-        CASE WHEN jsonb_typeof(r->'languages')='array' THEN ARRAY(SELECT jsonb_array_elements_text(r->'languages') LIMIT 30) ELSE '{}'::text[] END,
-        CASE WHEN r->>'experience_years' ~ '^[0-9]+$' THEN least((r->>'experience_years')::numeric,80)::integer ELSE NULL END,
-        left(coalesce(r->>'education',''),2000),left(coalesce(r->>'titles',''),2000),left(coalesce(r->>'achievements',r->>'achievements_summary',''),3000),
-        coalesce(nullif(r->>'image_url',''),r->>'avatar_url'),
-        CASE WHEN r->>'rating' ~ '^[0-9]+([.][0-9]+)?$' THEN least((r->>'rating')::numeric,5) ELSE 0 END,
-        CASE WHEN r->>'score' ~ '^[0-9]+([.][0-9]+)?$' THEN (r->>'score')::numeric ELSE 0 END,
-        coalesce(r->>'verified','false')='true')
-      ON CONFLICT(id) DO NOTHING;
-    END LOOP;
-  END IF;
-END $migration$;
-INSERT INTO public.fgi_sports(id,name)
-SELECT v.id,v.name FROM (VALUES
- ('bodybuilding','Bodybuilding','бодибилдинг'),('fitness','Fitness','фитнес'),
- ('crossfit','CrossFit','кроссфит'),('running','Running','бег'),('yoga','Yoga','йога'),
- ('swimming','Swimming','плавание'),('cycling','Cycling','велоспорт'),
- ('tennis','Tennis','теннис'),('combat','Combat sports','единоборства'),('football','Football','футбол')
-) AS v(id,name,alias)
-WHERE NOT EXISTS(SELECT 1 FROM public.fgi_sports s WHERE lower(trim(s.name)) IN (lower(v.name),v.alias))
-ON CONFLICT DO NOTHING;
-
-ALTER TABLE public.fgi_sports ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.fgi_coaches ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.fgi_media ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.fgi_threads ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.fgi_messages ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON public.fgi_sports,public.fgi_coaches,public.fgi_media,public.fgi_threads,public.fgi_messages FROM anon,authenticated;
-GRANT SELECT ON public.fgi_sports,public.fgi_coaches,public.fgi_media TO anon,authenticated;
-GRANT SELECT ON public.fgi_threads,public.fgi_messages TO authenticated;
-GRANT INSERT(id,name,sport,goal,format,price,period,bio,city,country,languages,experience_years,education,titles,achievements,avatar_path,image_url,payment_url,published)
- ON public.fgi_coaches TO authenticated;
-GRANT UPDATE(name,sport,goal,format,price,period,bio,city,country,languages,experience_years,education,titles,achievements,avatar_path,image_url,payment_url,published)
- ON public.fgi_coaches TO authenticated;
--- UPSERT включает id в UPDATE, но смена владельца всё равно запрещена RLS.
-GRANT UPDATE(id) ON public.fgi_coaches TO authenticated;
-GRANT INSERT(coach_id,path,kind,caption,consent),DELETE ON public.fgi_media TO authenticated;
-GRANT INSERT(coach_id,client_id,client_name) ON public.fgi_threads TO authenticated;
-GRANT INSERT(client_nonce,thread_id,sender_id,body) ON public.fgi_messages TO authenticated;
-GRANT USAGE ON SEQUENCE public.fgi_messages_id_seq TO authenticated;
-
-DROP POLICY IF EXISTS fgi_sports_read ON public.fgi_sports;
-CREATE POLICY fgi_sports_read ON public.fgi_sports FOR SELECT TO anon,authenticated USING(true);
-DROP POLICY IF EXISTS fgi_coaches_read ON public.fgi_coaches;
-CREATE POLICY fgi_coaches_read ON public.fgi_coaches FOR SELECT TO anon,authenticated USING(published OR id=(SELECT auth.uid()));
-DROP POLICY IF EXISTS fgi_coaches_insert ON public.fgi_coaches;
-CREATE POLICY fgi_coaches_insert ON public.fgi_coaches FOR INSERT TO authenticated WITH CHECK(id=(SELECT auth.uid()));
-DROP POLICY IF EXISTS fgi_coaches_update ON public.fgi_coaches;
-CREATE POLICY fgi_coaches_update ON public.fgi_coaches FOR UPDATE TO authenticated USING(id=(SELECT auth.uid())) WITH CHECK(id=(SELECT auth.uid()));
-DROP POLICY IF EXISTS fgi_media_read ON public.fgi_media;
-CREATE POLICY fgi_media_read ON public.fgi_media FOR SELECT TO anon,authenticated
- USING(EXISTS(SELECT 1 FROM public.fgi_coaches c WHERE c.id=coach_id));
-DROP POLICY IF EXISTS fgi_media_insert ON public.fgi_media;
-CREATE POLICY fgi_media_insert ON public.fgi_media FOR INSERT TO authenticated WITH CHECK(coach_id=(SELECT auth.uid()));
-DROP POLICY IF EXISTS fgi_media_delete ON public.fgi_media;
-CREATE POLICY fgi_media_delete ON public.fgi_media FOR DELETE TO authenticated USING(coach_id=(SELECT auth.uid()));
-DROP POLICY IF EXISTS fgi_threads_read ON public.fgi_threads;
-CREATE POLICY fgi_threads_read ON public.fgi_threads FOR SELECT TO authenticated USING((SELECT auth.uid()) IN (client_id,coach_id));
-DROP POLICY IF EXISTS fgi_threads_insert ON public.fgi_threads;
-CREATE POLICY fgi_threads_insert ON public.fgi_threads FOR INSERT TO authenticated
- WITH CHECK(client_id=(SELECT auth.uid()) AND EXISTS(SELECT 1 FROM public.fgi_coaches c WHERE c.id=coach_id AND c.published));
-DROP POLICY IF EXISTS fgi_messages_read ON public.fgi_messages;
-CREATE POLICY fgi_messages_read ON public.fgi_messages FOR SELECT TO authenticated
- USING(EXISTS(SELECT 1 FROM public.fgi_threads t WHERE t.id=thread_id AND (SELECT auth.uid()) IN (t.client_id,t.coach_id)));
-DROP POLICY IF EXISTS fgi_messages_insert ON public.fgi_messages;
-CREATE POLICY fgi_messages_insert ON public.fgi_messages FOR INSERT TO authenticated
- WITH CHECK(sender_id=(SELECT auth.uid()) AND EXISTS(SELECT 1 FROM public.fgi_threads t WHERE t.id=thread_id AND (SELECT auth.uid()) IN (t.client_id,t.coach_id)));
-
-INSERT INTO storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
-VALUES('fgi-media','fgi-media',true,4194304,ARRAY['image/jpeg','image/png','image/webp'])
-ON CONFLICT(id) DO UPDATE SET public=true,file_size_limit=4194304,allowed_mime_types=EXCLUDED.allowed_mime_types;
-DROP POLICY IF EXISTS fgi_storage_insert ON storage.objects;
-CREATE POLICY fgi_storage_insert ON storage.objects FOR INSERT TO authenticated
- WITH CHECK(bucket_id='fgi-media' AND (storage.foldername(name))[1]=(SELECT auth.uid())::text
- AND EXISTS(SELECT 1 FROM public.fgi_coaches c WHERE c.id=(SELECT auth.uid())));
-DROP POLICY IF EXISTS fgi_storage_read ON storage.objects;
-CREATE POLICY fgi_storage_read ON storage.objects FOR SELECT TO authenticated
- USING(bucket_id='fgi-media' AND (storage.foldername(name))[1]=(SELECT auth.uid())::text);
-DROP POLICY IF EXISTS fgi_storage_delete ON storage.objects;
-CREATE POLICY fgi_storage_delete ON storage.objects FOR DELETE TO authenticated
- USING(bucket_id='fgi-media' AND (storage.foldername(name))[1]=(SELECT auth.uid())::text);
--- Дополнительное ограничение защищает новый bucket даже при старых широких storage-политиках.
-DROP POLICY IF EXISTS fgi_storage_guard ON storage.objects;
-CREATE POLICY fgi_storage_guard ON storage.objects AS RESTRICTIVE FOR ALL TO anon,authenticated
- USING(bucket_id<>'fgi-media' OR (storage.foldername(name))[1]=(SELECT auth.uid())::text)
- WITH CHECK(bucket_id<>'fgi-media' OR ((storage.foldername(name))[1]=(SELECT auth.uid())::text
- AND EXISTS(SELECT 1 FROM public.fgi_coaches c WHERE c.id=(SELECT auth.uid()))));
-NOTIFY pgrst,'reload schema';
-COMMIT;
-FITGOIN_SETUP_SQL_END */
+/* Database schema is managed by Supabase migrations in supabase/migrations/. */
