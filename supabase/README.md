@@ -20,3 +20,4 @@ The historical foundation file is byte-for-byte matched to the SQL recorded by S
 
 - `20260929110708_add_audio_call_signaling` — adds participant-only WebRTC call records and SDP/ICE signaling.
 - `20260929111114_harden_call_stale_recovery` — expires abandoned ringing/accepted calls so they cannot block future calls.
+- `20260929111231_index_call_foreign_keys` — adds covering indexes for caller/signal sender foreign keys.
