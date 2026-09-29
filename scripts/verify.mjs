@@ -67,6 +67,14 @@ if (!js.includes("db.from('fgi_calls').insert")) throw new Error('Call creation 
 if (!js.includes("db.from('fgi_call_signals').insert")) throw new Error('Call signal exchange is missing');
 if (!js.includes("getUserMedia({audio:{echoCancellation:true")) throw new Error('Audio call microphone capture is missing');
 if (!js.includes("update({status:'accepted'})") || !js.includes("update({status:'ended'})")) throw new Error('Call lifecycle updates are missing');
+if (!html.includes('id="videoCall"') || !html.includes('id="callRemoteVideo"') || !html.includes('id="callLocalVideo"')) throw new Error('Video call UI is missing');
+if (!html.includes('id="toggleCamera"') || !html.includes('id="switchCamera"')) throw new Error('Video camera controls are missing');
+if (!js.includes('async function startVideoCall()')) throw new Error('Video call start flow is missing');
+if (!js.includes("kind:'video'")) throw new Error('Video call signaling kind is missing');
+if (!js.includes("video:{facingMode:{ideal:callFacingMode}")) throw new Error('Video camera capture is missing');
+if (!js.includes('async function switchCallCamera()')) throw new Error('Camera switching is missing');
+if (!js.includes("sender.replaceTrack(nextTrack)")) throw new Error('Camera track replacement is missing');
+if (!js.includes("call.kind==='video'")) throw new Error('Incoming video call handling is missing');
 
 const openSelects = (html.match(/<select\b/gi) || []).length;
 const closeSelects = (html.match(/<\/select\s*>/gi) || []).length;
