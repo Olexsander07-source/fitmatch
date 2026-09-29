@@ -31,6 +31,7 @@ if (!js.includes("searchParams.set('trainer',id)")) throw new Error('Shareable t
 if (js.includes("allRows('sports')") || js.includes("allRows('coaches')")) throw new Error('Legacy catalogue reads must not return');
 if (!html.includes('name="website"')) throw new Error('Signup honeypot is missing');
 if (!js.includes("rateGate('signup'")) throw new Error('Signup cooldown is missing');
+if (js.includes("c.image_url || c.avatar_url")) throw new Error('External coach image fallback must not return');
 
 const openSelects = (html.match(/<select\b/gi) || []).length;
 const closeSelects = (html.match(/<\/select\s*>/gi) || []).length;
