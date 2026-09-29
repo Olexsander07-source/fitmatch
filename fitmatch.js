@@ -30,7 +30,7 @@ let currentPage = 'home', pendingAction = '', authEpoch = 0, catalogueEpoch = 0,
 let chatRows = [], pendingMessage = null, chatBusy = false, inboxBusy = false, signupEmail = '';
 let pendingChatAttachment = null, pendingChatPreviewURL = '', pendingChatDurationMs = null, pendingMessageFile = null, chatMediaURLs = new Map();
 let voiceRecorder = null, voiceStream = null, voiceChunks = [], voiceStartedAt = 0, voiceTick = 0, voiceCancelled = false, voiceContext = null;
-let currentCall = null, incomingCall = null, callPeer = null, callLocalStream = null, callSignalLastId = 0, callPollBusy = false, callMuted = false, callClock = 0, callRemoteIce = [], lastIncomingCallPoll = 0, lastCallHeartbeat = 0;
+let currentCall = null, incomingCall = null, callPeer = null, callLocalStream = null, callSignalLastId = 0, callPollBusy = false, callMuted = false, callCameraOff = false, callFacingMode = 'user', callClock = 0, callRemoteIce = [], lastIncomingCallPoll = 0, lastCallHeartbeat = 0;
 const CALL_ICE_SERVERS=[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302']}];
 let presence = new Map(), presenceFetchedAt = 0, presenceTimer = 0;
 const PRESENCE_ONLINE_MS = 75000;
@@ -77,8 +77,8 @@ function explain(e) {
   if (/PGRST205|42P01/.test(code)) return 'Схема базы FitGoIn не готова. Владельцу сайта нужно проверить миграции Supabase.';
   if (/23505/.test(code)) return 'Такая запись уже существует. Обнови данные и повтори действие.';
   if (/42501|row.level.security|permission denied/i.test(code + raw)) return 'Нет доступа к операции. Проверь вход и правила доступа Supabase.';
-  if (/NotAllowedError|permission denied|Permission denied/i.test(raw)) return 'Разреши доступ к микрофону в браузере и попробуй ещё раз.';
-  if (/NotFoundError|Requested device not found/i.test(raw)) return 'Микрофон не найден на устройстве.';
+  if (/NotAllowedError|permission denied|Permission denied/i.test(raw)) return 'Разреши доступ к микрофону и камере в браузере и попробуй ещё раз.';
+  if (/NotFoundError|Requested device not found/i.test(raw)) return 'Нужный микрофон или камера не найдены на устройстве.';
   if (/Failed to fetch|NetworkError|fetch failed|AbortError|timed out/i.test(raw)) return 'Нет ответа сервера. Проверь интернет и повтори действие; результат предыдущего запроса мог сохраниться.';
   return raw;
 }
@@ -622,12 +622,16 @@ function stopCallMedia(){
   callLocalStream?.getTracks().forEach(t=>t.stop());callLocalStream=null;
   if(callPeer){callPeer.onicecandidate=null;callPeer.ontrack=null;callPeer.onconnectionstatechange=null;try{callPeer.close();}catch{}callPeer=null;}
   const audio=$('callRemoteAudio');if(audio){audio.srcObject=null;}
-  callRemoteIce=[];callSignalLastId=0;callMuted=false;lastCallHeartbeat=0;stopCallClock();
+  const remoteVideo=$('callRemoteVideo');if(remoteVideo){remoteVideo.srcObject=null;}
+  const localVideo=$('callLocalVideo');if(localVideo){localVideo.srcObject=null;}
+  callRemoteIce=[];callSignalLastId=0;callMuted=false;callCameraOff=false;callFacingMode='user';lastCallHeartbeat=0;stopCallClock();
 }
 function closeCallUI(){
   if($('callDialog')?.open)$('callDialog').close();
   if($('incomingCallDialog')?.open)$('incomingCallDialog').close();
-  $('muteCall').textContent='🎙️ Выключить микрофон';$('callDuration').textContent='0:00';
+  $('callDialog')?.classList.remove('video-mode');
+  $('callVideoStage').hidden=true;$('toggleCamera').hidden=true;$('switchCamera').hidden=true;
+  $('muteCall').textContent='🎙️ Выключить микрофон';$('toggleCamera').textContent='📷 Выключить камеру';$('callDuration').textContent='0:00';
 }
 function cleanupCallLocal(){
   stopCallMedia();currentCall=null;incomingCall=null;closeCallUI();
@@ -673,7 +677,11 @@ function createCallPeer(call){
   callLocalStream?.getTracks().forEach(track=>peer.addTrack(track,callLocalStream));
   peer.ontrack=event=>{
     const stream=event.streams?.[0] || new MediaStream([event.track]);
-    const audio=$('callRemoteAudio');audio.srcObject=stream;audio.play().catch(()=>{});
+    if(call.kind==='video'){
+      const video=$('callRemoteVideo');video.srcObject=stream;video.play().catch(()=>{});
+    } else {
+      const audio=$('callRemoteAudio');audio.srcObject=stream;audio.play().catch(()=>{});
+    }
   };
   peer.onicecandidate=event=>{if(event.candidate && currentCall?.id===call.id)sendCallSignal('ice',event.candidate.toJSON?event.candidate.toJSON():event.candidate,call).catch(()=>{});};
   peer.onconnectionstatechange=()=>{
@@ -684,7 +692,11 @@ function createCallPeer(call){
   return peer;
 }
 function showActiveCall(call,status='Соединение…'){
-  $('callName').textContent=callPartnerName(call);$('callTitle').textContent=call.kind==='video'?'Видеозвонок':'Аудиозвонок';setCallStatus(status);
+  const isVideo=call.kind==='video';
+  $('callName').textContent=callPartnerName(call);$('callTitle').textContent=isVideo?'Видеозвонок':'Аудиозвонок';setCallStatus(status);
+  $('callVideoStage').hidden=!isVideo;$('toggleCamera').hidden=!isVideo;$('switchCamera').hidden=!isVideo;
+  $('callDialog').classList.toggle('video-mode',isVideo);
+  if(isVideo && callLocalStream){$('callLocalVideo').srcObject=callLocalStream;$('callLocalVideo').play().catch(()=>{});}
   if(!$('callDialog').open)$('callDialog').showModal();
 }
 async function startAudioCall(){
@@ -702,12 +714,48 @@ async function startAudioCall(){
     await sendCallSignal('offer',{type:peer.localDescription.type,sdp:peer.localDescription.sdp},call);
   }catch(e){stream.getTracks().forEach(t=>t.stop());cleanupCallLocal();throw e;}
 }
+async function startVideoCall(){
+  if(!callSupported())throw Error('Видеозвонки не поддерживаются этим браузером.');
+  if(!user || !activeThread)throw Error('Сначала выбери диалог.');
+  if(currentCall || incomingCall)throw Error('Сначала заверши текущий звонок.');
+  cancelVoiceRecording();
+  const actor=user.id,thread=activeThread,callee=counterpartId(thread);
+  callFacingMode='user';
+  const stream=await navigator.mediaDevices.getUserMedia({
+    audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},
+    video:{facingMode:{ideal:callFacingMode},width:{ideal:1280},height:{ideal:720}}
+  });
+  try{
+    const call=unwrap(await db.from('fgi_calls').insert({thread_id:thread.id,caller_id:actor,callee_id:callee,kind:'video'}).select().single());
+    if(user?.id!==actor){stream.getTracks().forEach(t=>t.stop());return;}
+    currentCall=call;callLocalStream=stream;callSignalLastId=0;callMuted=false;callCameraOff=false;lastCallHeartbeat=Date.now();showActiveCall(call,'Вызов…');
+    const peer=createCallPeer(call),offer=await peer.createOffer({offerToReceiveAudio:true,offerToReceiveVideo:true});await peer.setLocalDescription(offer);
+    await sendCallSignal('offer',{type:peer.localDescription.type,sdp:peer.localDescription.sdp},call);
+  }catch(e){stream.getTracks().forEach(t=>t.stop());cleanupCallLocal();throw e;}
+}
+async function switchCallCamera(){
+  if(currentCall?.kind!=='video' || !callLocalStream || !callPeer)throw Error('Переключение камеры доступно только во время видеозвонка.');
+  const next=callFacingMode==='user'?'environment':'user';
+  const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:next},width:{ideal:1280},height:{ideal:720}},audio:false});
+  const nextTrack=stream.getVideoTracks()[0];if(!nextTrack){stream.getTracks().forEach(t=>t.stop());throw Error('Не удалось открыть другую камеру.');}
+  const sender=callPeer.getSenders().find(x=>x.track?.kind==='video');if(!sender){nextTrack.stop();throw Error('Видео ещё не подключено.');}
+  const oldTrack=callLocalStream.getVideoTracks()[0];
+  await sender.replaceTrack(nextTrack);
+  oldTrack?.stop();
+  callLocalStream=new MediaStream([...callLocalStream.getAudioTracks(),nextTrack]);
+  callFacingMode=next;callCameraOff=false;$('toggleCamera').textContent='📷 Выключить камеру';
+  $('callLocalVideo').srcObject=callLocalStream;$('callLocalVideo').play().catch(()=>{});
+}
 async function acceptIncomingCall(){
   const call=incomingCall;if(!call || !user)throw Error('Вызов уже завершён.');
-  if(!callSupported())throw Error('Аудиозвонки не поддерживаются этим браузером.');
-  const actor=user.id,stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false});
+  if(!callSupported())throw Error('Звонки не поддерживаются этим браузером.');
+  const isVideo=call.kind==='video';callFacingMode='user';
+  const actor=user.id,stream=await navigator.mediaDevices.getUserMedia({
+    audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},
+    video:isVideo?{facingMode:{ideal:callFacingMode},width:{ideal:1280},height:{ideal:720}}:false
+  });
   try{
-    currentCall=call;incomingCall=null;callLocalStream=stream;callSignalLastId=0;callMuted=false;lastCallHeartbeat=Date.now();
+    currentCall=call;incomingCall=null;callLocalStream=stream;callSignalLastId=0;callMuted=false;callCameraOff=false;lastCallHeartbeat=Date.now();
     if($('incomingCallDialog').open)$('incomingCallDialog').close();showActiveCall(call,'Подключаемся…');
     const peer=createCallPeer(call),offerSignal=await waitForCallOffer(call.id);
     await peer.setRemoteDescription(offerSignal.payload);await flushCallIce();
@@ -837,7 +885,7 @@ async function loadThreads() {
 }
 async function openThread(t) {
   cancelVoiceRecording();activeThread=t;chatRows=[];pendingMessage=null;threadEpoch++;clearChatAttachment();
-  $('messages').replaceChildren();$('messageForm').hidden=false;$('messageForm').reset();$('audioCall').hidden=false;$('chatTitle').textContent=threadTitle(t);message('chatMessage','');
+  $('messages').replaceChildren();$('messageForm').hidden=false;$('messageForm').reset();$('audioCall').hidden=false;$('videoCall').hidden=false;$('chatTitle').textContent=threadTitle(t);message('chatMessage','');
   try{await loadPresence(true);}catch{} updateActivePresence();
   $('olderMessages').hidden=true;await pollMessages(true);await loadThreads();
 }
@@ -872,10 +920,13 @@ async function pollMessages(initial = false, older = false) {
 function bindChat() {
   $('refreshThreads').onclick=()=>loadThreads().catch(e=>message('chatMessage',explain(e),true));
   $('audioCall').onclick=()=>startAudioCall().catch(e=>message('chatMessage',explain(e),true));
+  $('videoCall').onclick=()=>startVideoCall().catch(e=>message('chatMessage',explain(e),true));
   $('acceptCall').onclick=async()=>{const b=$('acceptCall');b.disabled=true;try{await acceptIncomingCall();}catch(e){message('incomingCallMessage',explain(e),true);}finally{b.disabled=false;}};
   $('declineCall').onclick=()=>declineIncomingCall().catch(e=>message('incomingCallMessage',explain(e),true));
   $('endCall').onclick=()=>endCurrentCall().catch(e=>message('callMessage',explain(e),true));
   $('muteCall').onclick=()=>{if(!callLocalStream)return;callMuted=!callMuted;callLocalStream.getAudioTracks().forEach(t=>t.enabled=!callMuted);$('muteCall').textContent=callMuted?'🎙️ Включить микрофон':'🎙️ Выключить микрофон';};
+  $('toggleCamera').onclick=()=>{if(currentCall?.kind!=='video' || !callLocalStream)return;callCameraOff=!callCameraOff;callLocalStream.getVideoTracks().forEach(t=>t.enabled=!callCameraOff);$('toggleCamera').textContent=callCameraOff?'📷 Включить камеру':'📷 Выключить камеру';};
+  $('switchCamera').onclick=()=>switchCallCamera().catch(e=>message('callMessage',explain(e),true));
   $('olderMessages').onclick=()=>pollMessages(false,true);
   $('chatFile').addEventListener('change',e=>{try{showChatAttachment(e.target.files?.[0]);message('chatMessage','');}catch(err){clearChatAttachment();message('chatMessage',explain(err),true);}});
   $('clearChatFile').onclick=()=>clearChatAttachment();
