@@ -1,7 +1,7 @@
 import { access, readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 
-const files = ['index.html', 'fitmatch.js', 'styles.css', 'robots.txt', 'sitemap.xml', 'favicon.svg', 'site.webmanifest', 'privacy.html', 'terms.html', 'legal.html', 'support.html'];
+const files = ['index.html', 'fitmatch.js', 'styles.css', 'cookie-consent.js', 'robots.txt', 'sitemap.xml', 'favicon.svg', 'site.webmanifest', 'privacy.html', 'terms.html', 'legal.html', 'cookies.html', 'support.html'];
 const migrations = new Map([
   ['20260927144002_fitgoin_stage1_foundation.sql', '0033aacf37052dc6ce150b0dca9669e9'],
   ['20260929062004_add_fgi_messages_sender_index.sql', '38fe7f22d0fac6cf8e667fc80842f7bd'],
@@ -38,6 +38,10 @@ if (!js.includes('db.auth.signInWithOtp({phone,options})')) throw new Error('Pho
 if (!js.includes("db.auth.verifyOtp({phone:pendingPhone,token,type:'sms'})")) throw new Error('Phone OTP verification flow is missing');
 if (!js.includes("shouldCreateUser:phoneMode==='signup'")) throw new Error('Phone login/signup account creation guard is missing');
 if (!js.includes('function normalizePhone')) throw new Error('Phone E.164 validation is missing');
+if (!html.includes('cookie-consent.js') || !html.includes('cookies.html') || !html.includes('data-cookie-settings')) throw new Error('Cookie consent entry points are missing');
+const cookieJs = await readFile(new URL('../cookie-consent.js', import.meta.url), 'utf8');
+if (!cookieJs.includes('fitgoin_cookie_consent_v1')) throw new Error('Cookie consent persistence is missing');
+if (!cookieJs.includes("analytics:value==='optional'")) throw new Error('Optional analytics consent gate is missing');
 
 const openSelects = (html.match(/<select\b/gi) || []).length;
 const closeSelects = (html.match(/<\/select\s*>/gi) || []).length;
