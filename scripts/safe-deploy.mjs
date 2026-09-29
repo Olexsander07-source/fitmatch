@@ -1,11 +1,17 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
+const repo = fileURLToPath(new URL('../', import.meta.url));
 const winGit = 'C:\\Program Files\\Git\\cmd\\git.exe';
 const git = process.platform === 'win32' && existsSync(winGit) ? winGit : 'git';
+const node = process.execPath;
+const wrangler = resolve(repo, 'node_modules', 'wrangler', 'bin', 'wrangler.js');
+
 const run = (cmd, args, capture = false) => {
   const result = execFileSync(cmd, args, {
-    cwd: new URL('../', import.meta.url),
+    cwd: repo,
     encoding: 'utf8',
     stdio: capture ? ['ignore', 'pipe', 'inherit'] : 'inherit',
   });
@@ -17,15 +23,16 @@ if (status) throw new Error('Refusing deploy: Git working tree is not clean.');
 
 const branch = run(git, ['branch', '--show-current'], true);
 if (branch !== 'main') throw new Error(`Refusing deploy from branch: ${branch}`);
-
 run(git, ['fetch', 'origin', 'main']);
 const local = run(git, ['rev-parse', 'HEAD'], true);
 const remote = run(git, ['rev-parse', 'origin/main'], true);
 if (local !== remote) throw new Error('Refusing deploy: local main differs from origin/main.');
-run('npm.cmd', ['run', 'check']);
-run('npm.cmd', ['run', 'build']);
-run('npx.cmd', ['wrangler', 'deploy', '--dry-run']);
-run('npx.cmd', ['wrangler', 'deploy']);
+
+run(node, ['--check', 'fitmatch.js']);
+run(node, ['scripts/verify.mjs']);
+run(node, ['scripts/build.mjs']);
+run(node, [wrangler, 'deploy', '--dry-run']);
+run(node, [wrangler, 'deploy']);
 
 let ok = false;
 for (let attempt = 1; attempt <= 3; attempt++) {
