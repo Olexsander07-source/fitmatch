@@ -13,6 +13,7 @@ const migrations = new Map([
   ['20260929105457_add_chat_media.sql', '1c595a2fe6fd006421cd922862526a08'],
   ['20260929110708_add_audio_call_signaling.sql', 'dfb51292f6203d9d5ecaade58730b14f'],
   ['20260929111114_harden_call_stale_recovery.sql', 'fa31d04e2f2ee21c909da11cfcc35589'],
+  ['20260929111231_index_call_foreign_keys.sql', 'e965606b67ec9e37992cdd01fd4ae857'],
 ]);
 for (const file of files) await access(new URL(`../${file}`, import.meta.url));
 for (const file of migrations.keys()) await access(new URL(`../supabase/migrations/${file}`, import.meta.url));
