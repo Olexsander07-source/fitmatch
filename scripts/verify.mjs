@@ -51,7 +51,7 @@ if (!js.includes("loadPresence(true)")) throw new Error('Active chat presence re
 if (!html.includes('id="chatFile"') || !html.includes('id="chatAttachmentPreview"')) throw new Error('Chat attachment controls are missing');
 if (!js.includes("chatBucket: 'fgi-chat'")) throw new Error('Private chat bucket config is missing');
 if (!js.includes("createSignedUrl(m.media_path,3600)")) throw new Error('Private chat media signed URLs are missing');
-if (!js.includes("uploadChatAttachment(file,actor,thread)")) throw new Error('Chat media upload flow is missing');
+if (!js.includes("uploadChatAttachment(file,actor,thread,pendingChatDurationMs)")) throw new Error('Chat media upload flow is missing');
 if (!js.includes("kind:media?.kind || 'text'")) throw new Error('Message media metadata is missing');
 if (!html.includes('id="voiceStart"') || !html.includes('id="voiceStop"') || !html.includes('id="voiceTimer"')) throw new Error('Voice recording controls are missing');
 if (!js.includes('navigator.mediaDevices?.getUserMedia')) throw new Error('Microphone capture is missing');
