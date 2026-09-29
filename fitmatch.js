@@ -27,6 +27,8 @@ const directions = [
 let db, user = null, own = null, sports = [], coaches = [], threads = [], activeThread = null;
 let currentPage = 'home', pendingAction = '', authEpoch = 0, catalogueEpoch = 0, threadEpoch = 0;
 let chatRows = [], pendingMessage = null, chatBusy = false, inboxBusy = false, signupEmail = '';
+let presence = new Map(), presenceFetchedAt = 0, presenceTimer = 0;
+const PRESENCE_ONLINE_MS = 75000;
 let phoneMode = 'login', pendingPhone = '', pendingPhoneName = '', phoneResendUntil = 0, phoneTimer = 0;
 let catalogueError = '', setupReady = false, visibleProfile = '', galleryEpoch = 0, accountVersion = 0;
 const publicOnly = c => c.published !== false;
@@ -204,9 +206,11 @@ async function openProfile(id, push = true) {
 }
 function authUI() { $('authOpen').textContent=user?'Кабинет':'Войти'; $('accountOpen').textContent=user?'Мой профиль':'Стать тренером'; $('accountEmail').textContent=user?.email || user?.phone || ''; }
 function authChanged(event, session) {
-  const next=session?.user || null, changed=user?.id!==next?.id; user=next; authUI();
-  if(changed){authEpoch++;threadEpoch++;catalogueEpoch++;own=null;activeThread=null;threads=[];chatRows=[];pendingMessage=null;visibleProfile='';
-    $('threads').replaceChildren();$('messages').replaceChildren();$('myGallery').replaceChildren();$('profileContent').replaceChildren();$('chatTitle').textContent='Выбери диалог';$('messageForm').hidden=true;$('messageForm').reset();$('coachForm').reset();delete $('coachForm').dataset.dirty;$('mediaEditor').hidden=true;
+  const previous=user,next=session?.user || null, changed=user?.id!==next?.id;
+  user=next; authUI();
+  if(changed){authEpoch++;threadEpoch++;catalogueEpoch++;own=null;activeThread=null;threads=[];chatRows=[];pendingMessage=null;visibleProfile='';presence.clear();presenceFetchedAt=0;
+    $('threads').replaceChildren();$('messages').replaceChildren();$('myGallery').replaceChildren();$('profileContent').replaceChildren();$('chatTitle').textContent='Выбери диалог';$('chatPresence').textContent='';$('messageForm').hidden=true;$('messageForm').reset();$('coachForm').reset();delete $('coachForm').dataset.dirty;$('mediaEditor').hidden=true;
+    stopPresenceHeartbeat();if(user)setTimeout(startPresenceHeartbeat,0);
     if(!user){coaches=coaches.filter(publicOnly);if(['account','inbox','profile'].includes(currentPage)) page('home');}
     setTimeout(()=>{loadCatalogue().then(()=>user?loadAccount():null).catch(e=>notice(explain(e)));},0);
   }
@@ -346,7 +350,7 @@ function bindAuth() {
     if(f.get('password')!==f.get('confirm')) throw Error('Пароли не совпадают.');
     unwrap(await db.auth.updateUser({password:assertStrongPassword(f.get('password'))})); form.reset();message('resetMessage','Пароль изменён.');$('resetDialog').close();notice('Пароль изменён.');
   });
-  $('signOut').onclick=()=>run($('signOut'),'coachMessage',async()=>{unwrap(await db.auth.signOut());authChanged('SIGNED_OUT',null);page('home');});
+  $('signOut').onclick=()=>run($('signOut'),'coachMessage',async()=>{try{await touchPresence(false);}catch{}unwrap(await db.auth.signOut());authChanged('SIGNED_OUT',null);page('home');});
 }
 function bindCoach() {
   $('coachForm').addEventListener('input',()=>{$('coachForm').dataset.dirty='1';});
@@ -473,17 +477,63 @@ async function contact(id) {
   if(user?.id!==actor)return;page('inbox');await openThread(thread);
 }
 function threadTitle(t) {return t.coach_id===user?.id?`${t.client_name || 'Клиент'} · ${t.client_id.slice(0,6)}`:coaches.find(c=>c.id===t.coach_id)?.name || 'Тренер';}
+function counterpartId(t) { return t ? (t.coach_id===user?.id?t.client_id:t.coach_id) : ''; }
+function presenceState(id) {
+  const row=presence.get(id),seen=row?.last_seen_at?new Date(row.last_seen_at).getTime():0;
+  return {online:Boolean(row?.online) && seen>0 && Date.now()-seen<PRESENCE_ONLINE_MS,seen};
+}
+function presenceLabel(id) {
+  const state=presenceState(id); if(state.online)return 'Онлайн'; if(!state.seen)return 'Не в сети';
+  const diff=Math.max(0,Date.now()-state.seen);
+  if(diff<120000)return 'Был(а) недавно';
+  if(diff<3600000)return `Был(а) ${Math.max(1,Math.floor(diff/60000))} мин назад`;
+  return `Был(а) ${new Date(state.seen).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}`;
+}
+function presenceHTML(id) {
+  const state=presenceState(id),label=presenceLabel(id);
+  return `<span class="presence-badge ${state.online?'online':'offline'}" title="${esc(label)}"><span class="presence-dot" aria-hidden="true"></span><span>${esc(label)}</span></span>`;
+}
+function updateActivePresence() {
+  const box=$('chatPresence'); if(!box)return;
+  if(!activeThread){box.textContent='';box.className='presence-text';return;}
+  const id=counterpartId(activeThread),state=presenceState(id);
+  box.textContent=presenceLabel(id);box.className=`presence-text ${state.online?'online':'offline'}`;
+}
+async function loadPresence(force=false) {
+  if(!user || !db)return;
+  const ids=[...new Set(threads.map(counterpartId).filter(Boolean))];
+  if(!ids.length){presence.clear();presenceFetchedAt=Date.now();updateActivePresence();return;}
+  if(!force && Date.now()-presenceFetchedAt<10000){updateActivePresence();return;}
+  const rows=unwrap(await db.from('fgi_presence').select('user_id,online,last_seen_at').in('user_id',ids));
+  presence=new Map(rows.map(row=>[row.user_id,row]));presenceFetchedAt=Date.now();updateActivePresence();
+}
+async function touchPresence(online=true,actor=user?.id) {
+  if(!actor || !db)return;
+  unwrap(await db.from('fgi_presence').upsert({user_id:actor,online},{onConflict:'user_id'}));
+}
+function stopPresenceHeartbeat() {
+  if(presenceTimer){clearInterval(presenceTimer);presenceTimer=0;}
+}
+function startPresenceHeartbeat() {
+  stopPresenceHeartbeat(); if(!user || !db)return;
+  touchPresence(document.visibilityState==='visible').catch(()=>{});
+  presenceTimer=setInterval(()=>{if(user && document.visibilityState==='visible')touchPresence(true).catch(()=>{});},30000);
+}
+
 async function loadThreads() {
   if(!user || !db || inboxBusy)return;inboxBusy=true;const epoch=authEpoch;
   try {
     const data=(await allRows('fgi_threads')).sort((a,b)=>(b.updated_at||b.created_at).localeCompare(a.updated_at||a.created_at));
     if(epoch!==authEpoch)return;threads=data;
-    $('threads').innerHTML=data.map(t=>`<button class="thread ${activeThread?.id===t.id?'active':''}" data-thread="${esc(t.id)}">${esc(threadTitle(t))}</button>`).join('') || '<p class="muted">Диалогов пока нет. Открой тренера и нажми «Написать».</p>';
+    try{await loadPresence();}catch{}
+    $('threads').innerHTML=data.map(t=>`<button class="thread ${activeThread?.id===t.id?'active':''}" data-thread="${esc(t.id)}"><span class="thread-name">${esc(threadTitle(t))}</span>${presenceHTML(counterpartId(t))}</button>`).join('') || '<p class="muted">Диалогов пока нет. Открой тренера и нажми «Написать».</p>';
+    updateActivePresence();
   } finally {inboxBusy=false;}
 }
 async function openThread(t) {
   activeThread=t;chatRows=[];pendingMessage=null;threadEpoch++;
   $('messages').replaceChildren();$('messageForm').hidden=false;$('messageForm').reset();$('chatTitle').textContent=threadTitle(t);message('chatMessage','');
+  try{await loadPresence(true);}catch{} updateActivePresence();
   $('olderMessages').hidden=true;await pollMessages(true);await loadThreads();
 }
 function drawMessages(stick = false) {
@@ -554,6 +604,7 @@ function bindUI() {
   $('goals').innerHTML=goals.map(g=>`<option value="${esc(g)}"></option>`).join('');
   opt($('matchGoal'),goals.map(g=>[g,g]),'Любая цель');
   window.addEventListener('popstate',()=>{const trainer=new URLSearchParams(location.search).get('trainer');if(trainer){openProfile(trainer,false).catch(e=>notice(explain(e)));return;}const target=location.hash.slice(1);try{page($(target)?.classList.contains('page')?target:'home',false);}catch(e){notice(explain(e));}});
+  document.addEventListener('visibilitychange',()=>{if(!user || !db)return;if(document.visibilityState==='visible')startPresenceHeartbeat();else{stopPresenceHeartbeat();touchPresence(false).catch(()=>{});}});
   let index=0,paused=matchMedia('(prefers-reduced-motion: reduce)').matches;
   function hero(){if(!sports.length)return;$('heroImage').style.backgroundImage=`url('${sportImage(sports[index++%sports.length].id)}')`;}
   const pauseButton=$('pauseHero');pauseButton.textContent=paused?'Включить смену фона':'Пауза фона';
@@ -572,7 +623,7 @@ async function init() {
     const {createClient}=await import(CONFIG.sdk);
     db=createClient(CONFIG.url,CONFIG.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'implicit'},global:{fetch:timedFetch}});
     db.auth.onAuthStateChange(authChanged); // Callback синхронный: никаких вложенных вызовов Supabase Auth.
-    const data=unwrap(await db.auth.getSession());user=data.session?.user || null;authUI();
+    const data=unwrap(await db.auth.getSession());user=data.session?.user || null;authUI();if(user)startPresenceHeartbeat();
     await loadCatalogue();
     if(callbackError){closeDialogs();$('authDialog').showModal();message('authMessage','Ссылка недействительна: '+callbackError,true);history.replaceState(null,'',redirectURL());}
     else if(callback.get('type')==='recovery' && user){closeDialogs();$('resetDialog').showModal();}
