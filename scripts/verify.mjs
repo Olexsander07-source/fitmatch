@@ -9,6 +9,7 @@ const migrations = new Map([
   ['20260929080940_tighten_fgi_storage_policies.sql', 'df85b11aa2289dee956104069d642cb6'],
   ['20260929081241_harden_fgi_data_integrity.sql', 'd994e020f1d3540df5fb2832ba46a7fd'],
   ['20260929102250_support_phone_auth_profiles.sql', '4920ed23d70898d91cd59a9f6376180a'],
+  ['20260929104742_add_chat_presence.sql', '52f2f847d0bec378971c6b52c2e72814'],
 ]);
 for (const file of files) await access(new URL(`../${file}`, import.meta.url));
 for (const file of migrations.keys()) await access(new URL(`../supabase/migrations/${file}`, import.meta.url));
@@ -42,6 +43,10 @@ if (!html.includes('cookie-consent.js') || !html.includes('cookies.html') || !ht
 const cookieJs = await readFile(new URL('../cookie-consent.js', import.meta.url), 'utf8');
 if (!cookieJs.includes('fitgoin_cookie_consent_v1')) throw new Error('Cookie consent persistence is missing');
 if (!cookieJs.includes("analytics:value==='optional'")) throw new Error('Optional analytics consent gate is missing');
+if (!html.includes('id="chatPresence"')) throw new Error('Chat presence status slot is missing');
+if (!js.includes("db.from('fgi_presence').upsert")) throw new Error('Presence heartbeat is missing');
+if (!js.includes("PRESENCE_ONLINE_MS = 75000")) throw new Error('Presence stale-session protection is missing');
+if (!js.includes("loadPresence(true)")) throw new Error('Active chat presence refresh is missing');
 
 const openSelects = (html.match(/<select\b/gi) || []).length;
 const closeSelects = (html.match(/<\/select\s*>/gi) || []).length;

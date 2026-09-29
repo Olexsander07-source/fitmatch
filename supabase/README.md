@@ -15,3 +15,4 @@ The historical foundation file is byte-for-byte matched to the SQL recorded by S
 3. Store the exact production migration SQL in this directory.
 4. Re-run security and performance advisors after DDL changes.
 5. Keep service-role and database secrets out of the repository.
+- `20260929104742_add_chat_presence` — tracks chat participant online/last-seen state with participant-only RLS.

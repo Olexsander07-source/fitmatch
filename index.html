@@ -97,7 +97,7 @@
   </section>
   <section id="inbox" class="page container section"><p class="eyebrow">ПРЯМОЙ КОНТАКТ</p><h1>Твои <em>сообщения.</em></h1>
     <div class="chat-layout"><aside class="panel"><h2>Диалоги</h2><button id="refreshThreads" class="text-btn">Обновить</button><div id="threads" class="stack"></div></aside>
-      <div class="panel chat"><h2 id="chatTitle">Выбери диалог</h2><button id="olderMessages" class="text-btn" hidden>Загрузить предыдущие сообщения</button><div id="messages" class="messages" aria-label="Переписка"></div>
+      <div class="panel chat"><div class="chat-head"><div><h2 id="chatTitle">Выбери диалог</h2><p id="chatPresence" class="presence-text" aria-live="polite"></p></div></div><button id="olderMessages" class="text-btn" hidden>Загрузить предыдущие сообщения</button><div id="messages" class="messages" aria-label="Переписка"></div>
         <form id="messageForm" hidden><label>Сообщение<textarea name="body" maxlength="4000" rows="3" required placeholder="Обсудите цель, расписание и стоимость"></textarea></label><button class="btn primary" type="submit">Отправить ↗</button></form><p id="chatMessage" role="status"></p>
       </div></div>
   </section>
