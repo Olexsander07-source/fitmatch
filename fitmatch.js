@@ -4,7 +4,8 @@ const CONFIG = Object.freeze({
   url: 'https://ypbhcgcwkpiujcakvaji.supabase.co',
   key: 'sb_publishable_Lsrk07A5aXJH7YypVR8QGQ_TQPwhfOV',
   sdk: 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/+esm',
-  bucket: 'fgi-media'
+  bucket: 'fgi-media',
+  chatBucket: 'fgi-chat'
 });
 const $ = id => document.getElementById(id);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -27,6 +28,7 @@ const directions = [
 let db, user = null, own = null, sports = [], coaches = [], threads = [], activeThread = null;
 let currentPage = 'home', pendingAction = '', authEpoch = 0, catalogueEpoch = 0, threadEpoch = 0;
 let chatRows = [], pendingMessage = null, chatBusy = false, inboxBusy = false, signupEmail = '';
+let pendingChatAttachment = null, pendingChatPreviewURL = '', pendingMessageFile = null, chatMediaURLs = new Map();
 let presence = new Map(), presenceFetchedAt = 0, presenceTimer = 0;
 const PRESENCE_ONLINE_MS = 75000;
 let phoneMode = 'login', pendingPhone = '', pendingPhoneName = '', phoneResendUntil = 0, phoneTimer = 0;
@@ -209,7 +211,7 @@ function authChanged(event, session) {
   const previous=user,next=session?.user || null, changed=user?.id!==next?.id;
   user=next; authUI();
   if(changed){authEpoch++;threadEpoch++;catalogueEpoch++;own=null;activeThread=null;threads=[];chatRows=[];pendingMessage=null;visibleProfile='';presence.clear();presenceFetchedAt=0;
-    $('threads').replaceChildren();$('messages').replaceChildren();$('myGallery').replaceChildren();$('profileContent').replaceChildren();$('chatTitle').textContent='Выбери диалог';$('chatPresence').textContent='';$('messageForm').hidden=true;$('messageForm').reset();$('coachForm').reset();delete $('coachForm').dataset.dirty;$('mediaEditor').hidden=true;
+    $('threads').replaceChildren();$('messages').replaceChildren();$('myGallery').replaceChildren();$('profileContent').replaceChildren();$('chatTitle').textContent='Выбери диалог';$('chatPresence').textContent='';$('messageForm').hidden=true;$('messageForm').reset();clearChatAttachment();chatMediaURLs.clear();$('coachForm').reset();delete $('coachForm').dataset.dirty;$('mediaEditor').hidden=true;
     stopPresenceHeartbeat();if(user)setTimeout(startPresenceHeartbeat,0);
     if(!user){coaches=coaches.filter(publicOnly);if(['account','inbox','profile'].includes(currentPage)) page('home');}
     setTimeout(()=>{loadCatalogue().then(()=>user?loadAccount():null).catch(e=>notice(explain(e)));},0);
@@ -464,6 +466,74 @@ async function deletePhoto(button) {
     await loadMyGallery();message('galleryMessage','Фото удалено.');
   } finally {button.disabled=false;}
 }
+const CHAT_IMAGE_TYPES=new Set(['image/jpeg','image/png','image/webp']);
+const CHAT_VIDEO_TYPES=new Set(['video/mp4','video/webm','video/quicktime']);
+function clearChatAttachment() {
+  if(pendingChatPreviewURL){URL.revokeObjectURL(pendingChatPreviewURL);pendingChatPreviewURL='';}
+  pendingChatAttachment=null;
+  if($('chatFile'))$('chatFile').value='';
+  if($('chatAttachmentPreview')){$('chatAttachmentPreview').replaceChildren();$('chatAttachmentPreview').hidden=true;}
+  if($('clearChatFile'))$('clearChatFile').hidden=true;
+}
+function showChatAttachment(file) {
+  clearChatAttachment();pendingMessage=null;pendingMessageFile=null;
+  if(!file?.size)return;
+  if(!CHAT_IMAGE_TYPES.has(file.type) && !CHAT_VIDEO_TYPES.has(file.type))throw Error('Можно отправлять JPEG, PNG, WebP, MP4, WebM или MOV.');
+  if(CHAT_IMAGE_TYPES.has(file.type) && file.size>12*1024*1024)throw Error('Фото больше 12 МБ.');
+  if(CHAT_VIDEO_TYPES.has(file.type) && file.size>50*1024*1024)throw Error('Видео больше 50 МБ.');
+  pendingChatAttachment=file;pendingChatPreviewURL=URL.createObjectURL(file);
+  const box=$('chatAttachmentPreview');box.hidden=false;
+  if(CHAT_IMAGE_TYPES.has(file.type)){
+    const img=document.createElement('img');img.src=pendingChatPreviewURL;img.alt='Предпросмотр фотографии';box.append(img);
+  } else {
+    const video=document.createElement('video');video.src=pendingChatPreviewURL;video.controls=true;video.preload='metadata';box.append(video);
+  }
+  const meta=document.createElement('p');meta.className='hint';meta.textContent=`${file.name || 'Вложение'} · ${Math.max(1,Math.round(file.size/1024))} КБ`;box.append(meta);
+  $('clearChatFile').hidden=false;
+}
+function chatFileExtension(mime) {
+  return ({'image/jpeg':'jpg','image/png':'png','image/webp':'webp','video/mp4':'mp4','video/webm':'webm','video/quicktime':'mov','audio/webm':'webm','audio/mp4':'m4a','audio/ogg':'ogg','audio/mpeg':'mp3'})[mime] || 'bin';
+}
+async function prepareChatAttachment(file) {
+  if(CHAT_IMAGE_TYPES.has(file?.type)){
+    const blob=await prepareImage(file);
+    return {blob,kind:'image',mime:'image/jpeg',size:blob.size,ext:'jpg',duration_ms:null};
+  }
+  if(CHAT_VIDEO_TYPES.has(file?.type)){
+    if(file.size>50*1024*1024)throw Error('Видео больше 50 МБ.');
+    return {blob:file,kind:'video',mime:file.type,size:file.size,ext:chatFileExtension(file.type),duration_ms:null};
+  }
+  throw Error('Неподдерживаемый тип вложения.');
+}
+async function uploadChatAttachment(file,actor,threadId) {
+  const prepared=await prepareChatAttachment(file);
+  if(user?.id!==actor || activeThread?.id!==threadId)throw Error('Диалог изменился. Выбери файл заново.');
+  const path=`${actor}/${threadId}/${crypto.randomUUID()}.${prepared.ext}`;
+  unwrap(await db.storage.from(CONFIG.chatBucket).upload(path,prepared.blob,{contentType:prepared.mime,upsert:false,cacheControl:'3600'}));
+  return {...prepared,path};
+}
+async function removeChatAttachment(path) {
+  if(!path)return;
+  unwrap(await db.storage.from(CONFIG.chatBucket).remove([path]));
+}
+async function ensureChatMediaURLs(rows) {
+  const now=Date.now();
+  await Promise.all(rows.filter(m=>m.media_path).map(async m=>{
+    const cached=chatMediaURLs.get(m.media_path);
+    if(cached && cached.expires>now+60000)return;
+    const data=unwrap(await db.storage.from(CONFIG.chatBucket).createSignedUrl(m.media_path,3600));
+    chatMediaURLs.set(m.media_path,{url:data.signedUrl,expires:now+3500000});
+  }));
+}
+function chatMediaHTML(m) {
+  if(!m.media_path)return '';
+  const url=chatMediaURLs.get(m.media_path)?.url || '';
+  if(!url)return '<span class="chat-media-loading">Вложение загружается…</span>';
+  if(m.kind==='image')return `<a class="chat-media-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer"><img class="chat-message-image" src="${esc(url)}" alt="Фото в сообщении" loading="lazy"></a>`;
+  if(m.kind==='video')return `<video class="chat-message-video" src="${esc(url)}" controls preload="metadata"></video>`;
+  if(m.kind==='audio')return `<audio class="chat-message-audio" src="${esc(url)}" controls preload="metadata"></audio>`;
+  return '';
+}
 async function contact(id) {
   if(!requireUser('contact:'+id))return;
   if(id===user.id){page('inbox');return;}
@@ -531,14 +601,17 @@ async function loadThreads() {
   } finally {inboxBusy=false;}
 }
 async function openThread(t) {
-  activeThread=t;chatRows=[];pendingMessage=null;threadEpoch++;
+  activeThread=t;chatRows=[];pendingMessage=null;threadEpoch++;clearChatAttachment();
   $('messages').replaceChildren();$('messageForm').hidden=false;$('messageForm').reset();$('chatTitle').textContent=threadTitle(t);message('chatMessage','');
   try{await loadPresence(true);}catch{} updateActivePresence();
   $('olderMessages').hidden=true;await pollMessages(true);await loadThreads();
 }
 function drawMessages(stick = false) {
   const box=$('messages'),atBottom=box.scrollHeight-box.scrollTop-box.clientHeight<70;
-  box.innerHTML=chatRows.map(m=>`<div class="bubble ${m.sender_id===user?.id?'mine':''}">${esc(m.body)}<time datetime="${esc(m.created_at)}">${esc(new Date(m.created_at).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}))}</time></div>`).join('');
+  box.innerHTML=chatRows.map(m=>{
+    const body=m.body?`<div class="message-body">${esc(m.body)}</div>`:'';
+    return `<div class="bubble ${m.sender_id===user?.id?'mine':''}">${chatMediaHTML(m)}${body}<time datetime="${esc(m.created_at)}">${esc(new Date(m.created_at).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}))}</time></div>`;
+  }).join('');
   if(stick || atBottom)box.scrollTop=box.scrollHeight;
 }
 async function pollMessages(initial = false, older = false) {
@@ -553,6 +626,7 @@ async function pollMessages(initial = false, older = false) {
     if(epoch!==threadEpoch || actor!==user?.id)return;
     const box=$('messages'),height=box.scrollHeight,top=box.scrollTop;
     chatRows=[...new Map([...chatRows,...rows].map(m=>[m.id,m])).values()].sort((a,b)=>a.id-b.id);
+    try{await ensureChatMediaURLs(chatRows);}catch(e){message('chatMessage','Не удалось загрузить одно из вложений. '+explain(e),true);}
     if(rows.length || initial)drawMessages(initial);
     if(older)box.scrollTop=top+(box.scrollHeight-height);
     if(initial || older)$('olderMessages').hidden=rows.length<50;
@@ -563,16 +637,40 @@ async function pollMessages(initial = false, older = false) {
 function bindChat() {
   $('refreshThreads').onclick=()=>loadThreads().catch(e=>message('chatMessage',explain(e),true));
   $('olderMessages').onclick=()=>pollMessages(false,true);
+  $('chatFile').addEventListener('change',e=>{try{showChatAttachment(e.target.files?.[0]);message('chatMessage','');}catch(err){clearChatAttachment();message('chatMessage',explain(err),true);}});
+  $('clearChatFile').onclick=()=>clearChatAttachment();
   bindForm('messageForm','chatMessage',async(f,form)=>{
     if(!user || !activeThread)throw Error('Выбери диалог.');
-    const body=String(f.get('body')).trim();if(!body)throw Error('Напиши сообщение.');
+    const body=String(f.get('body')).trim(),file=pendingChatAttachment;
+    if(!body && !file)throw Error('Напиши сообщение или добавь фото/видео.');
     const actor=user.id,thread=activeThread.id,epoch=threadEpoch;
-    if(!pendingMessage || pendingMessage.body!==body || pendingMessage.thread_id!==thread)pendingMessage={client_nonce:crypto.randomUUID(),thread_id:thread,sender_id:actor,body};
+    if(!pendingMessage || pendingMessage.body!==body || pendingMessage.thread_id!==thread || pendingMessageFile!==file){
+      let media=null;
+      if(file)media=await uploadChatAttachment(file,actor,thread);
+      pendingMessageFile=file || null;
+      pendingMessage={
+        client_nonce:crypto.randomUUID(),thread_id:thread,sender_id:actor,body,
+        kind:media?.kind || 'text',media_path:media?.path || null,media_mime:media?.mime || null,
+        media_size:media?.size || null,duration_ms:media?.duration_ms || null
+      };
+    }
     const result=await db.from('fgi_messages').insert(pendingMessage).select().single();
     let row;
-    if(result.error?.code==='23505')row=unwrap(await db.from('fgi_messages').select('*').eq('client_nonce',pendingMessage.client_nonce).single());else row=unwrap(result);
+    if(result.error){
+      if(result.error.code==='23505')row=unwrap(await db.from('fgi_messages').select('*').eq('client_nonce',pendingMessage.client_nonce).single());
+      else{
+        const check=await db.from('fgi_messages').select('*').eq('client_nonce',pendingMessage.client_nonce).maybeSingle();
+        if(check.error)throw Error('Не удалось подтвердить отправку. Обнови чат перед повтором.');
+        if(check.data)row=check.data;
+        else{
+          const path=pendingMessage.media_path;pendingMessage=null;pendingMessageFile=null;
+          if(path){try{await removeChatAttachment(path);}catch{}}
+          throw result.error;
+        }
+      }
+    } else row=result.data;
     if(epoch!==threadEpoch || actor!==user?.id)return;
-    pendingMessage=null;form.reset();message('chatMessage','Отправлено.');
+    pendingMessage=null;pendingMessageFile=null;form.reset();clearChatAttachment();message('chatMessage','Отправлено.');
     // Не добавляем строку перед опросом: иначе можно пропустить одновременное сообщение собеседника.
     await pollMessages(chatRows.length===0); if(!chatRows.some(m=>m.id===row.id))await pollMessages();
   });

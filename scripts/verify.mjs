@@ -10,6 +10,7 @@ const migrations = new Map([
   ['20260929081241_harden_fgi_data_integrity.sql', 'd994e020f1d3540df5fb2832ba46a7fd'],
   ['20260929102250_support_phone_auth_profiles.sql', '4920ed23d70898d91cd59a9f6376180a'],
   ['20260929104742_add_chat_presence.sql', '52f2f847d0bec378971c6b52c2e72814'],
+  ['20260929105457_add_chat_media.sql', '1c595a2fe6fd006421cd922862526a08'],
 ]);
 for (const file of files) await access(new URL(`../${file}`, import.meta.url));
 for (const file of migrations.keys()) await access(new URL(`../supabase/migrations/${file}`, import.meta.url));
@@ -47,6 +48,11 @@ if (!html.includes('id="chatPresence"')) throw new Error('Chat presence status s
 if (!js.includes("db.from('fgi_presence').upsert")) throw new Error('Presence heartbeat is missing');
 if (!js.includes("PRESENCE_ONLINE_MS = 75000")) throw new Error('Presence stale-session protection is missing');
 if (!js.includes("loadPresence(true)")) throw new Error('Active chat presence refresh is missing');
+if (!html.includes('id="chatFile"') || !html.includes('id="chatAttachmentPreview"')) throw new Error('Chat attachment controls are missing');
+if (!js.includes("chatBucket: 'fgi-chat'")) throw new Error('Private chat bucket config is missing');
+if (!js.includes("createSignedUrl(m.media_path,3600)")) throw new Error('Private chat media signed URLs are missing');
+if (!js.includes("uploadChatAttachment(file,actor,thread)")) throw new Error('Chat media upload flow is missing');
+if (!js.includes("kind:media?.kind || 'text'")) throw new Error('Message media metadata is missing');
 
 const openSelects = (html.match(/<select\b/gi) || []).length;
 const closeSelects = (html.match(/<\/select\s*>/gi) || []).length;
