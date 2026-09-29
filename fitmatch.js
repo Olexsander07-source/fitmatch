@@ -28,7 +28,8 @@ const directions = [
 let db, user = null, own = null, sports = [], coaches = [], threads = [], activeThread = null;
 let currentPage = 'home', pendingAction = '', authEpoch = 0, catalogueEpoch = 0, threadEpoch = 0;
 let chatRows = [], pendingMessage = null, chatBusy = false, inboxBusy = false, signupEmail = '';
-let pendingChatAttachment = null, pendingChatPreviewURL = '', pendingMessageFile = null, chatMediaURLs = new Map();
+let pendingChatAttachment = null, pendingChatPreviewURL = '', pendingChatDurationMs = null, pendingMessageFile = null, chatMediaURLs = new Map();
+let voiceRecorder = null, voiceStream = null, voiceChunks = [], voiceStartedAt = 0, voiceTick = 0, voiceCancelled = false, voiceContext = null;
 let presence = new Map(), presenceFetchedAt = 0, presenceTimer = 0;
 const PRESENCE_ONLINE_MS = 75000;
 let phoneMode = 'login', pendingPhone = '', pendingPhoneName = '', phoneResendUntil = 0, phoneTimer = 0;
@@ -74,6 +75,8 @@ function explain(e) {
   if (/PGRST205|42P01/.test(code)) return 'Схема базы FitGoIn не готова. Владельцу сайта нужно проверить миграции Supabase.';
   if (/23505/.test(code)) return 'Такая запись уже существует. Обнови данные и повтори действие.';
   if (/42501|row.level.security|permission denied/i.test(code + raw)) return 'Нет доступа к операции. Проверь вход и правила доступа Supabase.';
+  if (/NotAllowedError|permission denied|Permission denied/i.test(raw)) return 'Разреши доступ к микрофону в браузере и попробуй ещё раз.';
+  if (/NotFoundError|Requested device not found/i.test(raw)) return 'Микрофон не найден на устройстве.';
   if (/Failed to fetch|NetworkError|fetch failed|AbortError|timed out/i.test(raw)) return 'Нет ответа сервера. Проверь интернет и повтори действие; результат предыдущего запроса мог сохраниться.';
   return raw;
 }
@@ -211,7 +214,7 @@ function authChanged(event, session) {
   const previous=user,next=session?.user || null, changed=user?.id!==next?.id;
   user=next; authUI();
   if(changed){authEpoch++;threadEpoch++;catalogueEpoch++;own=null;activeThread=null;threads=[];chatRows=[];pendingMessage=null;visibleProfile='';presence.clear();presenceFetchedAt=0;
-    $('threads').replaceChildren();$('messages').replaceChildren();$('myGallery').replaceChildren();$('profileContent').replaceChildren();$('chatTitle').textContent='Выбери диалог';$('chatPresence').textContent='';$('messageForm').hidden=true;$('messageForm').reset();clearChatAttachment();chatMediaURLs.clear();$('coachForm').reset();delete $('coachForm').dataset.dirty;$('mediaEditor').hidden=true;
+    cancelVoiceRecording();$('threads').replaceChildren();$('messages').replaceChildren();$('myGallery').replaceChildren();$('profileContent').replaceChildren();$('chatTitle').textContent='Выбери диалог';$('chatPresence').textContent='';$('messageForm').hidden=true;$('messageForm').reset();clearChatAttachment();chatMediaURLs.clear();$('coachForm').reset();delete $('coachForm').dataset.dirty;$('mediaEditor').hidden=true;
     stopPresenceHeartbeat();if(user)setTimeout(startPresenceHeartbeat,0);
     if(!user){coaches=coaches.filter(publicOnly);if(['account','inbox','profile'].includes(currentPage)) page('home');}
     setTimeout(()=>{loadCatalogue().then(()=>user?loadAccount():null).catch(e=>notice(explain(e)));},0);
@@ -468,45 +471,113 @@ async function deletePhoto(button) {
 }
 const CHAT_IMAGE_TYPES=new Set(['image/jpeg','image/png','image/webp']);
 const CHAT_VIDEO_TYPES=new Set(['video/mp4','video/webm','video/quicktime']);
+const CHAT_AUDIO_TYPES=new Set(['audio/webm','audio/mp4','audio/ogg','audio/mpeg']);
 function clearChatAttachment() {
   if(pendingChatPreviewURL){URL.revokeObjectURL(pendingChatPreviewURL);pendingChatPreviewURL='';}
-  pendingChatAttachment=null;
+  pendingChatAttachment=null;pendingChatDurationMs=null;
   if($('chatFile'))$('chatFile').value='';
   if($('chatAttachmentPreview')){$('chatAttachmentPreview').replaceChildren();$('chatAttachmentPreview').hidden=true;}
   if($('clearChatFile'))$('clearChatFile').hidden=true;
 }
-function showChatAttachment(file) {
+function showChatAttachment(file,durationMs=null) {
   clearChatAttachment();pendingMessage=null;pendingMessageFile=null;
   if(!file?.size)return;
-  if(!CHAT_IMAGE_TYPES.has(file.type) && !CHAT_VIDEO_TYPES.has(file.type))throw Error('Можно отправлять JPEG, PNG, WebP, MP4, WebM или MOV.');
-  if(CHAT_IMAGE_TYPES.has(file.type) && file.size>12*1024*1024)throw Error('Фото больше 12 МБ.');
-  if(CHAT_VIDEO_TYPES.has(file.type) && file.size>50*1024*1024)throw Error('Видео больше 50 МБ.');
-  pendingChatAttachment=file;pendingChatPreviewURL=URL.createObjectURL(file);
+  const mime=String(file.type||'').split(';')[0];
+  if(!CHAT_IMAGE_TYPES.has(mime) && !CHAT_VIDEO_TYPES.has(mime) && !CHAT_AUDIO_TYPES.has(mime))throw Error('Неподдерживаемый тип вложения.');
+  if(CHAT_IMAGE_TYPES.has(mime) && file.size>12*1024*1024)throw Error('Фото больше 12 МБ.');
+  if(CHAT_VIDEO_TYPES.has(mime) && file.size>50*1024*1024)throw Error('Видео больше 50 МБ.');
+  if(CHAT_AUDIO_TYPES.has(mime) && file.size>15*1024*1024)throw Error('Голосовое сообщение больше 15 МБ.');
+  pendingChatAttachment=file;pendingChatDurationMs=durationMs;pendingChatPreviewURL=URL.createObjectURL(file);
   const box=$('chatAttachmentPreview');box.hidden=false;
-  if(CHAT_IMAGE_TYPES.has(file.type)){
+  if(CHAT_IMAGE_TYPES.has(mime)){
     const img=document.createElement('img');img.src=pendingChatPreviewURL;img.alt='Предпросмотр фотографии';box.append(img);
-  } else {
+  } else if(CHAT_VIDEO_TYPES.has(mime)){
     const video=document.createElement('video');video.src=pendingChatPreviewURL;video.controls=true;video.preload='metadata';box.append(video);
+  } else {
+    const audio=document.createElement('audio');audio.src=pendingChatPreviewURL;audio.controls=true;audio.preload='metadata';box.append(audio);
   }
-  const meta=document.createElement('p');meta.className='hint';meta.textContent=`${file.name || 'Вложение'} · ${Math.max(1,Math.round(file.size/1024))} КБ`;box.append(meta);
+  const meta=document.createElement('p');meta.className='hint';
+  const duration=durationMs?` · ${formatVoiceTime(durationMs)}`:'';
+  meta.textContent=`${file.name || 'Вложение'} · ${Math.max(1,Math.round(file.size/1024))} КБ${duration}`;box.append(meta);
   $('clearChatFile').hidden=false;
 }
 function chatFileExtension(mime) {
   return ({'image/jpeg':'jpg','image/png':'png','image/webp':'webp','video/mp4':'mp4','video/webm':'webm','video/quicktime':'mov','audio/webm':'webm','audio/mp4':'m4a','audio/ogg':'ogg','audio/mpeg':'mp3'})[mime] || 'bin';
 }
-async function prepareChatAttachment(file) {
+function formatVoiceTime(ms) {
+  const total=Math.max(0,Math.floor(Number(ms||0)/1000)),minutes=Math.floor(total/60),seconds=String(total%60).padStart(2,'0');
+  return `${minutes}:${seconds}`;
+}
+function setVoiceUI(recording) {
+  $('voiceStart').hidden=recording;$('voiceStop').hidden=!recording;$('voiceCancel').hidden=!recording;
+  if(!recording)$('voiceTimer').textContent='0:00';
+}
+function stopVoiceTracks() {
+  voiceStream?.getTracks().forEach(track=>track.stop());voiceStream=null;
+  if(voiceTick){clearInterval(voiceTick);voiceTick=0;}
+}
+function supportedVoiceMime() {
+  if(typeof MediaRecorder==='undefined')return '';
+  for(const type of ['audio/webm;codecs=opus','audio/mp4','audio/webm','audio/ogg;codecs=opus'])if(MediaRecorder.isTypeSupported?.(type))return type;
+  return '';
+}
+function cancelVoiceRecording() {
+  voiceCancelled=true;
+  if(voiceRecorder && voiceRecorder.state!=='inactive'){voiceRecorder.stop();return;}
+  stopVoiceTracks();voiceRecorder=null;voiceChunks=[];voiceContext=null;setVoiceUI(false);
+}
+function stopVoiceRecording() {
+  if(voiceRecorder && voiceRecorder.state!=='inactive')voiceRecorder.stop();
+}
+async function startVoiceRecording() {
+  if(!user || !activeThread)throw Error('Сначала выбери диалог.');
+  if(!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder==='undefined')throw Error('Запись голосовых не поддерживается этим браузером.');
+  cancelVoiceRecording();clearChatAttachment();pendingMessage=null;pendingMessageFile=null;
+  const actor=user.id,threadId=activeThread.id;
+  const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+  if(user?.id!==actor || activeThread?.id!==threadId){stream.getTracks().forEach(t=>t.stop());throw Error('Диалог изменился. Начни запись ещё раз.');}
+  const mimeType=supportedVoiceMime(),options=mimeType?{mimeType}:undefined;
+  const recorder=new MediaRecorder(stream,options);
+  voiceRecorder=recorder;voiceStream=stream;voiceChunks=[];voiceCancelled=false;voiceStartedAt=Date.now();voiceContext={actor,threadId};
+  recorder.ondataavailable=e=>{if(e.data?.size)voiceChunks.push(e.data);};
+  recorder.onerror=()=>{message('chatMessage','Ошибка записи голоса. Попробуй ещё раз.',true);cancelVoiceRecording();};
+  recorder.onstop=()=>{
+    const cancelled=voiceCancelled,ctx=voiceContext,chunks=voiceChunks.slice(),duration=Math.min(300000,Math.max(1,Date.now()-voiceStartedAt));
+    const type=String(recorder.mimeType || chunks[0]?.type || 'audio/webm').split(';')[0];
+    stopVoiceTracks();voiceRecorder=null;voiceChunks=[];voiceContext=null;setVoiceUI(false);
+    if(cancelled || !ctx || user?.id!==ctx.actor || activeThread?.id!==ctx.threadId)return;
+    try{
+      if(!CHAT_AUDIO_TYPES.has(type))throw Error('Формат записи не поддерживается. Попробуй другой браузер.');
+      const blob=new Blob(chunks,{type});if(!blob.size)throw Error('Запись получилась пустой. Попробуй ещё раз.');
+      if(blob.size>15*1024*1024)throw Error('Голосовое сообщение слишком большое.');
+      const file=new File([blob],`voice-${Date.now()}.${chatFileExtension(type)}`,{type});
+      showChatAttachment(file,duration);message('chatMessage','Голосовое готово. Нажми «Отправить».');
+    }catch(e){message('chatMessage',explain(e),true);}
+  };
+  recorder.start(1000);setVoiceUI(true);message('chatMessage','Идёт запись…');
+  voiceTick=setInterval(()=>{
+    const elapsed=Date.now()-voiceStartedAt;$('voiceTimer').textContent=formatVoiceTime(elapsed);
+    if(elapsed>=300000)stopVoiceRecording();
+  },250);
+}
+async function prepareChatAttachment(file,durationMs=null) {
   if(CHAT_IMAGE_TYPES.has(file?.type)){
     const blob=await prepareImage(file);
     return {blob,kind:'image',mime:'image/jpeg',size:blob.size,ext:'jpg',duration_ms:null};
   }
-  if(CHAT_VIDEO_TYPES.has(file?.type)){
+  const mime=String(file?.type||'').split(';')[0];
+  if(CHAT_VIDEO_TYPES.has(mime)){
     if(file.size>50*1024*1024)throw Error('Видео больше 50 МБ.');
-    return {blob:file,kind:'video',mime:file.type,size:file.size,ext:chatFileExtension(file.type),duration_ms:null};
+    return {blob:file,kind:'video',mime,size:file.size,ext:chatFileExtension(mime),duration_ms:null};
+  }
+  if(CHAT_AUDIO_TYPES.has(mime)){
+    if(file.size>15*1024*1024)throw Error('Голосовое сообщение больше 15 МБ.');
+    return {blob:file,kind:'audio',mime,size:file.size,ext:chatFileExtension(mime),duration_ms:durationMs?Math.min(3600000,Math.max(1,Math.round(durationMs))):null};
   }
   throw Error('Неподдерживаемый тип вложения.');
 }
-async function uploadChatAttachment(file,actor,threadId) {
-  const prepared=await prepareChatAttachment(file);
+async function uploadChatAttachment(file,actor,threadId,durationMs=null) {
+  const prepared=await prepareChatAttachment(file,durationMs);
   if(user?.id!==actor || activeThread?.id!==threadId)throw Error('Диалог изменился. Выбери файл заново.');
   const path=`${actor}/${threadId}/${crypto.randomUUID()}.${prepared.ext}`;
   unwrap(await db.storage.from(CONFIG.chatBucket).upload(path,prepared.blob,{contentType:prepared.mime,upsert:false,cacheControl:'3600'}));
@@ -601,7 +672,7 @@ async function loadThreads() {
   } finally {inboxBusy=false;}
 }
 async function openThread(t) {
-  activeThread=t;chatRows=[];pendingMessage=null;threadEpoch++;clearChatAttachment();
+  cancelVoiceRecording();activeThread=t;chatRows=[];pendingMessage=null;threadEpoch++;clearChatAttachment();
   $('messages').replaceChildren();$('messageForm').hidden=false;$('messageForm').reset();$('chatTitle').textContent=threadTitle(t);message('chatMessage','');
   try{await loadPresence(true);}catch{} updateActivePresence();
   $('olderMessages').hidden=true;await pollMessages(true);await loadThreads();
@@ -639,14 +710,17 @@ function bindChat() {
   $('olderMessages').onclick=()=>pollMessages(false,true);
   $('chatFile').addEventListener('change',e=>{try{showChatAttachment(e.target.files?.[0]);message('chatMessage','');}catch(err){clearChatAttachment();message('chatMessage',explain(err),true);}});
   $('clearChatFile').onclick=()=>clearChatAttachment();
+  $('voiceStart').onclick=()=>startVoiceRecording().catch(e=>{cancelVoiceRecording();message('chatMessage',explain(e),true);});
+  $('voiceStop').onclick=()=>stopVoiceRecording();
+  $('voiceCancel').onclick=()=>{cancelVoiceRecording();message('chatMessage','Запись отменена.');};
   bindForm('messageForm','chatMessage',async(f,form)=>{
     if(!user || !activeThread)throw Error('Выбери диалог.');
     const body=String(f.get('body')).trim(),file=pendingChatAttachment;
-    if(!body && !file)throw Error('Напиши сообщение или добавь фото/видео.');
+    if(!body && !file)throw Error('Напиши сообщение, добавь файл или запиши голосовое.');
     const actor=user.id,thread=activeThread.id,epoch=threadEpoch;
     if(!pendingMessage || pendingMessage.body!==body || pendingMessage.thread_id!==thread || pendingMessageFile!==file){
       let media=null;
-      if(file)media=await uploadChatAttachment(file,actor,thread);
+      if(file)media=await uploadChatAttachment(file,actor,thread,pendingChatDurationMs);
       pendingMessageFile=file || null;
       pendingMessage={
         client_nonce:crypto.randomUUID(),thread_id:thread,sender_id:actor,body,
