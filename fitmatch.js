@@ -28,7 +28,7 @@ const directions = [
 let db, user = null, own = null, sports = [], coaches = [], threads = [], activeThread = null;
 let currentPage = 'home', pendingAction = '', authEpoch = 0, catalogueEpoch = 0, threadEpoch = 0;
 let chatRows = [], pendingMessage = null, chatBusy = false, inboxBusy = false, signupEmail = '';
-let pendingChatAttachment = null, pendingChatPreviewURL = '', chatMediaURLs = new Map();
+let pendingChatAttachment = null, pendingChatPreviewURL = '', pendingMessageFile = null, chatMediaURLs = new Map();
 let presence = new Map(), presenceFetchedAt = 0, presenceTimer = 0;
 const PRESENCE_ONLINE_MS = 75000;
 let phoneMode = 'login', pendingPhone = '', pendingPhoneName = '', phoneResendUntil = 0, phoneTimer = 0;
@@ -476,7 +476,7 @@ function clearChatAttachment() {
   if($('clearChatFile'))$('clearChatFile').hidden=true;
 }
 function showChatAttachment(file) {
-  clearChatAttachment();
+  clearChatAttachment();pendingMessage=null;pendingMessageFile=null;
   if(!file?.size)return;
   if(!CHAT_IMAGE_TYPES.has(file.type) && !CHAT_VIDEO_TYPES.has(file.type))throw Error('Можно отправлять JPEG, PNG, WebP, MP4, WebM или MOV.');
   if(CHAT_IMAGE_TYPES.has(file.type) && file.size>12*1024*1024)throw Error('Фото больше 12 МБ.');
@@ -644,9 +644,10 @@ function bindChat() {
     const body=String(f.get('body')).trim(),file=pendingChatAttachment;
     if(!body && !file)throw Error('Напиши сообщение или добавь фото/видео.');
     const actor=user.id,thread=activeThread.id,epoch=threadEpoch;
-    if(!pendingMessage || pendingMessage.body!==body || pendingMessage.thread_id!==thread || Boolean(pendingMessage.media_path)!==Boolean(file)){
+    if(!pendingMessage || pendingMessage.body!==body || pendingMessage.thread_id!==thread || pendingMessageFile!==file){
       let media=null;
       if(file)media=await uploadChatAttachment(file,actor,thread);
+      pendingMessageFile=file || null;
       pendingMessage={
         client_nonce:crypto.randomUUID(),thread_id:thread,sender_id:actor,body,
         kind:media?.kind || 'text',media_path:media?.path || null,media_mime:media?.mime || null,
@@ -662,14 +663,14 @@ function bindChat() {
         if(check.error)throw Error('Не удалось подтвердить отправку. Обнови чат перед повтором.');
         if(check.data)row=check.data;
         else{
-          const path=pendingMessage.media_path;pendingMessage=null;
+          const path=pendingMessage.media_path;pendingMessage=null;pendingMessageFile=null;
           if(path){try{await removeChatAttachment(path);}catch{}}
           throw result.error;
         }
       }
     } else row=result.data;
     if(epoch!==threadEpoch || actor!==user?.id)return;
-    pendingMessage=null;form.reset();clearChatAttachment();message('chatMessage','Отправлено.');
+    pendingMessage=null;pendingMessageFile=null;form.reset();clearChatAttachment();message('chatMessage','Отправлено.');
     // Не добавляем строку перед опросом: иначе можно пропустить одновременное сообщение собеседника.
     await pollMessages(chatRows.length===0); if(!chatRows.some(m=>m.id===row.id))await pollMessages();
   });
