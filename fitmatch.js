@@ -1,4 +1,4 @@
-/* FitGoIn. Заменить fitmatch.js целиком. SQL для однократной настройки — в конце файла.
+/* FitGoIn production frontend.
    Здесь используется только публичный ключ. Никогда не вставляйте service_role или Stripe secret key. */
 const CONFIG = Object.freeze({
   url: 'https://ypbhcgcwkpiujcakvaji.supabase.co',
@@ -90,7 +90,10 @@ function page(id, push = true) {
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === id));
   document.querySelectorAll('[data-page]').forEach(b => b.classList.toggle('active', b.dataset.page === id));
   $('nav').classList.remove('open'); $('menu').setAttribute('aria-expanded','false');
-  if (push) history.pushState({page:id}, '', `#${id}`);
+  if (push) {
+    const u=new URL(location.href);u.searchParams.delete('trainer');u.hash=id==='home'?'':`#${id}`;
+    history.pushState({page:id},'',u.pathname+u.search+u.hash);
+  }
   window.scrollTo({top:0,behavior:'instant'});
   if (id === 'inbox') loadThreads().catch(e => message('chatMessage',explain(e),true));
   if (id === 'account') loadAccount().catch(e => message('coachMessage',explain(e),true));
@@ -132,18 +135,18 @@ async function allRows(table) {
 }
 async function loadCatalogue() {
   requireDB(); const epoch=++catalogueEpoch;
-  const result=await Promise.allSettled([allRows('fgi_sports'),allRows('fgi_coaches'),allRows('sports'),allRows('coaches')]);
+  const result=await Promise.allSettled([allRows('fgi_sports'),allRows('fgi_coaches')]);
   if(epoch!==catalogueEpoch) return;
   setupReady=result[0].status==='fulfilled' && result[1].status==='fulfilled';
   const data = i => result[i].status==='fulfilled' ? result[i].value : [];
-  sports=[...new Map([...data(2),...data(0)].map(s=>[String(s.id),{...s,id:String(s.id)}])).values()];
+  sports=data(0).map(s=>({...s,id:String(s.id)}));
   if(!sports.length) sports=directions.map(d=>({id:d[0],name:d[1]}));
-  const current=data(1).map(c=>normalizeCoach(c));
-  const owners=new Set(current.map(c=>c.id));
-  // После миграции старый публичный каталог не возвращает скрытые владельцем анкеты.
-  coaches=setupReady ? current : [...current,...data(3).filter(c=>!owners.has(String(c.user_id))).map(c=>normalizeCoach(c,true))];
-  catalogueError = !setupReady ? 'Обновлённые функции ещё не подключены. Владельцу сайта нужно выполнить SQL из fitmatch.js.' : '';
-  if (!setupReady && result[1].status==='rejected') catalogueError += ' '+explain(result[1].reason);
+  coaches=data(1).map(c=>normalizeCoach(c));
+  catalogueError = !setupReady ? 'Каталог временно недоступен. Проверь миграции Supabase.' : '';
+  if (!setupReady) {
+    const failed=result.find(r=>r.status==='rejected');
+    if(failed) catalogueError += ' '+explain(failed.reason);
+  }
   if(user===null) coaches=coaches.filter(publicOnly);
   renderSports(); renderCatalogue();
   const allGoals=[...new Set([...goals,...coaches.flatMap(c=>String(c.goal || '').split(/[,;\n]/).map(s=>s.trim()).filter(Boolean))])];
@@ -183,9 +186,11 @@ function findMatch(form) {
   const ranked=coaches.filter(publicOnly).map(c=>({c,m:calculateMatch(c,p)})).filter(x=>x.m).sort((a,b)=>b.m.percent-a.m.percent);
   $('matchResults').innerHTML=ranked.map(x=>card(x.c,x.m)).join('') || `<p class="empty">${esc(catalogueError || 'Тренеров по этому спорту пока нет.')}</p>`;
 }
-async function openProfile(id) {
+async function openProfile(id, push = true) {
   const c=coaches.find(c=>c.id===id); if(!c) throw Error('Профиль не найден. Обнови каталог.');
-  visibleProfile=id; page('profile'); const payment=safeURL(c.payment_url,true);
+  visibleProfile=id; page('profile',false);
+  if(push){const u=new URL(location.href);u.searchParams.set('trainer',id);u.hash='';history.pushState({page:'profile',profile:id},'',u.pathname+u.search);}
+  const payment=safeURL(c.payment_url,true);
   $('profileContent').innerHTML=`<button class="text-btn" data-page="coaches">← К тренерам</button><article class="profile-layout"><div class="portrait">${photoHTML(c)}</div><div class="profile-info"><p class="eyebrow">FITGOIN · ${esc(sportName(c.sport))}</p><h1>${esc(c.name)}</h1><p>${esc([c.city,c.country].filter(Boolean).join(', '))} · ${esc(c.format || '')}</p><div class="tags">${c.languages.map(l=>`<span class="tag">${esc(langs[l] || l)}</span>`).join('')}${c.verified?'<span class="tag">✓ Проверен</span>':''}</div><h2>${esc(priceText(c))}</h2><div class="actions">${!c.legacy?`<button class="btn primary" data-contact="${esc(c.id)}">Написать тренеру ↗</button>`:'<p class="hint">Этот тренер ещё не подключил сообщения в новой версии.</p>'}${c.id===user?.id?'<button class="btn" data-page="account">Редактировать</button>':''}</div>${payment?`<p class="section-small"><a class="btn" href="${esc(payment)}" target="_blank" rel="noopener noreferrer">${new URL(payment).pathname.startsWith('/test_')?'Тестовая оплата Stripe':'Оплатить у тренера'} ↗</a></p><p class="hint">Ссылку добавил тренер. Проверь продавца, услугу, сумму и период на странице Stripe. Подтверждение платежа приходит от Stripe; здесь статус оплаты не отслеживается.</p>`:'<p class="hint">Онлайн-оплата пока не подключена. Обсуди стоимость с тренером.</p>'}<h3 class="section-small">О тренере</h3><p class="multiline">${esc(c.bio || 'Описание пока не добавлено.')}</p><p>Опыт: ${c.experience_years==null?'не указан':esc(c.experience_years)+' лет'}</p>${[['Цели / специализация',c.goal],['Образование',c.education],['Титулы',c.titles],['Достижения',c.achievements]].map(([t,v])=>v?`<h3>${t}</h3><p class="multiline">${esc(v)}</p>`:'').join('')}<p class="hint">Достижения и титулы указаны тренером. Рейтинг: ${Number(c.rating)>0?Number(c.rating).toFixed(1):'ещё не сформирован'}.</p></div></article><div id="profileGallery" class="section-small"></div>`;
   if(!c.legacy) {
     try { const items=unwrap(await db.from('fgi_media').select('*').eq('coach_id',c.id).order('created_at',{ascending:false})); if(visibleProfile===id && $('profileGallery')) $('profileGallery').innerHTML=galleryHTML(items,false); }
@@ -225,6 +230,12 @@ async function loadAccount() {
   $('mediaEditor').hidden=!record; $('myProfile').hidden=!record;
   if(record) await loadMyGallery();
 }
+const actionTimes=new Map();
+function rateGate(key, wait=10000) {
+  const now=Date.now(),last=actionTimes.get(key)||0;
+  if(now-last<wait) throw Error('Подожди несколько секунд перед повторной попыткой.');
+  actionTimes.set(key,now);
+}
 function assertStrongPassword(value) {
   const password=String(value || '');
   const strong=password.length>=12 && /\p{Ll}/u.test(password) && /\p{Lu}/u.test(password) && /\p{N}/u.test(password) && /[\p{P}\p{S}]/u.test(password);
@@ -237,6 +248,8 @@ function bindAuth() {
     user=data.user;authUI();form.reset();message('authMessage','');await afterLogin();
   });
   bindForm('signupForm','signupMessage',async(f,form)=>{
+    if(String(f.get('website')||'').trim()){form.reset();message('signupMessage','Запрос принят.');return;}
+    rateGate('signup',15000);
     signupEmail=String(f.get('email')).trim();
     const name=String(f.get('name')).trim();if(!name)throw Error('Введи имя.');
     const data=unwrap(await db.auth.signUp({email:signupEmail,password:assertStrongPassword(f.get('password')),options:{emailRedirectTo:redirectURL(),data:{full_name:name}}}));
@@ -244,13 +257,13 @@ function bindAuth() {
     if(data.session){user=data.user;authUI();message('signupMessage','Аккаунт создан.');await afterLogin();}
     else message('signupMessage','Запрос принят. Если адрес можно зарегистрировать, придёт письмо со ссылкой подтверждения. Проверь входящие и спам. Если аккаунт уже есть — войди или восстанови пароль.');
   });
-  $('resend').onclick=()=>run($('resend'),'signupMessage',async()=>{
+  $('resend').onclick=()=>run($('resend'),'signupMessage',async()=>{rateGate('resend',15000);
     const email=$('signupForm').elements.email.value.trim() || signupEmail;
     if(!email || !$('signupForm').elements.email.checkValidity()) throw Error('Введи корректный email в поле регистрации.');
     unwrap(await db.auth.resend({type:'signup',email,options:{emailRedirectTo:redirectURL()}}));
     message('signupMessage','Запрос на повторное письмо принят. Доставка зависит от настроек почты.');
   });
-  $('forgot').onclick=()=>run($('forgot'),'authMessage',async()=>{
+  $('forgot').onclick=()=>run($('forgot'),'authMessage',async()=>{rateGate('forgot',15000);
     const input=$('authForm').elements.email; if(!input.value || !input.reportValidity()) throw Error('Введи email в поле выше.');
     unwrap(await db.auth.resetPasswordForEmail(input.value.trim(),{redirectTo:redirectURL()}));
     message('authMessage','Если аккаунт с этим адресом существует, придёт ссылка для смены пароля.');
@@ -272,6 +285,7 @@ function bindCoach() {
     for(const name of ['name','sport','goal','format','city','country','period','bio','education','titles','achievements','payment_url']) payload[name]=String(f.get(name)||'').trim();
     if(!payload.name || !payload.sport) throw Error('Заполни имя и вид спорта.');
     payload.price=f.get('price')===''?null:Number(f.get('price'));
+    if(payload.price!=null && (!Number.isFinite(payload.price) || payload.price<0 || payload.price>100)) throw Error('Цена должна быть от 0 до 100 €.');
     payload.experience_years=f.get('experience_years')===''?null:Number(f.get('experience_years'));
     payload.languages=f.getAll('languages');payload.published=f.has('published');
     if(payload.payment_url && !safeURL(payload.payment_url,true)) throw Error('Допускается только Payment Link вида https://buy.stripe.com/… без параметров после ссылки.');
@@ -466,7 +480,7 @@ function bindUI() {
   $('coachLanguages').innerHTML=Object.entries(langs).map(([id,name])=>`<label class="check"><input type="checkbox" name="languages" value="${id}">${name}</label>`).join('');
   $('goals').innerHTML=goals.map(g=>`<option value="${esc(g)}"></option>`).join('');
   opt($('matchGoal'),goals.map(g=>[g,g]),'Любая цель');
-  window.addEventListener('popstate',()=>{const target=location.hash.slice(1);try{page($(target)?.classList.contains('page')?target:'home',false);}catch(e){notice(explain(e));}});
+  window.addEventListener('popstate',()=>{const trainer=new URLSearchParams(location.search).get('trainer');if(trainer){openProfile(trainer,false).catch(e=>notice(explain(e)));return;}const target=location.hash.slice(1);try{page($(target)?.classList.contains('page')?target:'home',false);}catch(e){notice(explain(e));}});
   let index=0,paused=matchMedia('(prefers-reduced-motion: reduce)').matches;
   function hero(){if(!sports.length)return;$('heroImage').style.backgroundImage=`url('${sportImage(sports[index++%sports.length].id)}')`;}
   const pauseButton=$('pauseHero');pauseButton.textContent=paused?'Включить смену фона':'Пауза фона';
@@ -478,6 +492,7 @@ async function init() {
   const callback=new URLSearchParams(location.hash.slice(1)),query=new URLSearchParams(location.search);
   const callbackError=callback.get('error_description') || query.get('error_description');
   const requestedPage=location.hash.slice(1); // Считываем до обработки Auth SDK.
+  const requestedTrainer=query.get('trainer');
   bindUI();bindAuth();bindCoach();bindMedia();bindChat();
   notice('Подключаем FitGoIn…');
   try {
@@ -488,6 +503,7 @@ async function init() {
     await loadCatalogue();
     if(callbackError){closeDialogs();$('authDialog').showModal();message('authMessage','Ссылка недействительна: '+callbackError,true);history.replaceState(null,'',redirectURL());}
     else if(callback.get('type')==='recovery' && user){closeDialogs();$('resetDialog').showModal();}
+    else if(requestedTrainer) await openProfile(requestedTrainer,false);
     else if($(requestedPage)?.classList.contains('page'))page(requestedPage,false);
     if(user)await loadAccount();
   } catch(e){notice('Не удалось подключить все функции. '+explain(e));}
