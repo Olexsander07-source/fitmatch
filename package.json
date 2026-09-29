@@ -5,7 +5,8 @@
     "check": "node --check fitmatch.js && node scripts/verify.mjs",
     "build": "node scripts/build.mjs",
     "deploy:dry": "npm run check && npm run build && wrangler deploy --dry-run",
-    "deploy": "node scripts/safe-deploy.mjs"
+    "deploy": "node scripts/safe-deploy.mjs",
+    "codex": "scripts\\codex-fitgoin.cmd"
   },
   "devDependencies": {
     "wrangler": "4.142.0"
