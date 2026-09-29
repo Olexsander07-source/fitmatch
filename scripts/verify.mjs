@@ -11,6 +11,8 @@ const migrations = new Map([
   ['20260929102250_support_phone_auth_profiles.sql', '4920ed23d70898d91cd59a9f6376180a'],
   ['20260929104742_add_chat_presence.sql', '52f2f847d0bec378971c6b52c2e72814'],
   ['20260929105457_add_chat_media.sql', '1c595a2fe6fd006421cd922862526a08'],
+  ['20260929110708_add_audio_call_signaling.sql', 'dfb51292f6203d9d5ecaade58730b14f'],
+  ['20260929111114_harden_call_stale_recovery.sql', 'fa31d04e2f2ee21c909da11cfcc35589'],
 ]);
 for (const file of files) await access(new URL(`../${file}`, import.meta.url));
 for (const file of migrations.keys()) await access(new URL(`../supabase/migrations/${file}`, import.meta.url));
@@ -58,6 +60,12 @@ if (!js.includes('navigator.mediaDevices?.getUserMedia')) throw new Error('Micro
 if (!js.includes('new MediaRecorder(stream,options)')) throw new Error('MediaRecorder voice flow is missing');
 if (!js.includes("kind:'audio'")) throw new Error('Audio message preparation is missing');
 if (!js.includes("kind:'audio'") || !js.includes('duration_ms:durationMs?')) throw new Error('Voice duration metadata is missing');
+if (!html.includes('id="audioCall"') || !html.includes('id="callDialog"') || !html.includes('id="incomingCallDialog"')) throw new Error('Audio call UI is missing');
+if (!js.includes('new RTCPeerConnection({iceServers:CALL_ICE_SERVERS})')) throw new Error('WebRTC peer connection is missing');
+if (!js.includes("db.from('fgi_calls').insert")) throw new Error('Call creation signaling is missing');
+if (!js.includes("db.from('fgi_call_signals').insert")) throw new Error('Call signal exchange is missing');
+if (!js.includes("getUserMedia({audio:{echoCancellation:true")) throw new Error('Audio call microphone capture is missing');
+if (!js.includes("update({status:'accepted'})") || !js.includes("update({status:'ended'})")) throw new Error('Call lifecycle updates are missing');
 
 const openSelects = (html.match(/<select\b/gi) || []).length;
 const closeSelects = (html.match(/<\/select\s*>/gi) || []).length;
