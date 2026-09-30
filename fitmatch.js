@@ -474,6 +474,16 @@ async function deletePhoto(button) {
 const CHAT_IMAGE_TYPES=new Set(['image/jpeg','image/png','image/webp']);
 const CHAT_VIDEO_TYPES=new Set(['video/mp4','video/webm','video/quicktime']);
 const CHAT_AUDIO_TYPES=new Set(['audio/webm','audio/mp4','audio/ogg','audio/mpeg']);
+function chatAttachmentMime(file) {
+  const raw=String(file?.type||'').split(';')[0].trim().toLowerCase();
+  if(CHAT_IMAGE_TYPES.has(raw) || CHAT_VIDEO_TYPES.has(raw) || CHAT_AUDIO_TYPES.has(raw))return raw;
+  if(raw==='video/x-m4v')return 'video/mp4';
+  const name=String(file?.name||'').toLowerCase();
+  if(/\.mov$/.test(name))return 'video/quicktime';
+  if(/\.(mp4|m4v)$/.test(name))return 'video/mp4';
+  if(/\.webm$/.test(name))return 'video/webm';
+  return raw;
+}
 function clearChatAttachment() {
   if(pendingChatPreviewURL){URL.revokeObjectURL(pendingChatPreviewURL);pendingChatPreviewURL='';}
   pendingChatAttachment=null;pendingChatDurationMs=null;
@@ -484,10 +494,10 @@ function clearChatAttachment() {
 function showChatAttachment(file,durationMs=null) {
   clearChatAttachment();pendingMessage=null;pendingMessageFile=null;
   if(!file?.size)return;
-  const mime=String(file.type||'').split(';')[0];
+  const mime=chatAttachmentMime(file);
   if(!CHAT_IMAGE_TYPES.has(mime) && !CHAT_VIDEO_TYPES.has(mime) && !CHAT_AUDIO_TYPES.has(mime))throw Error('Неподдерживаемый тип вложения.');
   if(CHAT_IMAGE_TYPES.has(mime) && file.size>12*1024*1024)throw Error('Фото больше 12 МБ.');
-  if(CHAT_VIDEO_TYPES.has(mime) && file.size>50*1024*1024)throw Error('Видео больше 50 МБ.');
+  if(CHAT_VIDEO_TYPES.has(mime) && file.size>50*1024*1024)throw Error('Видео больше 50 МБ. Сейчас это максимальный размер одного файла в FitGoIn.');
   if(CHAT_AUDIO_TYPES.has(mime) && file.size>15*1024*1024)throw Error('Голосовое сообщение больше 15 МБ.');
   pendingChatAttachment=file;pendingChatDurationMs=durationMs;pendingChatPreviewURL=URL.createObjectURL(file);
   const box=$('chatAttachmentPreview');box.hidden=false;
@@ -563,13 +573,13 @@ async function startVoiceRecording() {
   },250);
 }
 async function prepareChatAttachment(file,durationMs=null) {
-  if(CHAT_IMAGE_TYPES.has(file?.type)){
+  const mime=chatAttachmentMime(file);
+  if(CHAT_IMAGE_TYPES.has(mime)){
     const blob=await prepareImage(file);
     return {blob,kind:'image',mime:'image/jpeg',size:blob.size,ext:'jpg',duration_ms:null};
   }
-  const mime=String(file?.type||'').split(';')[0];
   if(CHAT_VIDEO_TYPES.has(mime)){
-    if(file.size>50*1024*1024)throw Error('Видео больше 50 МБ.');
+    if(file.size>50*1024*1024)throw Error('Видео больше 50 МБ. Сейчас это максимальный размер одного файла в FitGoIn.');
     return {blob:file,kind:'video',mime,size:file.size,ext:chatFileExtension(mime),duration_ms:null};
   }
   if(CHAT_AUDIO_TYPES.has(mime)){
@@ -578,11 +588,37 @@ async function prepareChatAttachment(file,durationMs=null) {
   }
   throw Error('Неподдерживаемый тип вложения.');
 }
+async function uploadChatVideoResumable(file,path,mime) {
+  const session=unwrap(await db.auth.getSession()).session;
+  if(!session?.access_token)throw Error('Войди снова перед загрузкой видео.');
+  const {Upload}=await import('https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/+esm');
+  await new Promise((resolve,reject)=>{
+    const upload=new Upload(file,{
+      endpoint:'https://ypbhcgcwkpiujcakvaji.storage.supabase.co/storage/v1/upload/resumable',
+      retryDelays:[0,3000,5000,10000,20000],
+      headers:{authorization:`Bearer ${session.access_token}`,apikey:CONFIG.key},
+      uploadDataDuringCreation:true,
+      removeFingerprintOnSuccess:true,
+      chunkSize:6*1024*1024,
+      metadata:{bucketName:CONFIG.chatBucket,objectName:path,contentType:mime,cacheControl:'3600'},
+      onError:error=>reject(error),
+      onProgress:(sent,total)=>{
+        if(total>0 && pendingChatAttachment===file){
+          const percent=Math.max(1,Math.min(99,Math.round(sent/total*100)));
+          message('chatMessage',`Загрузка видео: ${percent}%…`);
+        }
+      },
+      onSuccess:()=>resolve()
+    });
+    upload.start();
+  });
+}
 async function uploadChatAttachment(file,actor,threadId,durationMs=null) {
   const prepared=await prepareChatAttachment(file,durationMs);
   if(user?.id!==actor || activeThread?.id!==threadId)throw Error('Диалог изменился. Выбери файл заново.');
   const path=`${actor}/${threadId}/${crypto.randomUUID()}.${prepared.ext}`;
-  unwrap(await db.storage.from(CONFIG.chatBucket).upload(path,prepared.blob,{contentType:prepared.mime,upsert:false,cacheControl:'3600'}));
+  if(prepared.kind==='video')await uploadChatVideoResumable(prepared.blob,path,prepared.mime);
+  else unwrap(await db.storage.from(CONFIG.chatBucket).upload(path,prepared.blob,{contentType:prepared.mime,upsert:false,cacheControl:'3600'}));
   return {...prepared,path};
 }
 async function removeChatAttachment(path) {
