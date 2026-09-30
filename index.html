@@ -19,9 +19,9 @@
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="manifest" href="./site.webmanifest">
   <title>FitGoIn — Find the one who fits you.</title>
-  <link rel="stylesheet" href="./styles.css?v=20260929">
+  <link rel="stylesheet" href="./styles.css?v=20260930">
   <script defer src="./cookie-consent.js?v=20260929"></script>
-  <script type="module" src="./fitmatch.js?v=20260929"></script>
+  <script type="module" src="./fitmatch.js?v=20260930"></script>
 </head>
 <body>
 <a class="skip" href="#main">К содержимому</a>
@@ -62,13 +62,20 @@
     <p id="coachCount" class="muted" aria-live="polite"></p><div id="coachesList" class="coach-grid"></div>
   </section>
   <section id="ranking" class="page container section"><p class="eyebrow">РЕЙТИНГ</p><h1>Тренеры и <em>их опыт.</em></h1><p class="muted">Сортировка по сохранённому рейтингу. Для новых профилей рейтинг ещё не сформирован.</p><div id="rankingList" class="stack"></div></section>
-  <section id="match" class="page container section"><p class="eyebrow">FITGOIN MATCH</p><h1>Начнём с <em>тебя.</em></h1><p class="lead">Выбери важные параметры. Процент показывает совпадение с анкетой тренера, а не гарантию результата.</p>
-    <form id="matchForm" class="panel form-grid"><label>Спорт<select id="matchSport" name="sport" required></select></label><label>Цель<select id="matchGoal" name="goal"><option value="">Любая цель</option></select></label>
-      <label>Формат<select name="format"><option value="">Любой</option><option value="Онлайн">Онлайн</option><option value="Офлайн">Офлайн</option></select></label><label>Язык<select id="matchLanguage" name="language"><option value="">Любой</option></select></label>
-      <label>Город для очных занятий<input name="city" maxlength="100" placeholder="Например, Nice"></label><label>Максимальный бюджет, €<input name="budget" type="number" min="0" max="100" step="0.01" placeholder="Не ограничен"></label>
-      <label>Бюджет за<select name="period"><option value="занятие">Занятие</option><option value="месяц">Месяц</option><option value="программа">Программу</option></select></label>
-      <div class="full"><button class="btn primary" type="submit">Показать мой MATCH ↗</button><p class="hint">Спорт — обязательное условие. Баллы за выбранные параметры: цель 30, формат 25, язык 20, город 15, бюджет 10. Пустые параметры не учитываются; спорт даёт 40 баллов.</p></div>
-    </form><div id="matchResults" class="coach-grid section-small" aria-live="polite"></div>
+  <section id="match" class="page container section"><p class="eyebrow">FITGOIN MATCH</p><h1>Найдём тренера <em>под тебя.</em></h1><p class="lead">Ответь на 7 коротких вопросов. FitGoIn покажет до трёх лучших совпадений и объяснит каждый процент.</p>
+    <form id="matchForm" class="panel match-wizard">
+      <div class="match-progress"><div class="match-progress-head"><strong id="matchStepText">Вопрос 1 из 7</strong><span id="matchStepLabel">Твой спорт</span></div><div class="match-progress-track"><i id="matchProgressFill"></i></div></div>
+      <div class="match-step active" data-match-step="0" data-step-label="Твой спорт"><p class="eyebrow">01 · СПОРТ</p><h2>Чем хочешь заниматься?</h2><label>Вид спорта<select id="matchSport" name="sport" required></select></label></div>
+      <div class="match-step" data-match-step="1" data-step-label="Твоя цель"><p class="eyebrow">02 · ЦЕЛЬ</p><h2>Какой результат тебе нужен?</h2><label>Цель<select id="matchGoal" name="goal"><option value="">Пока не решил</option></select></label></div>
+      <div class="match-step" data-match-step="2" data-step-label="Формат"><p class="eyebrow">03 · ФОРМАТ</p><h2>Как удобнее тренироваться?</h2><label>Формат<select name="format"><option value="">Не важно</option><option value="Онлайн">Онлайн</option><option value="Офлайн">Офлайн</option></select></label></div>
+      <div class="match-step" data-match-step="3" data-step-label="Местоположение"><p class="eyebrow">04 · ГОРОД</p><h2>Где искать очного тренера?</h2><label>Город<input name="city" maxlength="100" autocomplete="address-level2" placeholder="Например, Nice"></label><p class="hint">Для онлайн-тренировок город можно не указывать.</p></div>
+      <div class="match-step" data-match-step="4" data-step-label="Бюджет"><p class="eyebrow">05 · БЮДЖЕТ</p><h2>Какой бюджет тебе комфортен?</h2><div class="form-grid"><label>Максимум, €<input name="budget" type="number" min="0" max="100" step="0.01" placeholder="Не ограничен"></label><label>Бюджет за<select name="period"><option value="занятие">Занятие</option><option value="месяц">Месяц</option><option value="программа">Программу</option></select></label></div></div>
+      <div class="match-step" data-match-step="5" data-step-label="Язык"><p class="eyebrow">06 · ЯЗЫК</p><h2>На каком языке общаться?</h2><label>Язык<select id="matchLanguage" name="language"><option value="">Не важно</option></select></label></div>
+      <div class="match-step" data-match-step="6" data-step-label="Удобное время"><p class="eyebrow">07 · ВРЕМЯ</p><h2>Когда тебе удобнее заниматься?</h2><label>Время<select id="matchAvailability" name="availability"><option value="">Не важно</option><option value="morning">Утро</option><option value="day">День</option><option value="evening">Вечер</option><option value="weekend">Выходные</option></select></label></div>
+      <div class="match-wizard-actions"><button id="matchPrev" class="btn" type="button" hidden>← Назад</button><button id="matchNext" class="btn primary" type="button">Дальше →</button><button id="matchSubmit" class="btn primary" type="submit" hidden>Показать мой MATCH ↗</button></div>
+      <p class="hint">MATCH — это прозрачное сравнение анкеты клиента и профиля тренера: спорт 30%, цель 20%, формат 15%, город 15%, бюджет 10%, язык 5%, время 5%.</p>
+    </form>
+    <div id="matchSummary" class="match-summary section-small" hidden></div><div id="matchResults" class="coach-grid section-small" aria-live="polite"></div>
   </section>
   <section id="profile" class="page container section"><div id="profileContent"></div></section>
   <section id="account" class="page container section"><div class="section-head"><div><p class="eyebrow">ЛИЧНЫЙ КАБИНЕТ</p><h1>Твоё <em>пространство.</em></h1><p id="accountEmail" class="muted"></p></div><button id="signOut" class="btn">Выйти</button></div>
@@ -82,6 +89,7 @@
       <label>Опыт, лет<input name="experience_years" type="number" min="0" max="80" step="1"></label><label>Цена, €<input name="price" type="number" min="0" max="100" step="0.01" placeholder="Пусто — по запросу"></label>
       <label>Стоимость за<select name="period"><option value="занятие">Занятие</option><option value="месяц">Месяц</option><option value="программа">Программу</option></select></label>
       <fieldset class="full"><legend>Языки общения с клиентами</legend><div id="coachLanguages" class="checks"></div></fieldset>
+      <fieldset class="full"><legend>Когда удобно проводить тренировки</legend><div id="coachAvailability" class="checks"><label class="check"><input type="checkbox" name="availability" value="morning">Утро</label><label class="check"><input type="checkbox" name="availability" value="day">День</label><label class="check"><input type="checkbox" name="availability" value="evening">Вечер</label><label class="check"><input type="checkbox" name="availability" value="weekend">Выходные</label></div><p class="hint">Можно выбрать несколько вариантов. Это используется только для MATCH.</p></fieldset>
       <label class="full">О себе<textarea name="bio" maxlength="4000" rows="5"></textarea></label><label>Образование и сертификаты<textarea name="education" maxlength="2000" rows="3"></textarea></label>
       <label>Титулы<textarea name="titles" maxlength="2000" rows="3" placeholder="Название, соревнование, год"></textarea></label><label class="full">Достижения<textarea name="achievements" maxlength="3000" rows="3"></textarea></label>
       <label class="full">Ссылка на оплату Stripe<input name="payment_url" type="url" maxlength="300" placeholder="https://buy.stripe.com/…"><span class="hint">Создай Payment Link в своём Stripe с нужной ценой и валютой EUR. Для пробного платежа используй ссылку из тестового режима. Оплата поступает в аккаунт владельца ссылки.</span></label>

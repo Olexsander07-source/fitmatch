@@ -14,6 +14,7 @@ const migrations = new Map([
   ['20260929110708_add_audio_call_signaling.sql', 'dfb51292f6203d9d5ecaade58730b14f'],
   ['20260929111114_harden_call_stale_recovery.sql', 'fa31d04e2f2ee21c909da11cfcc35589'],
   ['20260929111231_index_call_foreign_keys.sql', 'e965606b67ec9e37992cdd01fd4ae857'],
+  ['20260930210545_add_coach_match_availability.sql', '53c6d78aca7aa1a3ed5894c43ed0a643'],
 ]);
 for (const file of files) await access(new URL(`../${file}`, import.meta.url));
 for (const file of migrations.keys()) await access(new URL(`../supabase/migrations/${file}`, import.meta.url));
@@ -75,6 +76,11 @@ if (!js.includes("video:{facingMode:{ideal:callFacingMode}")) throw new Error('V
 if (!js.includes('async function switchCallCamera()')) throw new Error('Camera switching is missing');
 if (!js.includes("sender.replaceTrack(nextTrack)")) throw new Error('Camera track replacement is missing');
 if (!js.includes("call.kind==='video'")) throw new Error('Incoming video call handling is missing');
+if (!html.includes('id="matchStepText"') || !html.includes('data-match-step="6"')) throw new Error('Seven-step MATCH wizard is missing');
+if (!html.includes('id="matchAvailability"') || !html.includes('id="coachAvailability"')) throw new Error('MATCH availability controls are missing');
+if (!js.includes("payload.availability=f.getAll('availability')")) throw new Error('Coach availability persistence is missing');
+if (!js.includes("[Boolean(p.availability),5")) throw new Error('Availability weight is missing from MATCH');
+if (!js.includes('.slice(0,3)')) throw new Error('MATCH top-three result limit is missing');
 
 const openSelects = (html.match(/<select\b/gi) || []).length;
 const closeSelects = (html.match(/<\/select\s*>/gi) || []).length;

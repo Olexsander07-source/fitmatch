@@ -13,6 +13,7 @@ const norm = v => String(v ?? '').trim().toLocaleLowerCase().replace(/ё/g,'е')
 const parts = v => String(v ?? '').split(/[,;\n]/).map(norm).filter(Boolean);
 const langs = {en:'English',fr:'Français',uk:'Українська',ru:'Русский',de:'Deutsch',es:'Español',it:'Italiano',pt:'Português',pl:'Polski',ar:'العربية'};
 const goals = ['Похудение','Набор мышечной массы','Сила','Выносливость','Подготовка к соревнованиям','Техника','Подвижность','Общее здоровье'];
+const availabilityLabels = {morning:'Утро',day:'День',evening:'Вечер',weekend:'Выходные'};
 const directions = [
   ['bodybuilding','Bodybuilding','бодибилдинг','1581009146145-b5ef050c2e1e'],
   ['fitness','Fitness','фитнес','1517836357463-d25dfeac3438'],
@@ -35,7 +36,7 @@ const CALL_ICE_SERVERS=[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.goog
 let presence = new Map(), presenceFetchedAt = 0, presenceTimer = 0;
 const PRESENCE_ONLINE_MS = 75000;
 let phoneMode = 'login', pendingPhone = '', pendingPhoneName = '', phoneResendUntil = 0, phoneTimer = 0;
-let catalogueError = '', setupReady = false, visibleProfile = '', galleryEpoch = 0, accountVersion = 0;
+let catalogueError = '', setupReady = false, visibleProfile = '', galleryEpoch = 0, accountVersion = 0, matchStep = 0;
 const publicOnly = c => c.published !== false;
 const sportName = id => sports.find(s => String(s.id) === String(id))?.name || String(id || 'Спорт не указан');
 function sportKey(id) {
@@ -138,6 +139,7 @@ function normalizeCoach(c, legacy = false) {
   return {...c,id:String(c.id),sport:String(c.sport ?? c.sport_id ?? ''),legacy,
     published:legacy ? true : c.published, user_id:legacy ? c.user_id : c.id,
     achievements:c.achievements || c.achievements_summary || '', languages:Array.isArray(c.languages)?c.languages:[],
+    availability:Array.isArray(c.availability)?c.availability:[],
     price:c.price == null || c.price === '' ? null : Number(c.price)};
 }
 async function allRows(table) {
@@ -164,12 +166,12 @@ async function loadCatalogue() {
   if(user===null) coaches=coaches.filter(publicOnly);
   renderSports(); renderCatalogue();
   const allGoals=[...new Set([...goals,...coaches.flatMap(c=>String(c.goal || '').split(/[,;\n]/).map(s=>s.trim()).filter(Boolean))])];
-  opt($('matchGoal'),allGoals.map(g=>[g,g]),'Любая цель');
+  opt($('matchGoal'),allGoals.map(g=>[g,g]),'Пока не решил');
   if(catalogueError) notice(catalogueError); else notice('');
 }
 function formatFits(c, wanted) { return !wanted || c.format === wanted || c.format === 'Онлайн и офлайн'; }
 function card(c, match) {
-  return `<article class="coach-card">${photoHTML(c)}${match?`<div class="match-badge">${match.percent}% MATCH</div>`:''}<div class="card-body"><h3>${esc(c.name || 'Тренер')}</h3><p>${esc(sportName(c.sport))} · ${esc(c.city || c.format || '')}</p><div class="tags">${[c.goal,c.format,c.verified?'✓ Проверен':null,Number(c.score)>0?'Баллы профиля: '+Number(c.score):null].filter(Boolean).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div><div class="card-bottom"><span>${Number(c.rating)>0?`★ ${Number(c.rating).toFixed(1)}`:'Пока без рейтинга'}</span><span>${esc(priceText(c))}</span></div>${match?`<ul class="match-reasons">${match.reasons.map(r=>`<li>${esc(r)}</li>`).join('')}</ul>`:''}<button class="btn" data-profile="${esc(c.id)}">Открыть профиль ↗</button></div></article>`;
+  return `<article class="coach-card">${photoHTML(c)}${match?`<div class="match-badge">${match.percent}% MATCH</div>`:''}<div class="card-body"><h3>${esc(c.name || 'Тренер')}</h3><p>${esc(sportName(c.sport))} · ${esc(c.city || c.format || '')}</p><div class="tags">${[c.goal,c.format,c.verified?'✓ Проверен':null,Number(c.score)>0?'Баллы профиля: '+Number(c.score):null].filter(Boolean).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div><div class="card-bottom"><span>${Number(c.rating)>0?`★ ${Number(c.rating).toFixed(1)}`:'Пока без рейтинга'}</span><span>${esc(priceText(c))}</span></div>${match?`<ul class="match-reasons">${match.reasons.map(r=>`<li>${esc(r)}</li>`).join('')}</ul>`:''}<div class="match-card-actions">${match && !c.legacy?`<button class="btn primary" data-contact="${esc(c.id)}">Написать ↗</button>`:''}<button class="btn" data-profile="${esc(c.id)}">Открыть профиль ↗</button></div></div></article>`;
 }
 function renderCatalogue() {
   const list=coaches.filter(publicOnly);
@@ -181,24 +183,64 @@ function renderCatalogue() {
   const banner=$('categoryBanner'), sport=$('sportFilter').value; banner.hidden=!sport;
   if(sport) { banner.style.backgroundImage=`linear-gradient(90deg,#111e12e6,#111e1233),url('${sportImage(sport)}')`; banner.innerHTML=`<p class="eyebrow">FITGOIN</p><h2>${esc(sportName(sport))}</h2><p>${filtered.length} тренеров по текущим фильтрам</p><button class="btn primary" data-match-sport="${esc(sport)}">Подобрать по целям ↗</button>`; }
 }
+function updateMatchWizard() {
+  const steps=[...document.querySelectorAll('#matchForm .match-step')];if(!steps.length)return;
+  matchStep=Math.max(0,Math.min(matchStep,steps.length-1));
+  steps.forEach((step,i)=>step.classList.toggle('active',i===matchStep));
+  $('matchPrev').hidden=matchStep===0;$('matchNext').hidden=matchStep===steps.length-1;$('matchSubmit').hidden=matchStep!==steps.length-1;
+  $('matchStepText').textContent=`Вопрос ${matchStep+1} из ${steps.length}`;
+  $('matchStepLabel').textContent=steps[matchStep].dataset.stepLabel || '';
+  $('matchProgressFill').style.width=`${((matchStep+1)/steps.length)*100}%`;
+}
+function moveMatchStep(direction) {
+  const steps=[...document.querySelectorAll('#matchForm .match-step')];
+  if(direction>0){const required=steps[matchStep]?.querySelector('[required]');if(required && !required.reportValidity())return;}
+  matchStep=Math.max(0,Math.min(matchStep+direction,steps.length-1));updateMatchWizard();
+}
+function resetMatchWizard(clear=false) {
+  if(clear)$('matchForm')?.reset();matchStep=0;
+  if($('matchSummary'))$('matchSummary').hidden=true;if($('matchResults'))$('matchResults').replaceChildren();
+  updateMatchWizard();
+}
 function calculateMatch(c, p) {
   if(sportKey(c.sport)!==sportKey(p.sport)) return null;
-  let earned=40,total=40; const reasons=['✓ Спорт совпадает'];
+  let earned=30,total=30; const reasons=['✓ Спорт совпадает'];
+  const citySelected=Boolean(p.city && p.format!=='Онлайн');
+  const budgetSelected=p.budget!=='';
   const criteria=[
-    [p.goal,30,parts(c.goal).includes(norm(p.goal)),'Цель'],[p.format,25,formatFits(c,p.format),'Формат'],
-    [p.language,20,c.languages.includes(p.language),'Язык'],
-    [p.city,15,norm(c.city)===norm(p.city) && c.format!=='Онлайн','Город / очные занятия'],
-    [p.budget!==''?true:false,10,c.price!=null && c.period===p.period && c.price<=Number(p.budget),'Бюджет и период']
+    [Boolean(p.goal),20,parts(c.goal).includes(norm(p.goal)),'Цель'],
+    [Boolean(p.format),15,formatFits(c,p.format),'Формат'],
+    [citySelected,15,norm(c.city)===norm(p.city) && c.format!=='Онлайн','Город / очные занятия'],
+    [budgetSelected,10,c.price!=null && c.period===p.period && c.price<=Number(p.budget),'Бюджет'],
+    [Boolean(p.language),5,c.languages.includes(p.language),'Язык'],
+    [Boolean(p.availability),5,c.availability.includes(p.availability),'Удобное время']
   ];
-  for(const [selected,weight,ok,label] of criteria) if(selected){ total+=weight; if(ok)earned+=weight; reasons.push(`${ok?'✓':'—'} ${label}${ok?' совпадает':' не совпадает или не указан'}`); }
+  for(const [selected,weight,ok,label] of criteria){
+    if(!selected)continue;
+    total+=weight;if(ok)earned+=weight;
+    reasons.push(`${ok?'✓':'—'} ${label}${ok?' совпадает':' не совпадает или не указан'}`);
+  }
   return {percent:Math.min(100,Math.round(earned/total*100)),reasons};
 }
+function matchPreferenceSummary(p) {
+  const items=[
+    sportName(p.sport),p.goal,p.format,
+    p.city && p.format!=='Онлайн'?p.city:'',
+    p.budget!==''?`до ${Number(p.budget).toLocaleString('fr-FR')} € / ${p.period}`:'',
+    p.language?(langs[p.language]||p.language):'',
+    p.availability?(availabilityLabels[p.availability]||p.availability):''
+  ].filter(Boolean);
+  return items.map(v=>`<span class="tag">${esc(v)}</span>`).join('');
+}
 function findMatch(form) {
-  const p=Object.fromEntries(new FormData(form));
-  if(p.city && p.format==='Онлайн') {notice('Для онлайн-тренировок убери город или выбери очный формат.');return;}
-  notice('');
-  const ranked=coaches.filter(publicOnly).map(c=>({c,m:calculateMatch(c,p)})).filter(x=>x.m).sort((a,b)=>b.m.percent-a.m.percent);
-  $('matchResults').innerHTML=ranked.map(x=>card(x.c,x.m)).join('') || `<p class="empty">${esc(catalogueError || 'Тренеров по этому спорту пока нет.')}</p>`;
+  const p=Object.fromEntries(new FormData(form));notice('');
+  const ranked=coaches.filter(publicOnly).map(c=>({c,m:calculateMatch(c,p)})).filter(x=>x.m)
+    .sort((a,b)=>b.m.percent-a.m.percent || Number(b.c.rating||0)-Number(a.c.rating||0) || Number(b.c.score||0)-Number(a.c.score||0))
+    .slice(0,3);
+  const summary=$('matchSummary');summary.hidden=false;
+  summary.innerHTML=`<p class="eyebrow">ТВОЙ MATCH</p><h2>${ranked.length?`Нашли ${ranked.length} ${ranked.length===1?'подходящего тренера':'лучших совпадения'}`:'Пока нет точного совпадения'}</h2><div class="tags">${matchPreferenceSummary(p)}</div><p class="muted">Процент рассчитан только по выбранным тобой параметрам. Он показывает совпадение анкет, а не гарантирует результат тренировок.</p>`;
+  $('matchResults').innerHTML=ranked.map(x=>card(x.c,x.m)).join('') || `<p class="empty">${esc(catalogueError || 'Тренеров по этому спорту пока нет. Попробуй другой вид спорта или вернись позже.')}</p>`;
+  summary.scrollIntoView({behavior:'smooth',block:'start'});
 }
 async function openProfile(id, push = true) {
   const c=coaches.find(c=>c.id===id); if(!c) throw Error('Профиль не найден. Обнови каталог.');
@@ -236,13 +278,14 @@ async function loadAccount() {
   const form=$('coachForm');
   if(form.dataset.dirty || form.dataset.busy) return; // Не затирать уже начатое редактирование поздним ответом.
   for(const [name,control] of Object.entries(Object.fromEntries([...form.elements].filter(e=>e.name).map(e=>[e.name,e])))) {
-    if(name==='languages') continue;
+    if(name==='languages' || name==='availability') continue;
     if(control.type==='checkbox') control.checked=record?.[name] ?? true;
     else control.value=record?.[name] ?? (name==='name'?user.user_metadata?.full_name || '':name==='format'?'Онлайн':name==='period'?'занятие':'');
   }
   if(record?.sport && ![...$('coachSport').options].some(o=>o.value===record.sport)) $('coachSport').add(new Option(sportName(record.sport),record.sport));
   if(record) $('coachSport').value=record.sport;
   form.querySelectorAll('[name=languages]').forEach(i=>i.checked=record?.languages?.includes(i.value) || false);
+  form.querySelectorAll('[name=availability]').forEach(i=>i.checked=record?.availability?.includes(i.value) || false);
   $('mediaEditor').hidden=!record; $('myProfile').hidden=!record;
   if(record) await loadMyGallery();
 }
@@ -371,7 +414,7 @@ function bindCoach() {
     payload.price=f.get('price')===''?null:Number(f.get('price'));
     if(payload.price!=null && (!Number.isFinite(payload.price) || payload.price<0 || payload.price>100)) throw Error('Цена должна быть от 0 до 100 €.');
     payload.experience_years=f.get('experience_years')===''?null:Number(f.get('experience_years'));
-    payload.languages=f.getAll('languages');payload.published=f.has('published');
+    payload.languages=f.getAll('languages');payload.availability=f.getAll('availability');payload.published=f.has('published');
     if(payload.payment_url && !safeURL(payload.payment_url,true)) throw Error('Допускается только Payment Link вида https://buy.stripe.com/… без параметров после ссылки.');
     if(payload.payment_url)payload.payment_url=safeURL(payload.payment_url,true);
     const saved=unwrap(await db.from('fgi_coaches').upsert(payload,{onConflict:'id'}).select().single());
@@ -1014,11 +1057,11 @@ function bindUI() {
   document.addEventListener('click',e=>{
     const b=e.target.closest('button');if(!b)return;
     Promise.resolve().then(async()=>{
-      if(b.dataset.page)page(b.dataset.page);
+      if(b.dataset.page){if(b.dataset.page==='match')resetMatchWizard(true);page(b.dataset.page);}
       if(b.dataset.action==='login')$('authDialog').showModal();
       if(b.hasAttribute('data-close'))b.closest('dialog').close();
       if(b.dataset.sport){$('sportFilter').value=b.dataset.sport;page('coaches');renderCatalogue();}
-      if(b.dataset.matchSport){$('matchSport').value=b.dataset.matchSport;page('match');}
+      if(b.dataset.matchSport){resetMatchWizard(true);$('matchSport').value=b.dataset.matchSport;matchStep=1;updateMatchWizard();page('match');}
       if(b.dataset.profile)await openProfile(b.dataset.profile);
       if(b.dataset.contact){if(b.dataset.busy)return;b.dataset.busy='1';b.disabled=true;try{await contact(b.dataset.contact);}finally{delete b.dataset.busy;b.disabled=false;}}
       if(b.dataset.thread){const t=threads.find(t=>t.id===b.dataset.thread);if(t)await openThread(t);}
@@ -1027,18 +1070,19 @@ function bindUI() {
   });
   document.addEventListener('error',e=>{if(e.target.tagName==='IMG'){const box=document.createElement('div');box.className='initials';box.textContent='Фото недоступно';box.style.fontSize='18px';e.target.replaceWith(box);}},true);
   $('search').oninput=renderCatalogue;$('sportFilter').onchange=renderCatalogue;$('formatFilter').onchange=renderCatalogue;
+  $('matchPrev').onclick=()=>moveMatchStep(-1);$('matchNext').onclick=()=>moveMatchStep(1);
   $('matchForm').onsubmit=e=>{e.preventDefault();findMatch(e.target);};
-  opt($('matchLanguage'),Object.entries(langs),'Любой язык');
+  opt($('matchLanguage'),Object.entries(langs),'Не важно');
   $('coachLanguages').innerHTML=Object.entries(langs).map(([id,name])=>`<label class="check"><input type="checkbox" name="languages" value="${id}">${name}</label>`).join('');
   $('goals').innerHTML=goals.map(g=>`<option value="${esc(g)}"></option>`).join('');
-  opt($('matchGoal'),goals.map(g=>[g,g]),'Любая цель');
+  opt($('matchGoal'),goals.map(g=>[g,g]),'Пока не решил');
   window.addEventListener('popstate',()=>{const trainer=new URLSearchParams(location.search).get('trainer');if(trainer){openProfile(trainer,false).catch(e=>notice(explain(e)));return;}const target=location.hash.slice(1);try{page($(target)?.classList.contains('page')?target:'home',false);}catch(e){notice(explain(e));}});
   document.addEventListener('visibilitychange',()=>{if(!user || !db)return;if(document.visibilityState==='visible')startPresenceHeartbeat();else{stopPresenceHeartbeat();touchPresence(false).catch(()=>{});}});
   let index=0,paused=matchMedia('(prefers-reduced-motion: reduce)').matches;
   function hero(){if(!sports.length)return;$('heroImage').style.backgroundImage=`url('${sportImage(sports[index++%sports.length].id)}')`;}
   const pauseButton=$('pauseHero');pauseButton.textContent=paused?'Включить смену фона':'Пауза фона';
   pauseButton.onclick=()=>{paused=!paused;pauseButton.textContent=paused?'Включить смену фона':'Пауза фона';};
-  sports=directions.map(d=>({id:d[0],name:d[1]}));renderSports();renderCatalogue();hero();
+  sports=directions.map(d=>({id:d[0],name:d[1]}));renderSports();renderCatalogue();updateMatchWizard();hero();
   setInterval(()=>{if(!paused && currentPage==='home' && document.visibilityState==='visible')hero();},7000);
 }
 async function init() {
