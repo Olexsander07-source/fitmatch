@@ -1,5 +1,5 @@
 const COOKIE_NAME='fitgoin_cookie_consent_v1';
-const MAX_AGE=60*60*24*365;
+const MAX_AGE=60*60*24*180;
 
 function readChoice(){
   const row=document.cookie.split('; ').find(v=>v.startsWith(COOKIE_NAME+'='));
@@ -38,8 +38,8 @@ function showBanner(force=false){
       <p class="hint"><a href="./cookies.html">Подробнее о cookie и локальном хранилище</a></p>
     </div>
     <div class="cookie-actions">
-      <button class="btn" type="button" data-cookie-choice="necessary">Только необходимые</button>
-      <button class="btn primary" type="button" data-cookie-choice="optional">Разрешить необязательные</button>
+      <button class="btn primary" type="button" data-cookie-choice="necessary">Отклонить необязательные</button>
+      <button class="btn primary" type="button" data-cookie-choice="optional">Принять необязательные</button>
     </div>
   </div>`;
   document.body.append(wrap);
