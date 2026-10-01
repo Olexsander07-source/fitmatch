@@ -267,6 +267,14 @@ function renderAccountWorkspace() {
   $('accountTitle').innerHTML=coachMode?'Кабинет <em>тренера.</em>':'Твоё <em>пространство.</em>';
   $('accountIntro').textContent=coachMode?'Анкета, фотографии и общение с клиентами — всё под рукой.':'Тренеры, сообщения и личные данные — всё под рукой.';
   $('coachOverview').hidden=!coachMode;$('workspaceSidebar').hidden=!coachMode;
+  if(own){
+    const profileURL=new URL(location.href);profileURL.searchParams.set('trainer',own.id);profileURL.searchParams.delete('signup');profileURL.hash='';
+    $('coachOverview').setAttribute('href',profileURL.pathname+profileURL.search);
+    $('coachOverview').setAttribute('aria-label','Открыть мою анкету');
+  }else{
+    $('coachOverview').removeAttribute('href');$('coachOverview').removeAttribute('aria-label');
+  }
+  $('workspaceProfileArrow').hidden=!own;
   form.hidden=!coachMode || accountTab!=='profile';
   $('workspaceMedia').hidden=!coachMode || accountTab!=='media';
   $('workspaceSettings').hidden=coachMode && accountTab!=='settings';
@@ -335,7 +343,6 @@ function bindAccountWorkspace() {
 function authUI() {
   const isCoach=coachWorkspaceActive();
   $('authOpen').textContent=user?'Кабинет':'Войти';$('authOpen').hidden=isCoach;
-  $('myProfile').hidden=!Boolean(user && own);
   $('accountOpen').textContent=user?'Мой кабинет':'Стать тренером';
   $('clientSignupOpen').hidden=Boolean(user);
   $('accountFindCoach').hidden=isCoach;
@@ -348,7 +355,7 @@ function authChanged(event, session) {
   const previous=user,next=session?.user || null, changed=user?.id!==next?.id;
   user=next;if(changed)own=null;
   if(changed){authEpoch++;threadEpoch++;catalogueEpoch++;own=null;profileRecord=null;activeThread=null;threads=[];chatRows=[];pendingMessage=null;visibleProfile='';presence.clear();presenceFetchedAt=0;
-    cancelVoiceRecording();cleanupCallLocal();$('threads').replaceChildren();$('messages').replaceChildren();$('myGallery').replaceChildren();$('profileContent').replaceChildren();$('chatTitle').textContent='Выбери диалог';$('chatPresence').textContent='';$('messageForm').hidden=true;$('messageForm').reset();clearChatAttachment();chatMediaURLs.clear();$('clientForm').reset();delete $('clientForm').dataset.dirty;$('coachForm').reset();delete $('coachForm').dataset.dirty;accountTab='profile';$('coachForm').hidden=true;$('clientCoachStart').hidden=false;$('myProfile').hidden=true;$('mediaEditor').hidden=true;
+    cancelVoiceRecording();cleanupCallLocal();$('threads').replaceChildren();$('messages').replaceChildren();$('myGallery').replaceChildren();$('profileContent').replaceChildren();$('chatTitle').textContent='Выбери диалог';$('chatPresence').textContent='';$('messageForm').hidden=true;$('messageForm').reset();clearChatAttachment();chatMediaURLs.clear();$('clientForm').reset();delete $('clientForm').dataset.dirty;$('coachForm').reset();delete $('coachForm').dataset.dirty;accountTab='profile';$('coachForm').hidden=true;$('clientCoachStart').hidden=false;$('mediaEditor').hidden=true;
     stopPresenceHeartbeat();if(user)setTimeout(startPresenceHeartbeat,0);
     if(!user){coaches=coaches.filter(publicOnly);if(['account','inbox','profile'].includes(currentPage)) page('home');}
     setTimeout(()=>{loadCatalogue().then(()=>user?loadAccount():null).catch(e=>notice(explain(e)));},0);
@@ -559,7 +566,7 @@ function bindCoach() {
     message('coachMessage','Профиль сохранён. Теперь можно загрузить фотографии.');$('mediaEditor').hidden=false;authUI();
     await loadCatalogue();await loadAccount();
   });
-  $('myProfile').onclick=()=>{if(own) openProfile(own.id).catch(e=>notice(explain(e)));};
+  $('coachOverview').onclick=event=>{if(own && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey){event.preventDefault();openProfile(own.id).catch(e=>notice(explain(e)));}};
 }
 async function prepareImage(file) {
   if(!['image/jpeg','image/png','image/webp'].includes(file?.type)) throw Error('Выбери JPEG, PNG или WebP. Для HEIC на iPhone сначала экспортируй фото в JPEG.');

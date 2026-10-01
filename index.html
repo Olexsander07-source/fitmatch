@@ -19,9 +19,9 @@
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="manifest" href="./site.webmanifest">
   <title>FitGoIn — Find the one who fits you.</title>
-  <link rel="stylesheet" href="./styles.css?v=20261001-workspace">
+  <link rel="stylesheet" href="./styles.css?v=20261001-profile-link">
   <script defer src="./cookie-consent.js?v=20260929"></script>
-  <script type="module" src="./fitmatch.js?v=20261001-workspace"></script>
+  <script type="module" src="./fitmatch.js?v=20261001-profile-link"></script>
 </head>
 <body>
 <a class="skip" href="#main">К содержимому</a>
@@ -32,7 +32,7 @@
     <button data-page="ranking">Рейтинг</button><button data-page="match">MATCH</button>
     <button data-page="inbox">Сообщения</button>
   </nav>
-  <div class="header-actions guest-nav"><button id="authOpen" class="btn small">Войти</button><button id="myProfile" class="btn small" hidden>Посмотреть мою карточку</button><button id="accountOpen" class="btn primary small">Стать тренером</button><button id="clientSignupOpen" class="btn small" aria-label="Регистрация клиента">Стать клиентом</button></div>
+  <div class="header-actions guest-nav"><button id="authOpen" class="btn small">Войти</button><button id="accountOpen" class="btn primary small">Стать тренером</button><button id="clientSignupOpen" class="btn small" aria-label="Регистрация клиента">Стать клиентом</button></div>
   <button id="menu" class="menu" aria-label="Меню" aria-controls="nav" aria-expanded="false">☰</button>
 </header>
 <div id="notice" class="notice" role="status" hidden></div>
@@ -83,10 +83,10 @@
       <div><p class="eyebrow">FITGOIN · ЛИЧНЫЙ КАБИНЕТ</p><h1 id="accountTitle">Твоё <em>пространство.</em></h1><p id="accountIntro" class="muted">Тренеры, сообщения и личные данные — всё под рукой.</p></div>
       <div class="account-actions"><button id="accountFindCoach" data-page="match" class="btn primary">Найти тренера ↗</button><button data-page="inbox" class="btn">Мои сообщения ↗</button><button id="signOut" class="text-btn" type="button">Выйти</button></div>
     </div>
-    <div id="coachOverview" class="coach-overview" hidden>
-      <div class="coach-identity"><div id="workspaceAvatar" class="workspace-avatar"></div><div><p class="workspace-kicker">ТВОЙ ПРОФИЛЬ</p><h2 id="workspaceName"></h2><p id="workspaceSpecialty" class="muted"></p></div></div>
+    <a id="coachOverview" class="coach-overview" hidden>
+      <div class="coach-identity"><div id="workspaceAvatar" class="workspace-avatar"></div><div><p class="workspace-kicker">ТВОЙ ПРОФИЛЬ</p><h2 id="workspaceName"></h2><p id="workspaceSpecialty" class="muted"></p></div><span id="workspaceProfileArrow" class="workspace-profile-arrow" aria-hidden="true" hidden>↗</span></div>
       <div class="workspace-publication"><span id="workspacePublication" class="publication-badge"></span><p id="workspacePublicationHint" class="hint"></p></div>
-    </div>
+    </a>
     <div id="accountWorkspace" class="account-workspace">
       <aside id="workspaceSidebar" class="workspace-sidebar" hidden>
         <div id="workspaceTabs" class="workspace-tabs" role="tablist" aria-label="Разделы кабинета тренера" aria-orientation="vertical">
