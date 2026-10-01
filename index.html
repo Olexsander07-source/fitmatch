@@ -19,9 +19,9 @@
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="manifest" href="./site.webmanifest">
   <title>FitGoIn — Find the one who fits you.</title>
-  <link rel="stylesheet" href="./styles.css?v=20261001-background-rotation">
+  <link rel="stylesheet" href="./styles.css?v=20261001-client-workspace">
   <script defer src="./cookie-consent.js?v=20260929"></script>
-  <script type="module" src="./fitmatch.js?v=20261001-background-rotation"></script>
+  <script type="module" src="./fitmatch.js?v=20261001-client-workspace"></script>
 </head>
 <body>
 <a class="skip" href="#main">К содержимому</a>
@@ -86,11 +86,16 @@
       <div class="account-actions"><button id="accountFindCoach" data-page="match" class="btn primary">Найти тренера ↗</button><button data-page="inbox" class="btn">Мои сообщения ↗</button><button id="accountBackgroundPause" class="text-btn backdrop-pause" type="button" data-background-pause hidden>Пауза фона</button><button id="signOut" class="text-btn" type="button">Выйти</button></div>
     </div>
     <a id="coachOverview" class="coach-overview" hidden>
-      <div class="coach-identity"><div id="workspaceAvatar" class="workspace-avatar"></div><div><p class="workspace-kicker">ТВОЙ ПРОФИЛЬ</p><h2 id="workspaceName"></h2><p id="workspaceSpecialty" class="muted"></p></div><span id="workspaceProfileArrow" class="workspace-profile-arrow" aria-hidden="true" hidden>↗</span></div>
+      <div class="coach-identity"><div id="workspaceAvatar" class="workspace-avatar"></div><div><p id="workspaceIdentityLabel" class="workspace-kicker">ТВОЙ ПРОФИЛЬ</p><h2 id="workspaceName"></h2><p id="workspaceSpecialty" class="muted"></p></div><span id="workspaceProfileArrow" class="workspace-profile-arrow" aria-hidden="true" hidden>↗</span></div>
       <div class="workspace-publication"><span id="workspacePublication" class="publication-badge"></span><p id="workspacePublicationHint" class="hint"></p></div>
     </a>
     </div>
     <div id="accountWorkspace" class="account-workspace">
+      <aside id="clientSidebar" class="workspace-sidebar" aria-label="Как начать тренировки" hidden>
+        <div class="client-guide"><p class="workspace-kicker">ТВОИ ТРЕНИРОВКИ</p><h2>Твой спорт.<br>Твой тренер.</h2><p class="muted">Начни с MATCH — подберём тренеров по тому, что важно тебе.</p>
+          <ol class="client-steps"><li><span aria-hidden="true">01</span><div><strong>Расскажи о цели</strong><p>Спорт, формат, бюджет и удобное время.</p></div></li><li><span aria-hidden="true">02</span><div><strong>Сравни тренеров</strong><p>Опыт, подход и совпадение с твоими пожеланиями.</p></div></li><li><span aria-hidden="true">03</span><div><strong>Начни общение</strong><p>Напиши тренеру и обсуди первые занятия.</p></div></li></ol>
+        </div>
+      </aside>
       <aside id="workspaceSidebar" class="workspace-sidebar" hidden>
         <div id="workspaceTabs" class="workspace-tabs" role="tablist" aria-label="Разделы кабинета тренера" aria-orientation="vertical">
           <button id="workspaceTabProfile" class="workspace-tab" type="button" role="tab" data-account-tab="profile" aria-controls="coachForm" aria-selected="true"><span class="tab-number" aria-hidden="true">01</span>Анкета<span class="tab-arrow" aria-hidden="true">↗</span></button>
@@ -137,13 +142,13 @@
           </div>
         </div>
         <div id="workspaceSettings">
-          <div id="workspaceSettingsHeading" class="workspace-section-heading" hidden><p class="workspace-kicker">НАСТРОЙКИ</p><h2>Личные данные.</h2><p class="muted">Контакты твоего аккаунта. Имя в публичной анкете меняется отдельно.</p></div>
+          <div id="workspaceSettingsHeading" class="workspace-section-heading" hidden><p class="workspace-kicker">НАСТРОЙКИ</p><h2>Личные данные.</h2><p id="workspaceSettingsIntro" class="muted">Имя и контактные данные твоего аккаунта.</p></div>
           <form id="clientForm" class="panel form-grid workspace-card">
             <div class="full workspace-card-heading"><div><h3>Данные аккаунта</h3><p id="accountEmail" class="hint"></p></div></div>
             <label>Имя и фамилия<input name="full_name" autocomplete="name" maxlength="100" required></label><label>Телефон<input name="phone" type="tel" autocomplete="tel" maxlength="30" placeholder="+33 6 12 34 56 78"></label>
             <div class="full"><button class="btn primary" type="submit">Сохранить данные</button><p id="clientMessage" role="status"></p></div>
           </form>
-          <div id="clientCoachStart" class="panel workspace-card"><h3>Ты тренер?</h3><p class="hint">Создай анкету, расскажи о своём опыте и начни общаться с клиентами.</p><button id="becomeCoach" class="btn" type="button">Создать профиль тренера ↗</button></div>
+          <details id="clientCoachStart" class="panel workspace-card client-coach-start"><summary>Работаешь тренером?</summary><p class="hint">Создай анкету, расскажи о своём опыте и начни общаться с клиентами.</p><button id="becomeCoach" class="btn" type="button">Создать профиль тренера ↗</button></details>
         </div>
       </div>
     </div>
