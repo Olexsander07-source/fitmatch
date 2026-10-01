@@ -26,7 +26,7 @@ if (!html.includes('<title>FitGoIn')) throw new Error('FitGoIn title is missing'
 if (!html.includes('fitmatch.js')) throw new Error('fitmatch.js is not linked');
 if (!html.includes('styles.css')) throw new Error('styles.css is not linked');
 if (!js.includes('supabase')) throw new Error('Expected Supabase integration was not found');
-if ((html.match(/minlength="6"/g) || []).length !== 3) throw new Error('Password minimum is not enforced in signup/reset forms');
+if ((html.match(/minlength="6" maxlength="128"/g) || []).length !== 3) throw new Error('Password minimum is not enforced in signup/reset forms');
 if (!js.includes('function assertStrongPassword')) throw new Error('Strong password validation is missing');
 if (!js.includes('b.updated_at||b.created_at')) throw new Error('Inbox is not ordered by latest thread activity');
 if (js.includes('FITGOIN_SETUP_SQL_BEGIN')) throw new Error('Database setup SQL must not be embedded in frontend JavaScript');
