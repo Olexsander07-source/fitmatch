@@ -251,7 +251,19 @@ async function openProfile(id, push = true) {
   visibleProfile=id; page('profile',false);
   if(push){const u=new URL(location.href);u.searchParams.set('trainer',id);u.hash='';history.pushState({page:'profile',profile:id},'',u.pathname+u.search);}
   const payment=safeURL(c.payment_url,true);
-  $('profileContent').innerHTML=`<button class="text-btn" data-page="coaches">← К тренерам</button><article class="profile-layout"><div class="portrait">${photoHTML(c)}</div><div class="profile-info"><p class="eyebrow">FITGOIN · ${esc(sportName(c.sport))}</p><h1>${esc(c.name)}</h1><p>${esc([c.city,c.country].filter(Boolean).join(', '))} · ${esc(c.format || '')}</p><div class="tags">${c.languages.map(l=>`<span class="tag">${esc(langs[l] || l)}</span>`).join('')}${c.verified?'<span class="tag">✓ Проверен</span>':''}</div><h2>${esc(priceText(c))}</h2><div class="actions">${!c.legacy?`<button class="btn primary" data-contact="${esc(c.id)}">Написать тренеру ↗</button>`:'<p class="hint">Этот тренер ещё не подключил сообщения в новой версии.</p>'}${c.id===user?.id?'<button class="btn" data-page="account">Редактировать</button>':''}</div>${payment?`<p class="section-small"><a class="btn" href="${esc(payment)}" target="_blank" rel="noopener noreferrer">${new URL(payment).pathname.startsWith('/test_')?'Тестовая оплата Stripe':'Оплатить у тренера'} ↗</a></p><p class="hint">Ссылку добавил тренер. Проверь продавца, услугу, сумму и период на странице Stripe. Подтверждение платежа приходит от Stripe; здесь статус оплаты не отслеживается.</p>`:'<p class="hint">Онлайн-оплата пока не подключена. Обсуди стоимость с тренером.</p>'}<h3 class="section-small">О тренере</h3><p class="multiline">${esc(c.bio || 'Описание пока не добавлено.')}</p><p>Опыт: ${c.experience_years==null?'не указан':esc(c.experience_years)+' лет'}</p>${[['Цели / специализация',c.goal],['Образование',c.education],['Титулы',c.titles],['Достижения',c.achievements]].map(([t,v])=>v?`<h3>${t}</h3><p class="multiline">${esc(v)}</p>`:'').join('')}<p class="hint">Достижения и титулы указаны тренером. Рейтинг: ${Number(c.rating)>0?Number(c.rating).toFixed(1):'ещё не сформирован'}.</p></div></article><div id="profileGallery" class="section-small"></div>`;
+  $('profileContent').innerHTML=`
+    <header class="profile-cover"><div class="sport-backdrop" style="background-image:url('${esc(sportImage(c.sport))}')" aria-hidden="true"></div>
+      <div class="profile-cover-content"><button class="text-btn profile-back" data-page="coaches">← К тренерам</button><p class="eyebrow">FITGOIN · ${esc(sportName(c.sport))}</p><h1>${esc(c.name)}</h1><p class="profile-location">${esc([[c.city,c.country].filter(Boolean).join(', '),c.format].filter(Boolean).join(' · '))}</p>
+        <div class="tags">${c.languages.map(l=>`<span class="tag">${esc(langs[l] || l)}</span>`).join('')}${c.verified?'<span class="tag">✓ Проверен</span>':''}</div>
+      </div>
+    </header>
+    <article class="profile-layout profile-details"><div class="portrait">${photoHTML(c)}</div><div class="profile-info panel">
+      <p class="workspace-kicker">ТРЕНИРОВКИ С ТРЕНЕРОМ</p><h2>${esc(priceText(c))}</h2><div class="actions">${!c.legacy?`<button class="btn primary" data-contact="${esc(c.id)}">Написать тренеру ↗</button>`:'<p class="hint">Этот тренер ещё не подключил сообщения в новой версии.</p>'}${c.id===user?.id?'<button class="btn" data-page="account">Редактировать</button>':''}</div>
+      ${payment?`<p class="section-small"><a class="btn" href="${esc(payment)}" target="_blank" rel="noopener noreferrer">${new URL(payment).pathname.startsWith('/test_')?'Тестовая оплата Stripe':'Оплатить у тренера'} ↗</a></p><p class="hint">Ссылку добавил тренер. Проверь продавца, услугу, сумму и период на странице Stripe. Подтверждение платежа приходит от Stripe; здесь статус оплаты не отслеживается.</p>`:'<p class="hint">Онлайн-оплата пока не подключена. Обсуди стоимость с тренером.</p>'}
+      <h3 class="section-small">О тренере</h3><p class="multiline">${esc(c.bio || 'Описание пока не добавлено.')}</p><p>Опыт: ${c.experience_years==null?'не указан':esc(c.experience_years)+' лет'}</p>
+      ${[['Цели / специализация',c.goal],['Образование',c.education],['Титулы',c.titles],['Достижения',c.achievements]].map(([t,v])=>v?`<h3>${t}</h3><p class="multiline">${esc(v)}</p>`:'').join('')}
+      <p class="hint">Достижения и титулы указаны тренером. Рейтинг: ${Number(c.rating)>0?Number(c.rating).toFixed(1):'ещё не сформирован'}.</p>
+    </div></article><div id="profileGallery" class="section-small"></div>`;
   if(!c.legacy) {
     try { const items=unwrap(await db.from('fgi_media').select('*').eq('coach_id',c.id).order('created_at',{ascending:false})); if(visibleProfile===id && $('profileGallery')) $('profileGallery').innerHTML=galleryHTML(items,false); }
     catch(e){if(visibleProfile===id && $('profileGallery')) $('profileGallery').textContent=explain(e);}
@@ -293,6 +305,8 @@ function renderAccountWorkspace() {
     button.setAttribute('aria-selected',String(selected));button.tabIndex=selected?0:-1;
   });
   if(!coachMode)return;
+  const cover=sportImage(form.elements.sport.value || own?.sport || 'fitness');
+  if($('accountBackdrop').dataset.photo!==cover){$('accountBackdrop').style.backgroundImage=`url("${cover}")`;$('accountBackdrop').dataset.photo=cover;}
   const name=form.elements.name.value.trim() || profileRecord?.full_name || 'Твой профиль';
   $('workspaceName').textContent=name;
   $('workspaceSpecialty').textContent=[form.elements.sport.value?sportName(form.elements.sport.value):'Выбери вид спорта',form.elements.format.value].filter(Boolean).join(' · ');
