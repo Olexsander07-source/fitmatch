@@ -19,9 +19,9 @@
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="manifest" href="./site.webmanifest">
   <title>FitGoIn — Find the one who fits you.</title>
-  <link rel="stylesheet" href="./styles.css?v=20261001-profile-background">
+  <link rel="stylesheet" href="./styles.css?v=20261001-background-rotation">
   <script defer src="./cookie-consent.js?v=20260929"></script>
-  <script type="module" src="./fitmatch.js?v=20261001-profile-background"></script>
+  <script type="module" src="./fitmatch.js?v=20261001-background-rotation"></script>
 </head>
 <body>
 <a class="skip" href="#main">К содержимому</a>
@@ -83,7 +83,7 @@
     <div id="accountCover" class="account-cover"><div id="accountBackdrop" class="sport-backdrop" aria-hidden="true"></div>
     <div class="account-heading">
       <div><p class="eyebrow">FITGOIN · ЛИЧНЫЙ КАБИНЕТ</p><h1 id="accountTitle">Твоё <em>пространство.</em></h1><p id="accountIntro" class="muted">Тренеры, сообщения и личные данные — всё под рукой.</p></div>
-      <div class="account-actions"><button id="accountFindCoach" data-page="match" class="btn primary">Найти тренера ↗</button><button data-page="inbox" class="btn">Мои сообщения ↗</button><button id="signOut" class="text-btn" type="button">Выйти</button></div>
+      <div class="account-actions"><button id="accountFindCoach" data-page="match" class="btn primary">Найти тренера ↗</button><button data-page="inbox" class="btn">Мои сообщения ↗</button><button id="accountBackgroundPause" class="text-btn backdrop-pause" type="button" data-background-pause hidden>Пауза фона</button><button id="signOut" class="text-btn" type="button">Выйти</button></div>
     </div>
     <a id="coachOverview" class="coach-overview" hidden>
       <div class="coach-identity"><div id="workspaceAvatar" class="workspace-avatar"></div><div><p class="workspace-kicker">ТВОЙ ПРОФИЛЬ</p><h2 id="workspaceName"></h2><p id="workspaceSpecialty" class="muted"></p></div><span id="workspaceProfileArrow" class="workspace-profile-arrow" aria-hidden="true" hidden>↗</span></div>

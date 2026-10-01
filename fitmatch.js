@@ -31,6 +31,8 @@ let currentPage = 'home', pendingAction = '', authEpoch = 0, catalogueEpoch = 0,
 let chatRows = [], pendingMessage = null, chatBusy = false, inboxBusy = false, signupEmail = '';
 let signupRole = 'client';
 let accountTab = 'profile';
+const backgroundMotion = matchMedia('(prefers-reduced-motion: reduce)');
+let backgroundPaused = backgroundMotion.matches, backgroundRotation = null;
 let pendingChatAttachment = null, pendingChatPreviewURL = '', pendingChatDurationMs = null, pendingMessageFile = null, chatMediaURLs = new Map();
 let voiceRecorder = null, voiceStream = null, voiceChunks = [], voiceStartedAt = 0, voiceTick = 0, voiceCancelled = false, voiceContext = null;
 let currentCall = null, incomingCall = null, callPeer = null, callLocalStream = null, callSignalLastId = 0, callPollBusy = false, callMuted = false, callCameraOff = false, callFacingMode = 'user', callClock = 0, callRemoteIce = [], lastIncomingCallPoll = 0, lastCallHeartbeat = 0;
@@ -49,6 +51,67 @@ function sportKey(id) {
 function sportImage(id) {
   const d = directions.find(d => d[0] === sportKey(id)) || directions[1];
   return `https://images.unsplash.com/photo-${d[3]}?auto=format&fit=crop&w=1000&q=80`;
+}
+function sportBackgrounds(id) {
+  const key=sportKey(id),strength=['fitness','bodybuilding','crossfit'],endurance=['running','cycling','swimming'];
+  const related=key==='yoga'?[]:strength.includes(key)?strength:endurance.includes(key)?endurance:[key,'fitness','running'];
+  const photos=[sportImage(id),...related.map(sportImage)];
+  if(key==='yoga')photos.push('https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=1000&q=80');
+  return [...new Set(photos)];
+}
+function updateBackgroundControls() {
+  document.querySelectorAll('[data-background-pause]').forEach(button=>{
+    button.textContent=backgroundPaused?'Включить фон':'Пауза фона';
+    button.setAttribute('aria-label',backgroundPaused?'Включить смену фона':'Остановить смену фона');
+    button.setAttribute('aria-pressed',String(backgroundPaused));
+  });
+}
+function finishBackgroundFade(rotation) {
+  clearTimeout(rotation.fadeTimer);rotation.fadeTimer=0;
+  if(!rotation.next)return;
+  rotation.layers.forEach(({element,frame})=>{element.style.backgroundImage=`url("${rotation.next}")`;frame.classList.remove('is-visible');});
+  rotation.next='';
+}
+function stopBackgroundRotation() {
+  if(!backgroundRotation)return;
+  clearInterval(backgroundRotation.timer);finishBackgroundFade(backgroundRotation);
+  backgroundRotation.layers.forEach(({frame})=>frame.remove());backgroundRotation=null;
+}
+function scheduleBackgroundRotation() {
+  const rotation=backgroundRotation;
+  updateBackgroundControls();if(!rotation)return;
+  clearInterval(rotation.timer);rotation.timer=0;
+  if(backgroundPaused || document.hidden){finishBackgroundFade(rotation);return;}
+  rotation.timer=setInterval(()=>{
+    if(backgroundRotation!==rotation || rotation.next || backgroundPaused || document.hidden)return;
+    let next=rotation.index;
+    for(let offset=1;offset<rotation.photos.length;offset++){
+      const candidate=(rotation.index+offset)%rotation.photos.length;
+      if(rotation.ready.has(rotation.photos[candidate])){next=candidate;break;}
+    }
+    if(next===rotation.index)return;
+    rotation.index=next;rotation.next=rotation.photos[next];
+    rotation.layers.forEach(({frame})=>{frame.style.backgroundImage=`url("${rotation.next}")`;frame.classList.add('is-visible');});
+    rotation.fadeTimer=setTimeout(()=>{if(backgroundRotation===rotation)finishBackgroundFade(rotation);},950);
+  },5000);
+}
+function startBackgroundRotation(key,sport,elements) {
+  const photos=sportBackgrounds(sport),rotationKey=`${currentPage}:${key}:${photos.join('|')}`;
+  if(backgroundRotation?.key===rotationKey && backgroundRotation.layers.every(({element},i)=>element===elements[i]))return;
+  stopBackgroundRotation();
+  const layers=elements.map(element=>{
+    element.style.backgroundImage=`url("${photos[0]}")`;
+    const frame=document.createElement('div');frame.className='backdrop-frame';element.append(frame);
+    return {element,frame};
+  });
+  const rotation={key:rotationKey,photos,layers,index:0,ready:new Set([photos[0]]),next:'',timer:0,fadeTimer:0};
+  backgroundRotation=rotation;
+  photos.slice(1).forEach(url=>{
+    const photo=new Image();photo.decoding='async';
+    photo.onload=()=>{if(backgroundRotation===rotation && photo.naturalWidth)rotation.ready.add(url);};
+    photo.src=url;
+  });
+  scheduleBackgroundRotation();
 }
 function safeURL(value, payment = false) {
   try {
@@ -103,7 +166,7 @@ function closeDialogs() { document.querySelectorAll('dialog[open]:not(#callDialo
 function page(id, push = true) {
   if (!$(id)?.classList.contains('page')) id = 'home';
   if (['account','inbox'].includes(id) && !requireUser(id)) return;
-  closeDialogs(); currentPage = id;
+  closeDialogs(); stopBackgroundRotation(); currentPage = id;
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === id));
   document.querySelectorAll('[data-page]').forEach(b => b.classList.toggle('active', b.dataset.page === id));
   $('nav').classList.remove('open'); $('menu').setAttribute('aria-expanded','false');
@@ -251,10 +314,9 @@ async function openProfile(id, push = true) {
   visibleProfile=id; page('profile',false);
   if(push){const u=new URL(location.href);u.searchParams.set('trainer',id);u.hash='';history.pushState({page:'profile',profile:id},'',u.pathname+u.search);}
   const payment=safeURL(c.payment_url,true);
-  $('profileBackdrop').style.backgroundImage=`url("${sportImage(c.sport)}")`;
   $('profileContent').innerHTML=`
     <header class="profile-cover"><div class="sport-backdrop" style="background-image:url('${esc(sportImage(c.sport))}')" aria-hidden="true"></div>
-      <div class="profile-cover-content"><button class="text-btn profile-back" data-page="coaches">← К тренерам</button><p class="eyebrow">FITGOIN · ${esc(sportName(c.sport))}</p><h1>${esc(c.name)}</h1><p class="profile-location">${esc([[c.city,c.country].filter(Boolean).join(', '),c.format].filter(Boolean).join(' · '))}</p>
+      <div class="profile-cover-content"><div class="profile-cover-toolbar"><button class="text-btn profile-back" data-page="coaches">← К тренерам</button><button type="button" class="text-btn backdrop-pause" data-background-pause>Пауза фона</button></div><p class="eyebrow">FITGOIN · ${esc(sportName(c.sport))}</p><h1>${esc(c.name)}</h1><p class="profile-location">${esc([[c.city,c.country].filter(Boolean).join(', '),c.format].filter(Boolean).join(' · '))}</p>
         <div class="tags">${c.languages.map(l=>`<span class="tag">${esc(langs[l] || l)}</span>`).join('')}${c.verified?'<span class="tag">✓ Проверен</span>':''}</div>
       </div>
     </header>
@@ -265,6 +327,7 @@ async function openProfile(id, push = true) {
       ${[['Цели / специализация',c.goal],['Образование',c.education],['Титулы',c.titles],['Достижения',c.achievements]].map(([t,v])=>v?`<h3>${t}</h3><p class="multiline">${esc(v)}</p>`:'').join('')}
       <p class="hint">Достижения и титулы указаны тренером. Рейтинг: ${Number(c.rating)>0?Number(c.rating).toFixed(1):'ещё не сформирован'}.</p>
     </div></article><div id="profileGallery" class="section-small"></div>`;
+  startBackgroundRotation(c.id,c.sport,[$('profileBackdrop'),$('profileContent').querySelector('.sport-backdrop')]);
   if(!c.legacy) {
     try { const items=unwrap(await db.from('fgi_media').select('*').eq('coach_id',c.id).order('created_at',{ascending:false})); if(visibleProfile===id && $('profileGallery')) $('profileGallery').innerHTML=galleryHTML(items,false); }
     catch(e){if(visibleProfile===id && $('profileGallery')) $('profileGallery').textContent=explain(e);}
@@ -278,6 +341,7 @@ function renderAccountWorkspace() {
   const coachMode=coachWorkspaceActive(),form=$('coachForm');
   $('account').classList.toggle('trainer-account',coachMode);
   $('workspaceBackdrop').hidden=!coachMode;
+  $('accountBackgroundPause').hidden=!coachMode;
   $('accountTitle').innerHTML=coachMode?'Кабинет <em>тренера.</em>':'Твоё <em>пространство.</em>';
   $('accountIntro').textContent=coachMode?'Анкета, фотографии и общение с клиентами — всё под рукой.':'Тренеры, сообщения и личные данные — всё под рукой.';
   $('coachOverview').hidden=!coachMode;$('workspaceSidebar').hidden=!coachMode;
@@ -306,10 +370,8 @@ function renderAccountWorkspace() {
     const selected=button.dataset.accountTab===accountTab;
     button.setAttribute('aria-selected',String(selected));button.tabIndex=selected?0:-1;
   });
-  if(!coachMode)return;
-  const cover=sportImage(form.elements.sport.value || own?.sport || 'fitness');
-  if($('accountBackdrop').dataset.photo!==cover){$('accountBackdrop').style.backgroundImage=`url("${cover}")`;$('accountBackdrop').dataset.photo=cover;}
-  if($('workspaceBackdrop').dataset.photo!==cover){$('workspaceBackdrop').style.backgroundImage=`url("${cover}")`;$('workspaceBackdrop').dataset.photo=cover;}
+  if(!coachMode){if(currentPage==='account')stopBackgroundRotation();return;}
+  if(currentPage==='account')startBackgroundRotation(user.id,form.elements.sport.value || own?.sport || 'fitness',[$('accountBackdrop'),$('workspaceBackdrop')]);
   const name=form.elements.name.value.trim() || profileRecord?.full_name || 'Твой профиль';
   $('workspaceName').textContent=name;
   $('workspaceSpecialty').textContent=[form.elements.sport.value?sportName(form.elements.sport.value):'Выбери вид спорта',form.elements.format.value].filter(Boolean).join(' · ');
@@ -1218,6 +1280,7 @@ function bindUI() {
   document.addEventListener('click',e=>{
     const b=e.target.closest('button');if(!b)return;
     Promise.resolve().then(async()=>{
+      if(b.hasAttribute('data-background-pause')){backgroundPaused=!backgroundPaused;scheduleBackgroundRotation();}
       if(b.dataset.page){if(b.dataset.page==='match')resetMatchWizard(true);if(b.dataset.page==='signup')openSignup('client');else page(b.dataset.page);}
       if(b.dataset.action==='login')$('authDialog').showModal();
       if(b.hasAttribute('data-close'))b.closest('dialog').close();
@@ -1239,6 +1302,8 @@ function bindUI() {
   opt($('matchGoal'),goals.map(g=>[g,g]),'Пока не решил');
   window.addEventListener('popstate',()=>{const query=new URLSearchParams(location.search),trainer=query.get('trainer');if(trainer){openProfile(trainer,false).catch(e=>notice(explain(e)));return;}const target=location.hash.slice(1);if(target==='signup')setSignupRole(query.get('signup'));try{page($(target)?.classList.contains('page')?target:'home',false);}catch(e){notice(explain(e));}});
   document.addEventListener('visibilitychange',()=>{if(!user || !db)return;if(document.visibilityState==='visible')startPresenceHeartbeat();else{stopPresenceHeartbeat();touchPresence(false).catch(()=>{});}});
+  document.addEventListener('visibilitychange',scheduleBackgroundRotation);
+  backgroundMotion.addEventListener('change',event=>{backgroundPaused=event.matches;scheduleBackgroundRotation();});
   let index=0,paused=matchMedia('(prefers-reduced-motion: reduce)').matches;
   function hero(){if(!sports.length)return;$('heroImage').style.backgroundImage=`url('${sportImage(sports[index++%sports.length].id)}')`;}
   const pauseButton=$('pauseHero');pauseButton.textContent=paused?'Включить смену фона':'Пауза фона';
