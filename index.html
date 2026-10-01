@@ -19,9 +19,9 @@
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="manifest" href="./site.webmanifest">
   <title>FitGoIn — Find the one who fits you.</title>
-  <link rel="stylesheet" href="./styles.css?v=20260930">
+  <link rel="stylesheet" href="./styles.css?v=20261001-nav">
   <script defer src="./cookie-consent.js?v=20260929"></script>
-  <script type="module" src="./fitmatch.js?v=20261001"></script>
+  <script type="module" src="./fitmatch.js?v=20261001-nav"></script>
 </head>
 <body>
 <a class="skip" href="#main">К содержимому</a>
@@ -32,7 +32,7 @@
     <button data-page="ranking">Рейтинг</button><button data-page="match">MATCH</button>
     <button data-page="inbox">Сообщения</button>
   </nav>
-  <div class="header-actions"><button id="authOpen" class="btn small">Войти</button><button id="clientSignupOpen" class="btn small" aria-label="Регистрация клиента">Регистрация</button><button id="accountOpen" class="btn primary small">Стать тренером</button></div>
+  <div class="header-actions"><button id="authOpen" class="btn small">Войти</button><button id="myProfile" class="btn small" hidden>Посмотреть мою карточку</button><button id="clientSignupOpen" class="btn small" aria-label="Регистрация клиента">Регистрация</button><button id="accountOpen" class="btn primary small">Стать тренером</button></div>
   <button id="menu" class="menu" aria-label="Меню" aria-controls="nav" aria-expanded="false">☰</button>
 </header>
 <div id="notice" class="notice" role="status" hidden></div>
@@ -79,7 +79,7 @@
   </section>
   <section id="profile" class="page container section"><div id="profileContent"></div></section>
   <section id="account" class="page container section"><div class="section-head"><div><p class="eyebrow">ЛИЧНЫЙ КАБИНЕТ</p><h1>Твоё <em>пространство.</em></h1><p id="accountEmail" class="muted"></p></div><button id="signOut" class="btn">Выйти</button></div>
-    <div class="actions"><button data-page="match" class="btn primary">Найти тренера ↗</button><button data-page="inbox" class="btn">Мои сообщения ↗</button><button id="myProfile" class="btn" hidden>Посмотреть мою карточку</button></div>
+    <div class="actions"><button id="accountFindCoach" data-page="match" class="btn primary">Найти тренера ↗</button><button data-page="inbox" class="btn">Мои сообщения ↗</button></div>
     <form id="clientForm" class="panel form-grid section-small">
       <h2 class="full">Личные данные</h2>
       <label>Имя и фамилия<input name="full_name" autocomplete="name" maxlength="100" required></label>

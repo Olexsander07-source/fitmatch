@@ -253,10 +253,19 @@ async function openProfile(id, push = true) {
     catch(e){if(visibleProfile===id && $('profileGallery')) $('profileGallery').textContent=explain(e);}
   }
 }
-function authUI() { $('authOpen').textContent=user?'Кабинет':'Войти'; $('accountOpen').textContent=user?'Мой кабинет':'Стать тренером'; $('clientSignupOpen').hidden=Boolean(user); $('accountEmail').textContent=user?.email || user?.phone || ''; }
+function authUI() {
+  const isCoach=Boolean(user && own);
+  $('authOpen').textContent=user?'Кабинет':'Войти';$('authOpen').hidden=isCoach;
+  $('myProfile').hidden=!isCoach;
+  $('accountOpen').textContent=user?'Мой кабинет':'Стать тренером';
+  $('clientSignupOpen').hidden=Boolean(user);
+  $('accountFindCoach').hidden=isCoach;
+  document.querySelector('.header-actions').classList.toggle('coach-nav',isCoach);
+  $('accountEmail').textContent=user?.email || user?.phone || '';
+}
 function authChanged(event, session) {
   const previous=user,next=session?.user || null, changed=user?.id!==next?.id;
-  user=next; authUI();
+  user=next;if(changed)own=null;authUI();
   if(changed){authEpoch++;threadEpoch++;catalogueEpoch++;own=null;profileRecord=null;activeThread=null;threads=[];chatRows=[];pendingMessage=null;visibleProfile='';presence.clear();presenceFetchedAt=0;
     cancelVoiceRecording();cleanupCallLocal();$('threads').replaceChildren();$('messages').replaceChildren();$('myGallery').replaceChildren();$('profileContent').replaceChildren();$('chatTitle').textContent='Выбери диалог';$('chatPresence').textContent='';$('messageForm').hidden=true;$('messageForm').reset();clearChatAttachment();chatMediaURLs.clear();$('clientForm').reset();$('coachForm').reset();delete $('coachForm').dataset.dirty;$('coachForm').hidden=true;$('clientCoachStart').hidden=false;$('myProfile').hidden=true;$('mediaEditor').hidden=true;
     stopPresenceHeartbeat();if(user)setTimeout(startPresenceHeartbeat,0);
@@ -298,7 +307,7 @@ async function loadAccount() {
     form.querySelectorAll('[name=availability]').forEach(i=>i.checked=record?.availability?.includes(i.value) || false);
   }
   form.hidden=!record;$('clientCoachStart').hidden=Boolean(record);
-  $('mediaEditor').hidden=!record;$('myProfile').hidden=!record;
+  $('mediaEditor').hidden=!record;authUI();
   if(record) await loadMyGallery();
 }
 const actionTimes=new Map();
@@ -450,7 +459,7 @@ function bindCoach() {
     const saved=unwrap(await db.from('fgi_coaches').upsert(payload,{onConflict:'id'}).select().single());
     if(epoch!==authEpoch) return;
     accountVersion++;own=saved;delete $('coachForm').dataset.dirty;
-    message('coachMessage','Профиль сохранён. Теперь можно загрузить фотографии.');$('mediaEditor').hidden=false;$('myProfile').hidden=false;
+    message('coachMessage','Профиль сохранён. Теперь можно загрузить фотографии.');$('mediaEditor').hidden=false;authUI();
     await loadCatalogue();await loadAccount();
   });
   $('myProfile').onclick=()=>{if(own) openProfile(own.id).catch(e=>notice(explain(e)));};
