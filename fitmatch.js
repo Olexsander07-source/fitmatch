@@ -251,6 +251,7 @@ async function openProfile(id, push = true) {
   visibleProfile=id; page('profile',false);
   if(push){const u=new URL(location.href);u.searchParams.set('trainer',id);u.hash='';history.pushState({page:'profile',profile:id},'',u.pathname+u.search);}
   const payment=safeURL(c.payment_url,true);
+  $('profileBackdrop').style.backgroundImage=`url("${sportImage(c.sport)}")`;
   $('profileContent').innerHTML=`
     <header class="profile-cover"><div class="sport-backdrop" style="background-image:url('${esc(sportImage(c.sport))}')" aria-hidden="true"></div>
       <div class="profile-cover-content"><button class="text-btn profile-back" data-page="coaches">← К тренерам</button><p class="eyebrow">FITGOIN · ${esc(sportName(c.sport))}</p><h1>${esc(c.name)}</h1><p class="profile-location">${esc([[c.city,c.country].filter(Boolean).join(', '),c.format].filter(Boolean).join(' · '))}</p>
@@ -276,6 +277,7 @@ function coachWorkspaceActive() {
 function renderAccountWorkspace() {
   const coachMode=coachWorkspaceActive(),form=$('coachForm');
   $('account').classList.toggle('trainer-account',coachMode);
+  $('workspaceBackdrop').hidden=!coachMode;
   $('accountTitle').innerHTML=coachMode?'Кабинет <em>тренера.</em>':'Твоё <em>пространство.</em>';
   $('accountIntro').textContent=coachMode?'Анкета, фотографии и общение с клиентами — всё под рукой.':'Тренеры, сообщения и личные данные — всё под рукой.';
   $('coachOverview').hidden=!coachMode;$('workspaceSidebar').hidden=!coachMode;
@@ -307,6 +309,7 @@ function renderAccountWorkspace() {
   if(!coachMode)return;
   const cover=sportImage(form.elements.sport.value || own?.sport || 'fitness');
   if($('accountBackdrop').dataset.photo!==cover){$('accountBackdrop').style.backgroundImage=`url("${cover}")`;$('accountBackdrop').dataset.photo=cover;}
+  if($('workspaceBackdrop').dataset.photo!==cover){$('workspaceBackdrop').style.backgroundImage=`url("${cover}")`;$('workspaceBackdrop').dataset.photo=cover;}
   const name=form.elements.name.value.trim() || profileRecord?.full_name || 'Твой профиль';
   $('workspaceName').textContent=name;
   $('workspaceSpecialty').textContent=[form.elements.sport.value?sportName(form.elements.sport.value):'Выбери вид спорта',form.elements.format.value].filter(Boolean).join(' · ');

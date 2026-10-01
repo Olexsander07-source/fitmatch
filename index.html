@@ -19,9 +19,9 @@
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="manifest" href="./site.webmanifest">
   <title>FitGoIn — Find the one who fits you.</title>
-  <link rel="stylesheet" href="./styles.css?v=20261001-sport-covers">
+  <link rel="stylesheet" href="./styles.css?v=20261001-profile-background">
   <script defer src="./cookie-consent.js?v=20260929"></script>
-  <script type="module" src="./fitmatch.js?v=20261001-sport-covers"></script>
+  <script type="module" src="./fitmatch.js?v=20261001-profile-background"></script>
 </head>
 <body>
 <a class="skip" href="#main">К содержимому</a>
@@ -77,8 +77,9 @@
     </form>
     <div id="matchSummary" class="match-summary section-small" hidden></div><div id="matchResults" class="coach-grid section-small" aria-live="polite"></div>
   </section>
-  <section id="profile" class="page container section"><div id="profileContent"></div></section>
+  <section id="profile" class="page container section"><div id="profileBackdrop" class="page-backdrop" aria-hidden="true"></div><div id="profileContent"></div></section>
   <section id="account" class="page container section">
+    <div id="workspaceBackdrop" class="page-backdrop" aria-hidden="true" hidden></div>
     <div id="accountCover" class="account-cover"><div id="accountBackdrop" class="sport-backdrop" aria-hidden="true"></div>
     <div class="account-heading">
       <div><p class="eyebrow">FITGOIN · ЛИЧНЫЙ КАБИНЕТ</p><h1 id="accountTitle">Твоё <em>пространство.</em></h1><p id="accountIntro" class="muted">Тренеры, сообщения и личные данные — всё под рукой.</p></div>
