@@ -30,6 +30,7 @@ let db, user = null, own = null, profileRecord = null, sports = [], coaches = []
 let currentPage = 'home', pendingAction = '', authEpoch = 0, catalogueEpoch = 0, threadEpoch = 0;
 let chatRows = [], pendingMessage = null, chatBusy = false, inboxBusy = false, signupEmail = '';
 let signupRole = 'client';
+let accountTab = 'profile';
 let pendingChatAttachment = null, pendingChatPreviewURL = '', pendingChatDurationMs = null, pendingMessageFile = null, chatMediaURLs = new Map();
 let voiceRecorder = null, voiceStream = null, voiceChunks = [], voiceStartedAt = 0, voiceTick = 0, voiceCancelled = false, voiceContext = null;
 let currentCall = null, incomingCall = null, callPeer = null, callLocalStream = null, callSignalLastId = 0, callPollBusy = false, callMuted = false, callCameraOff = false, callFacingMode = 'user', callClock = 0, callRemoteIce = [], lastIncomingCallPoll = 0, lastCallHeartbeat = 0;
@@ -256,33 +257,110 @@ async function openProfile(id, push = true) {
     catch(e){if(visibleProfile===id && $('profileGallery')) $('profileGallery').textContent=explain(e);}
   }
 }
+function coachWorkspaceActive() {
+  // Выбирает только интерфейс. Права на данные по-прежнему проверяет Supabase.
+  return Boolean(user && (own || user.user_metadata?.signup_intent==='coach' || pendingAction==='coach-onboarding' || $('coachForm').dataset.dirty));
+}
+function renderAccountWorkspace() {
+  const coachMode=coachWorkspaceActive(),form=$('coachForm');
+  $('account').classList.toggle('trainer-account',coachMode);
+  $('accountTitle').innerHTML=coachMode?'Кабинет <em>тренера.</em>':'Твоё <em>пространство.</em>';
+  $('accountIntro').textContent=coachMode?'Анкета, фотографии и общение с клиентами — всё под рукой.':'Тренеры, сообщения и личные данные — всё под рукой.';
+  $('coachOverview').hidden=!coachMode;$('workspaceSidebar').hidden=!coachMode;
+  form.hidden=!coachMode || accountTab!=='profile';
+  $('workspaceMedia').hidden=!coachMode || accountTab!=='media';
+  $('workspaceSettings').hidden=coachMode && accountTab!=='settings';
+  $('workspaceSettingsHeading').hidden=!coachMode;$('clientCoachStart').hidden=coachMode;
+  $('mediaEditor').hidden=!own;$('mediaLock').hidden=Boolean(own);
+  if(coachMode){
+    $('workspaceSettings').setAttribute('role','tabpanel');
+    $('workspaceSettings').setAttribute('aria-labelledby','workspaceTabSettings');
+    $('workspaceSettings').tabIndex=0;
+  }else{
+    $('workspaceSettings').removeAttribute('role');$('workspaceSettings').removeAttribute('aria-labelledby');$('workspaceSettings').removeAttribute('tabindex');
+  }
+  $('workspaceTabs').setAttribute('aria-orientation',matchMedia('(max-width:900px)').matches?'horizontal':'vertical');
+  $('workspaceTabs').querySelectorAll('[data-account-tab]').forEach(button=>{
+    const selected=button.dataset.accountTab===accountTab;
+    button.setAttribute('aria-selected',String(selected));button.tabIndex=selected?0:-1;
+  });
+  if(!coachMode)return;
+  const name=form.elements.name.value.trim() || profileRecord?.full_name || 'Твой профиль';
+  $('workspaceName').textContent=name;
+  $('workspaceSpecialty').textContent=[form.elements.sport.value?sportName(form.elements.sport.value):'Выбери вид спорта',form.elements.format.value].filter(Boolean).join(' · ');
+  const photo={name,avatar_path:own?.avatar_path},photoKey=JSON.stringify(photo);
+  for(const id of ['workspaceAvatar','workspaceMediaAvatar'])if($(id).dataset.photo!==photoKey){$(id).innerHTML=photoHTML(photo,'workspace-photo');$(id).dataset.photo=photoKey;}
+  const published=Boolean(own && own.published!==false);
+  $('workspacePublication').textContent=!own?'Новая анкета':published?'В каталоге':'Скрыта из каталога';
+  $('workspacePublication').classList.toggle('is-published',published);
+  $('workspacePublicationHint').textContent=!own?'Сохрани анкету, чтобы начать.':published?'Клиенты могут найти тебя в каталоге.':'Анкета сохранена. Включи показ в каталоге и сохрани изменения, когда будешь готов.';
+  $('coachSaveState').textContent=form.dataset.dirty?'Есть несохранённые изменения.':own?'Все изменения сохранены.':'После сохранения можно добавить фотографии.';
+  const checks=[
+    ['Основные данные','name',Boolean(form.elements.name.value.trim() && form.elements.sport.value)],
+    ['Формат и место','format',Boolean(form.elements.format.value && (form.elements.format.value==='Онлайн' || form.elements.city.value.trim()))],
+    ['О себе','bio',Boolean(form.elements.bio.value.trim())],
+    ['Языки общения','languages',Boolean(form.querySelector('[name=languages]:checked'))],
+    ['Удобное время','availability',Boolean(form.querySelector('[name=availability]:checked'))],
+    ['Фото профиля','photo',Boolean(own?.avatar_path)]
+  ];
+  const done=checks.filter(item=>item[2]).length;
+  $('workspaceProgress').value=done;$('workspaceProgressText').textContent=`${done} / ${checks.length}`;
+  $('workspaceChecklist').innerHTML=checks.map(([label,field,complete])=>`<button type="button" class="checklist-item${complete?' complete':''}" data-workspace-field="${field}" aria-label="${label}: ${complete?'заполнено':'добавить'}"><span aria-hidden="true">${complete?'✓':'+'}</span>${label}</button>`).join('');
+  $('removeAvatar').hidden=!own?.avatar_path;
+}
+function setAccountTab(tab) {
+  accountTab=['profile','media','settings'].includes(tab)?tab:'profile';renderAccountWorkspace();
+}
+function bindAccountWorkspace() {
+  $('account').addEventListener('click',event=>{
+    const tab=event.target.closest('[data-account-tab]');
+    if(tab){setAccountTab(tab.dataset.accountTab);return;}
+    const step=event.target.closest('[data-workspace-field]');if(!step)return;
+    const field=step.dataset.workspaceField;setAccountTab(field==='photo'?'media':'profile');
+    const target=field==='photo'?(own?$('avatarForm').elements.photo:$('mediaLock').querySelector('button')):$('coachForm').querySelector(`[name="${field}"]`);
+    target?.focus({preventScroll:true});target?.scrollIntoView({behavior:'smooth',block:'center'});
+  });
+  $('workspaceTabs').addEventListener('keydown',event=>{
+    const tabs=[...$('workspaceTabs').querySelectorAll('[role=tab]')],index=tabs.indexOf(event.target);
+    if(index<0 || !['ArrowDown','ArrowUp','ArrowRight','ArrowLeft','Home','End'].includes(event.key))return;
+    event.preventDefault();
+    const next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(index+(['ArrowDown','ArrowRight'].includes(event.key)?1:-1)+tabs.length)%tabs.length;
+    setAccountTab(tabs[next].dataset.accountTab);tabs[next].focus();
+  });
+  const mobile=matchMedia('(max-width:900px)');
+  $('workspaceProgressDetails').open=!mobile.matches;
+  mobile.addEventListener('change',()=>{$('workspaceProgressDetails').open=!mobile.matches;renderAccountWorkspace();});
+  $('coachForm').addEventListener('invalid',event=>{const details=event.target.closest('details');if(details)details.open=true;},true);
+}
 function authUI() {
-  const isCoach=Boolean(user && own);
+  const isCoach=coachWorkspaceActive();
   $('authOpen').textContent=user?'Кабинет':'Войти';$('authOpen').hidden=isCoach;
-  $('myProfile').hidden=!isCoach;
+  $('myProfile').hidden=!Boolean(user && own);
   $('accountOpen').textContent=user?'Мой кабинет':'Стать тренером';
   $('clientSignupOpen').hidden=Boolean(user);
   $('accountFindCoach').hidden=isCoach;
   document.querySelector('.header-actions').classList.toggle('coach-nav',isCoach);
   document.querySelector('.header-actions').classList.toggle('guest-nav',!user);
   $('accountEmail').textContent=user?.email || user?.phone || '';
+  renderAccountWorkspace();
 }
 function authChanged(event, session) {
   const previous=user,next=session?.user || null, changed=user?.id!==next?.id;
-  user=next;if(changed)own=null;authUI();
+  user=next;if(changed)own=null;
   if(changed){authEpoch++;threadEpoch++;catalogueEpoch++;own=null;profileRecord=null;activeThread=null;threads=[];chatRows=[];pendingMessage=null;visibleProfile='';presence.clear();presenceFetchedAt=0;
-    cancelVoiceRecording();cleanupCallLocal();$('threads').replaceChildren();$('messages').replaceChildren();$('myGallery').replaceChildren();$('profileContent').replaceChildren();$('chatTitle').textContent='Выбери диалог';$('chatPresence').textContent='';$('messageForm').hidden=true;$('messageForm').reset();clearChatAttachment();chatMediaURLs.clear();$('clientForm').reset();$('coachForm').reset();delete $('coachForm').dataset.dirty;$('coachForm').hidden=true;$('clientCoachStart').hidden=false;$('myProfile').hidden=true;$('mediaEditor').hidden=true;
+    cancelVoiceRecording();cleanupCallLocal();$('threads').replaceChildren();$('messages').replaceChildren();$('myGallery').replaceChildren();$('profileContent').replaceChildren();$('chatTitle').textContent='Выбери диалог';$('chatPresence').textContent='';$('messageForm').hidden=true;$('messageForm').reset();clearChatAttachment();chatMediaURLs.clear();$('clientForm').reset();delete $('clientForm').dataset.dirty;$('coachForm').reset();delete $('coachForm').dataset.dirty;accountTab='profile';$('coachForm').hidden=true;$('clientCoachStart').hidden=false;$('myProfile').hidden=true;$('mediaEditor').hidden=true;
     stopPresenceHeartbeat();if(user)setTimeout(startPresenceHeartbeat,0);
     if(!user){coaches=coaches.filter(publicOnly);if(['account','inbox','profile'].includes(currentPage)) page('home');}
     setTimeout(()=>{loadCatalogue().then(()=>user?loadAccount():null).catch(e=>notice(explain(e)));},0);
   }
+  authUI();
   if(event==='PASSWORD_RECOVERY') {pendingAction='';closeDialogs();$('resetDialog').showModal();}
 }
 async function afterLogin() {
   closeDialogs(); const action=pendingAction;
   await loadCatalogue(); await loadAccount();
   if(action==='coach-onboarding' && !own)$('coachForm').dataset.dirty='1';
-  pendingAction='';
+  pendingAction='';authUI();
   if(action.startsWith('contact:')) await contact(action.slice(8)); else page(action==='coach-onboarding'?'account':action || 'account');
 }
 function redirectURL() { return location.origin+location.pathname; } // Сохраняет /имя-репозитория/ GitHub Pages.
@@ -306,7 +384,7 @@ async function loadAccount() {
   if(epoch!==authEpoch || version!==accountVersion) return;
   profileRecord=profile;own=record;
   const clientForm=$('clientForm');
-  if(!clientForm.dataset.busy){
+  if(!clientForm.dataset.dirty && !clientForm.dataset.busy){
     clientForm.elements.full_name.value=profile?.full_name || user.user_metadata?.full_name || '';
     clientForm.elements.phone.value=profile?.phone || user.phone || '';
   }
@@ -321,11 +399,9 @@ async function loadAccount() {
     if(record) $('coachSport').value=record.sport;
     form.querySelectorAll('[name=languages]').forEach(i=>i.checked=record?.languages?.includes(i.value) || false);
     form.querySelectorAll('[name=availability]').forEach(i=>i.checked=record?.availability?.includes(i.value) || false);
+    $('coachPayment').open=Boolean(record?.payment_url);
   }
-  // signup_intent выбирает экран онбординга; права и роль определяет база после сохранения анкеты.
-  const showCoach=Boolean(record || user.user_metadata?.signup_intent==='coach' || pendingAction==='coach-onboarding' || form.dataset.dirty);
-  form.hidden=!showCoach;$('clientCoachStart').hidden=showCoach;
-  $('mediaEditor').hidden=!record;authUI();
+  authUI();
   if(record) await loadMyGallery();
 }
 const actionTimes=new Map();
@@ -441,30 +517,33 @@ function bindAuth() {
   $('signOut').onclick=()=>run($('signOut'),'coachMessage',async()=>{try{await endCurrentCall(true);}catch{}try{await touchPresence(false);}catch{}unwrap(await db.auth.signOut());authChanged('SIGNED_OUT',null);page('home');});
 }
 function bindClient() {
+  bindAccountWorkspace();
+  $('clientForm').addEventListener('input',()=>{$('clientForm').dataset.dirty='1';$('clientForm').dataset.revision=String(Number($('clientForm').dataset.revision || 0)+1);});
   bindForm('clientForm','clientMessage',async(f)=>{
     if(!requireUser('account'))return;
-    const actor=user.id,epoch=authEpoch;
+    const actor=user.id,epoch=authEpoch,revision=$('clientForm').dataset.revision;
     const full_name=String(f.get('full_name')||'').trim();
     const phone=String(f.get('phone')||'').trim();
     if(!full_name)throw Error('Введи имя.');
     const saved=unwrap(await db.from('profiles').update({full_name,phone:phone || null}).eq('id',actor).select('id,full_name,phone,role,is_active').single());
     if(epoch!==authEpoch || user?.id!==actor)return;
-    profileRecord=saved;message('clientMessage','Данные клиента сохранены.');
+    profileRecord=saved;if(revision===$('clientForm').dataset.revision)delete $('clientForm').dataset.dirty;message('clientMessage','Данные аккаунта сохранены.');
     if(!own && !$('coachForm').dataset.dirty)$('coachForm').elements.name.value=full_name;
+    renderAccountWorkspace();
   });
   $('becomeCoach').onclick=()=>{
     if(!requireUser('account'))return;
     const form=$('coachForm');form.hidden=false;$('clientCoachStart').hidden=true;
     if(!form.elements.name.value)form.elements.name.value=profileRecord?.full_name || user.user_metadata?.full_name || '';
-    form.dataset.dirty='1';form.scrollIntoView({behavior:'smooth',block:'start'});
+    form.dataset.dirty='1';accountTab='profile';authUI();form.scrollIntoView({behavior:'smooth',block:'start'});
   };
 }
 function bindCoach() {
-  $('coachForm').addEventListener('input',()=>{$('coachForm').dataset.dirty='1';});
+  $('coachForm').addEventListener('input',()=>{const form=$('coachForm');form.dataset.dirty='1';form.dataset.revision=String(Number(form.dataset.revision || 0)+1);renderAccountWorkspace();});
   bindForm('coachForm','coachMessage',async(f)=>{
     if(!requireUser('account')) return;
     if(!setupReady) throw Error('Схема базы FitGoIn не готова. Проверь миграции Supabase.');
-    const actor=user.id,epoch=authEpoch;
+    const actor=user.id,epoch=authEpoch,revision=$('coachForm').dataset.revision;
     const payload={id:actor};
     for(const name of ['name','sport','goal','format','city','country','period','bio','education','titles','achievements','payment_url']) payload[name]=String(f.get(name)||'').trim();
     if(!payload.name || !payload.sport) throw Error('Заполни имя и вид спорта.');
@@ -476,7 +555,7 @@ function bindCoach() {
     if(payload.payment_url)payload.payment_url=safeURL(payload.payment_url,true);
     const saved=unwrap(await db.from('fgi_coaches').upsert(payload,{onConflict:'id'}).select().single());
     if(epoch!==authEpoch) return;
-    accountVersion++;own=saved;delete $('coachForm').dataset.dirty;
+    accountVersion++;own=saved;if(revision===$('coachForm').dataset.revision)delete $('coachForm').dataset.dirty;
     message('coachMessage','Профиль сохранён. Теперь можно загрузить фотографии.');$('mediaEditor').hidden=false;authUI();
     await loadCatalogue();await loadAccount();
   });
@@ -530,14 +609,14 @@ function bindMedia() {
       else{try{await cleanupPhoto(path);}catch{throw Error(explain(e)+' Новое фото осталось в хранилище: '+path);}throw e;}
     }
     if(old) {try{await cleanupPhoto(old);}catch{notice('Новый аватар сохранён, но старый файл не удалён. Повтори удаление старого файла через Storage.');}}
-    if(user?.id!==actor)return;form.reset();message('avatarMessage','Фото профиля сохранено.');await loadCatalogue();
+    if(user?.id!==actor)return;form.reset();message('avatarMessage','Фото профиля сохранено.');renderAccountWorkspace();await loadCatalogue();
   });
   $('removeAvatar').onclick=()=>run($('avatarForm'),'avatarMessage',async()=>{
     if(!own || !user) throw Error('Сначала сохрани профиль.');
     const actor=user.id; await cleanupPhoto(own.avatar_path);
     const saved=unwrap(await db.from('fgi_coaches').update({avatar_path:null}).eq('id',actor).select().single());
     if(user?.id!==actor)return;accountVersion++;own=saved;
-    message('avatarMessage','Аватар удалён.');await loadCatalogue();
+    message('avatarMessage','Фото профиля удалено.');renderAccountWorkspace();await loadCatalogue();
   });
   bindForm('galleryForm','galleryMessage',async(f,form)=>{
     if(!own || !user) throw Error('Сначала сохрани профиль.');

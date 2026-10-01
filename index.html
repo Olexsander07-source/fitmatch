@@ -19,9 +19,9 @@
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="manifest" href="./site.webmanifest">
   <title>FitGoIn — Find the one who fits you.</title>
-  <link rel="stylesheet" href="./styles.css?v=20261001-signup">
+  <link rel="stylesheet" href="./styles.css?v=20261001-workspace">
   <script defer src="./cookie-consent.js?v=20260929"></script>
-  <script type="module" src="./fitmatch.js?v=20261001-signup"></script>
+  <script type="module" src="./fitmatch.js?v=20261001-workspace"></script>
 </head>
 <body>
 <a class="skip" href="#main">К содержимому</a>
@@ -78,35 +78,71 @@
     <div id="matchSummary" class="match-summary section-small" hidden></div><div id="matchResults" class="coach-grid section-small" aria-live="polite"></div>
   </section>
   <section id="profile" class="page container section"><div id="profileContent"></div></section>
-  <section id="account" class="page container section"><div class="section-head"><div><p class="eyebrow">ЛИЧНЫЙ КАБИНЕТ</p><h1>Твоё <em>пространство.</em></h1><p id="accountEmail" class="muted"></p></div><button id="signOut" class="btn">Выйти</button></div>
-    <div class="actions"><button id="accountFindCoach" data-page="match" class="btn primary">Найти тренера ↗</button><button data-page="inbox" class="btn">Мои сообщения ↗</button></div>
-    <form id="clientForm" class="panel form-grid section-small">
-      <h2 class="full">Личные данные</h2>
-      <label>Имя и фамилия<input name="full_name" autocomplete="name" maxlength="100" required></label>
-      <label>Телефон<input name="phone" type="tel" autocomplete="tel" maxlength="30" placeholder="+33 6 12 34 56 78"></label>
-      <div class="full"><button class="btn primary" type="submit">Сохранить данные</button><p id="clientMessage" role="status"></p></div>
-    </form>
-    <div id="clientCoachStart" class="panel section-small"><h2>Ты тренер?</h2><p class="hint">Клиентский аккаунт можно в любой момент дополнить профилем тренера. После сохранения анкеты роль автоматически станет coach.</p><button id="becomeCoach" class="btn" type="button">Создать профиль тренера ↗</button></div>
-    <form id="coachForm" class="panel form-grid section-small" hidden>
-      <h2 class="full">Профиль тренера</h2><label>Имя и фамилия<input name="name" autocomplete="name" maxlength="100" required></label><label>Вид спорта<select id="coachSport" name="sport" required></select></label>
-      <label>Цели клиентов / специализация<input name="goal" list="goals" maxlength="300" placeholder="Похудение, сила, выносливость"></label><datalist id="goals"></datalist>
-      <label>Формат<select name="format"><option>Онлайн</option><option>Офлайн</option><option>Онлайн и офлайн</option></select></label>
-      <label>Город<input name="city" maxlength="100" autocomplete="address-level2"></label><label>Страна<input name="country" maxlength="100" autocomplete="country-name"></label>
-      <label>Опыт, лет<input name="experience_years" type="number" min="0" max="80" step="1"></label><label>Цена, €<input name="price" type="number" min="0" max="100" step="0.01" placeholder="Пусто — по запросу"></label>
-      <label>Стоимость за<select name="period"><option value="занятие">Занятие</option><option value="месяц">Месяц</option><option value="программа">Программу</option></select></label>
-      <fieldset class="full"><legend>Языки общения с клиентами</legend><div id="coachLanguages" class="checks"></div></fieldset>
-      <fieldset class="full"><legend>Когда удобно проводить тренировки</legend><div id="coachAvailability" class="checks"><label class="check"><input type="checkbox" name="availability" value="morning">Утро</label><label class="check"><input type="checkbox" name="availability" value="day">День</label><label class="check"><input type="checkbox" name="availability" value="evening">Вечер</label><label class="check"><input type="checkbox" name="availability" value="weekend">Выходные</label></div><p class="hint">Можно выбрать несколько вариантов. Это используется только для MATCH.</p></fieldset>
-      <label class="full">О себе<textarea name="bio" maxlength="4000" rows="5"></textarea></label><label>Образование и сертификаты<textarea name="education" maxlength="2000" rows="3"></textarea></label>
-      <label>Титулы<textarea name="titles" maxlength="2000" rows="3" placeholder="Название, соревнование, год"></textarea></label><label class="full">Достижения<textarea name="achievements" maxlength="3000" rows="3"></textarea></label>
-      <label class="full">Ссылка на оплату Stripe<input name="payment_url" type="url" maxlength="300" placeholder="https://buy.stripe.com/…"><span class="hint">Создай Payment Link в своём Stripe с нужной ценой и валютой EUR. Для пробного платежа используй ссылку из тестового режима. Оплата поступает в аккаунт владельца ссылки.</span></label>
-      <label class="check full"><input name="published" type="checkbox">Показывать мою анкету в каталоге</label>
-      <div class="full"><button class="btn primary" type="submit">Сохранить профиль</button><p id="coachMessage" role="status"></p></div>
-    </form>
-    <div id="mediaEditor" class="panel section-small" hidden><h2>Фотографии и портфолио</h2><p class="hint">Фотографии доступны по публичной ссылке. JPEG, PNG или WebP до 12 МБ; перед загрузкой изображение уменьшается. Сначала сохрани анкету.</p>
-      <form id="avatarForm"><label>Фото профиля<input name="photo" type="file" accept="image/jpeg,image/png,image/webp" required></label><div class="actions"><button class="btn" type="submit">Загрузить аватар</button><button id="removeAvatar" class="text-btn" type="button">Удалить аватар</button></div><p id="avatarMessage" role="status"></p></form>
-      <form id="galleryForm" class="form-grid section-small"><label>Категория<select name="kind"><option value="coach">Мои фото</option><option value="client">Результаты клиентов</option><option value="achievement">Достижения / сертификаты</option></select></label><label>Фото, до 6 за раз<input name="photos" type="file" accept="image/jpeg,image/png,image/webp" multiple required></label>
-        <label class="full">Подпись<input name="caption" maxlength="300"></label><label class="check full"><input name="consent" type="checkbox">У меня есть согласие изображённых клиентов на публичное размещение их фото.</label>
-        <div class="full"><button class="btn" type="submit">Добавить фотографии</button><p id="galleryMessage" role="status"></p></div></form><div id="myGallery"></div>
+  <section id="account" class="page container section">
+    <div class="account-heading">
+      <div><p class="eyebrow">FITGOIN · ЛИЧНЫЙ КАБИНЕТ</p><h1 id="accountTitle">Твоё <em>пространство.</em></h1><p id="accountIntro" class="muted">Тренеры, сообщения и личные данные — всё под рукой.</p></div>
+      <div class="account-actions"><button id="accountFindCoach" data-page="match" class="btn primary">Найти тренера ↗</button><button data-page="inbox" class="btn">Мои сообщения ↗</button><button id="signOut" class="text-btn" type="button">Выйти</button></div>
+    </div>
+    <div id="coachOverview" class="coach-overview" hidden>
+      <div class="coach-identity"><div id="workspaceAvatar" class="workspace-avatar"></div><div><p class="workspace-kicker">ТВОЙ ПРОФИЛЬ</p><h2 id="workspaceName"></h2><p id="workspaceSpecialty" class="muted"></p></div></div>
+      <div class="workspace-publication"><span id="workspacePublication" class="publication-badge"></span><p id="workspacePublicationHint" class="hint"></p></div>
+    </div>
+    <div id="accountWorkspace" class="account-workspace">
+      <aside id="workspaceSidebar" class="workspace-sidebar" hidden>
+        <div id="workspaceTabs" class="workspace-tabs" role="tablist" aria-label="Разделы кабинета тренера" aria-orientation="vertical">
+          <button id="workspaceTabProfile" class="workspace-tab" type="button" role="tab" data-account-tab="profile" aria-controls="coachForm" aria-selected="true"><span class="tab-number" aria-hidden="true">01</span>Анкета<span class="tab-arrow" aria-hidden="true">↗</span></button>
+          <button id="workspaceTabMedia" class="workspace-tab" type="button" role="tab" data-account-tab="media" aria-controls="workspaceMedia" aria-selected="false" tabindex="-1"><span class="tab-number" aria-hidden="true">02</span>Фото и результаты<span class="tab-arrow" aria-hidden="true">↗</span></button>
+          <button id="workspaceTabSettings" class="workspace-tab" type="button" role="tab" data-account-tab="settings" aria-controls="workspaceSettings" aria-selected="false" tabindex="-1"><span class="tab-number" aria-hidden="true">03</span>Настройки<span class="tab-arrow" aria-hidden="true">↗</span></button>
+        </div>
+        <details id="workspaceProgressDetails" class="workspace-progress" open><summary class="workspace-progress-head"><h3>Заполнение анкеты</h3><strong id="workspaceProgressText"></strong></summary><progress id="workspaceProgress" max="6" value="0" aria-label="Заполнение анкеты"></progress><div id="workspaceChecklist" class="workspace-checklist"></div><p class="hint">Это подсказки для оформления. Обязательны только имя и вид спорта.</p></details>
+      </aside>
+      <div class="workspace-content">
+        <form id="coachForm" class="workspace-form" role="tabpanel" aria-labelledby="workspaceTabProfile" tabindex="0" hidden>
+          <div class="workspace-section-heading"><p class="workspace-kicker">АНКЕТА</p><h2>Расскажи о себе.</h2><p class="muted">Помоги клиентам понять, чем ты можешь быть полезен.</p></div>
+          <div class="panel workspace-card form-grid">
+            <div class="full workspace-card-heading"><span aria-hidden="true">01</span><div><h3>Основные данные</h3><p class="hint">Имя и вид спорта обязательны. Остальное можно добавить позже.</p></div></div>
+            <label>Имя и фамилия<input name="name" autocomplete="name" maxlength="100" required></label><label>Вид спорта<select id="coachSport" name="sport" required></select></label>
+            <label class="full">Цели клиентов / специализация<input name="goal" list="goals" maxlength="300" placeholder="Например: похудение, сила, выносливость"></label><datalist id="goals"></datalist>
+          </div>
+          <div class="panel workspace-card form-grid">
+            <div class="full workspace-card-heading"><span aria-hidden="true">02</span><div><h3>Условия тренировок</h3><p class="hint">Где, когда и на каких условиях ты работаешь с клиентами.</p></div></div>
+            <label class="full">Формат<select name="format"><option>Онлайн</option><option>Офлайн</option><option>Онлайн и офлайн</option></select></label>
+            <label>Город<input name="city" maxlength="100" autocomplete="address-level2" placeholder="Например: Париж"></label><label>Страна<input name="country" maxlength="100" autocomplete="country-name" placeholder="Например: Франция"></label>
+            <label>Цена, €<input name="price" type="number" min="0" max="100" step="0.01" placeholder="Пусто — по запросу"></label><label>Стоимость за<select name="period"><option value="занятие">Занятие</option><option value="месяц">Месяц</option><option value="программа">Программу</option></select></label>
+            <fieldset class="full"><legend>Языки общения</legend><div id="coachLanguages" class="checks"></div></fieldset>
+            <fieldset class="full"><legend>Удобное время</legend><div id="coachAvailability" class="checks"><label class="check"><input type="checkbox" name="availability" value="morning">Утро</label><label class="check"><input type="checkbox" name="availability" value="day">День</label><label class="check"><input type="checkbox" name="availability" value="evening">Вечер</label><label class="check"><input type="checkbox" name="availability" value="weekend">Выходные</label></div><p class="hint">Можно выбрать несколько вариантов — они помогут в подборе через MATCH.</p></fieldset>
+          </div>
+          <div class="panel workspace-card form-grid">
+            <div class="full workspace-card-heading"><span aria-hidden="true">03</span><div><h3>Опыт и подход</h3><p class="hint">Расскажи, как проходят занятия и каких результатов ты помогаешь достичь.</p></div></div>
+            <label>Опыт, лет<input name="experience_years" type="number" min="0" max="80" step="1" placeholder="Например: 5"></label>
+            <label class="full">О себе<textarea name="bio" maxlength="4000" rows="5" placeholder="С кем ты работаешь, как строишь тренировки и что для тебя важно"></textarea></label>
+            <label class="full">Образование и сертификаты<textarea name="education" maxlength="2000" rows="3" placeholder="Образование, курсы и профессиональные сертификаты"></textarea></label>
+            <label>Титулы<textarea name="titles" maxlength="2000" rows="3" placeholder="Название, соревнование, год"></textarea></label><label>Достижения<textarea name="achievements" maxlength="3000" rows="3" placeholder="Результаты, которыми ты гордишься"></textarea></label>
+          </div>
+          <details id="coachPayment" class="panel workspace-payment"><summary>Оплата через Stripe <span class="muted">Необязательно</span></summary><label>Ссылка на оплату<input name="payment_url" type="url" maxlength="300" placeholder="https://buy.stripe.com/…"><span class="hint">Добавь Payment Link из своего Stripe с ценой в EUR. Деньги поступают в твой аккаунт Stripe. Для пробного платежа используй ссылку из тестового режима.</span></label></details>
+          <div class="coach-savebar"><div><label class="check"><input name="published" type="checkbox">Показывать анкету в каталоге</label><p id="coachSaveState" class="hint" aria-live="polite"></p></div><button class="btn primary" type="submit">Сохранить профиль ↗</button><p id="coachMessage" class="full" role="status"></p></div>
+        </form>
+        <div id="workspaceMedia" role="tabpanel" aria-labelledby="workspaceTabMedia" tabindex="0" hidden>
+          <div class="workspace-section-heading"><p class="workspace-kicker">ФОТО И РЕЗУЛЬТАТЫ</p><h2>Покажи свою работу.</h2><p class="muted">Фото профиля, результаты клиентов и твои достижения.</p></div>
+          <div id="mediaLock" class="panel workspace-empty"><span class="empty-mark" aria-hidden="true">↗</span><h3>Начни с анкеты</h3><p class="muted">Сохрани имя и вид спорта, чтобы добавить фото профиля и портфолио.</p><button class="btn primary" type="button" data-account-tab="profile">Заполнить анкету</button></div>
+          <div id="mediaEditor" hidden>
+            <form id="avatarForm" class="panel workspace-card"><div class="workspace-card-heading"><span aria-hidden="true">01</span><div><h3>Фото профиля</h3><p class="hint">Выбери портрет, на котором хорошо видно твоё лицо.</p></div></div><div class="avatar-upload"><div id="workspaceMediaAvatar" class="workspace-avatar large"></div><div><label>Новое фото<input name="photo" type="file" accept="image/jpeg,image/png,image/webp" required></label><div class="actions"><button class="btn" type="submit">Сохранить фото</button><button id="removeAvatar" class="text-btn" type="button">Удалить фото</button></div></div></div><p id="avatarMessage" role="status"></p></form>
+            <form id="galleryForm" class="panel workspace-card form-grid"><div class="full workspace-card-heading"><span aria-hidden="true">02</span><div><h3>Портфолио</h3><p class="hint">Тренировки, результаты клиентов, достижения и сертификаты.</p></div></div><label>Категория<select name="kind"><option value="coach">Мои фото</option><option value="client">Результаты клиентов</option><option value="achievement">Достижения / сертификаты</option></select></label><label>Фото, до 6 за раз<input name="photos" type="file" accept="image/jpeg,image/png,image/webp" multiple required></label>
+              <label class="full">Подпись<input name="caption" maxlength="300" placeholder="Что показано на этих фотографиях"></label><label class="check full"><input name="consent" type="checkbox">У меня есть согласие изображённых клиентов на публичное размещение их фото.</label>
+              <div class="full"><button class="btn primary" type="submit">Добавить фотографии ↗</button><p id="galleryMessage" role="status"></p></div><p class="hint full">JPEG, PNG или WebP до 12 МБ. Изображения уменьшаются перед загрузкой и доступны по публичной ссылке.</p></form>
+            <div class="panel workspace-card"><h3>Твои фотографии</h3><div id="myGallery"></div></div>
+          </div>
+        </div>
+        <div id="workspaceSettings">
+          <div id="workspaceSettingsHeading" class="workspace-section-heading" hidden><p class="workspace-kicker">НАСТРОЙКИ</p><h2>Личные данные.</h2><p class="muted">Контакты твоего аккаунта. Имя в публичной анкете меняется отдельно.</p></div>
+          <form id="clientForm" class="panel form-grid workspace-card">
+            <div class="full workspace-card-heading"><div><h3>Данные аккаунта</h3><p id="accountEmail" class="hint"></p></div></div>
+            <label>Имя и фамилия<input name="full_name" autocomplete="name" maxlength="100" required></label><label>Телефон<input name="phone" type="tel" autocomplete="tel" maxlength="30" placeholder="+33 6 12 34 56 78"></label>
+            <div class="full"><button class="btn primary" type="submit">Сохранить данные</button><p id="clientMessage" role="status"></p></div>
+          </form>
+          <div id="clientCoachStart" class="panel workspace-card"><h3>Ты тренер?</h3><p class="hint">Создай анкету, расскажи о своём опыте и начни общаться с клиентами.</p><button id="becomeCoach" class="btn" type="button">Создать профиль тренера ↗</button></div>
+        </div>
+      </div>
     </div>
   </section>
   <section id="inbox" class="page container section"><p class="eyebrow">ПРЯМОЙ КОНТАКТ</p><h1>Твои <em>сообщения.</em></h1>
