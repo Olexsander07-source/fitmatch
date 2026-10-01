@@ -26,3 +26,4 @@ h1,h2,h3,.muted{overflow-wrap:anywhere}
 @media(max-width:650px){.match-step{min-height:220px}.match-wizard-actions .btn{flex:1}.match-card-actions{grid-template-columns:1fr}}
 @media(max-width:650px){.header-actions.coach-nav{flex-wrap:wrap;justify-content:flex-end;max-width:calc(100% - 105px)}.header-actions.coach-nav #myProfile{max-width:148px;white-space:normal}}
 @media(max-width:370px){.header-actions.coach-nav #accountOpen{display:block}}
+@media(max-width:650px){.header:has(.guest-nav){flex-wrap:wrap}.header:has(.guest-nav) .menu{margin-left:auto}.header-actions.guest-nav{order:1;width:100%;margin-left:0;justify-content:center;gap:6px}.header-actions.guest-nav #accountOpen{display:inline-flex}}

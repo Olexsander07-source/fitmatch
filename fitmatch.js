@@ -29,6 +29,7 @@ const directions = [
 let db, user = null, own = null, profileRecord = null, sports = [], coaches = [], threads = [], activeThread = null;
 let currentPage = 'home', pendingAction = '', authEpoch = 0, catalogueEpoch = 0, threadEpoch = 0;
 let chatRows = [], pendingMessage = null, chatBusy = false, inboxBusy = false, signupEmail = '';
+let signupRole = 'client';
 let pendingChatAttachment = null, pendingChatPreviewURL = '', pendingChatDurationMs = null, pendingMessageFile = null, chatMediaURLs = new Map();
 let voiceRecorder = null, voiceStream = null, voiceChunks = [], voiceStartedAt = 0, voiceTick = 0, voiceCancelled = false, voiceContext = null;
 let currentCall = null, incomingCall = null, callPeer = null, callLocalStream = null, callSignalLastId = 0, callPollBusy = false, callMuted = false, callCameraOff = false, callFacingMode = 'user', callClock = 0, callRemoteIce = [], lastIncomingCallPoll = 0, lastCallHeartbeat = 0;
@@ -106,7 +107,9 @@ function page(id, push = true) {
   document.querySelectorAll('[data-page]').forEach(b => b.classList.toggle('active', b.dataset.page === id));
   $('nav').classList.remove('open'); $('menu').setAttribute('aria-expanded','false');
   if (push) {
-    const u=new URL(location.href);u.searchParams.delete('trainer');u.hash=id==='home'?'':`#${id}`;
+    const u=new URL(location.href);u.searchParams.delete('trainer');
+    if(id==='signup')u.searchParams.set('signup',signupRole);else u.searchParams.delete('signup');
+    u.hash=id==='home'?'':`#${id}`;
     history.pushState({page:id},'',u.pathname+u.search+u.hash);
   }
   window.scrollTo({top:0,behavior:'instant'});
@@ -261,6 +264,7 @@ function authUI() {
   $('clientSignupOpen').hidden=Boolean(user);
   $('accountFindCoach').hidden=isCoach;
   document.querySelector('.header-actions').classList.toggle('coach-nav',isCoach);
+  document.querySelector('.header-actions').classList.toggle('guest-nav',!user);
   $('accountEmail').textContent=user?.email || user?.phone || '';
 }
 function authChanged(event, session) {
@@ -275,11 +279,23 @@ function authChanged(event, session) {
   if(event==='PASSWORD_RECOVERY') {pendingAction='';closeDialogs();$('resetDialog').showModal();}
 }
 async function afterLogin() {
-  closeDialogs(); const action=pendingAction; pendingAction='';
+  closeDialogs(); const action=pendingAction;
   await loadCatalogue(); await loadAccount();
-  if(action.startsWith('contact:')) await contact(action.slice(8)); else page(action || 'account');
+  if(action==='coach-onboarding' && !own)$('coachForm').dataset.dirty='1';
+  pendingAction='';
+  if(action.startsWith('contact:')) await contact(action.slice(8)); else page(action==='coach-onboarding'?'account':action || 'account');
 }
 function redirectURL() { return location.origin+location.pathname; } // Сохраняет /имя-репозитория/ GitHub Pages.
+function setSignupRole(role) {
+  signupRole=role==='coach'?'coach':'client';
+  const coach=signupRole==='coach';
+  $('signupRoleLabel').textContent=coach?'РЕГИСТРАЦИЯ ТРЕНЕРА':'РЕГИСТРАЦИЯ КЛИЕНТА';
+  $('signupTitle').innerHTML=coach?'Создай профиль <em>тренера.</em>':'Создай свой <em>кабинет.</em>';
+  $('signupHint').textContent=coach?'После подтверждения email ты перейдёшь к заполнению анкеты тренера: укажешь свой спорт, опыт и условия тренировок.':'После регистрации ты сможешь проходить MATCH, писать тренерам и пользоваться своим кабинетом.';
+}
+function openSignup(role) {
+  setSignupRole(role);pendingAction=signupRole==='coach'?'coach-onboarding':'account';page('signup');
+}
 async function loadAccount() {
   if(!user) return; const epoch=authEpoch, id=user.id, version=++accountVersion;
   const [profileResult,coachResult]=await Promise.all([
@@ -306,7 +322,9 @@ async function loadAccount() {
     form.querySelectorAll('[name=languages]').forEach(i=>i.checked=record?.languages?.includes(i.value) || false);
     form.querySelectorAll('[name=availability]').forEach(i=>i.checked=record?.availability?.includes(i.value) || false);
   }
-  form.hidden=!record;$('clientCoachStart').hidden=Boolean(record);
+  // signup_intent выбирает экран онбординга; права и роль определяет база после сохранения анкеты.
+  const showCoach=Boolean(record || user.user_metadata?.signup_intent==='coach' || pendingAction==='coach-onboarding' || form.dataset.dirty);
+  form.hidden=!showCoach;$('clientCoachStart').hidden=showCoach;
   $('mediaEditor').hidden=!record;authUI();
   if(record) await loadMyGallery();
 }
@@ -353,7 +371,7 @@ function openPhoneAuth(mode) {
 async function requestPhoneOtp(phone,name='') {
   if(Date.now()<phoneResendUntil) throw Error('Подожди до повторной отправки SMS-кода.');
   const options={channel:'sms',shouldCreateUser:phoneMode==='signup'};
-  if(phoneMode==='signup') options.data={full_name:name};
+  if(phoneMode==='signup') options.data={full_name:name,signup_intent:signupRole};
   unwrap(await db.auth.signInWithOtp({phone,options}));
   startPhoneResendTimer();
 }
@@ -399,7 +417,7 @@ function bindAuth() {
     rateGate('signup',15000);
     signupEmail=String(f.get('email')).trim();
     const name=String(f.get('name')).trim();if(!name)throw Error('Введи имя.');
-    const data=unwrap(await db.auth.signUp({email:signupEmail,password:assertStrongPassword(f.get('password')),options:{emailRedirectTo:redirectURL(),data:{full_name:name}}}));
+    const data=unwrap(await db.auth.signUp({email:signupEmail,password:assertStrongPassword(f.get('password')),options:{emailRedirectTo:redirectURL(),data:{full_name:name,signup_intent:signupRole}}}));
     form.elements.password.value='';
     if(data.session){user=data.user;authUI();message('signupMessage','Аккаунт создан.');await afterLogin();}
     else message('signupMessage','Запрос принят. Если адрес можно зарегистрировать, придёт письмо со ссылкой подтверждения. Проверь входящие и спам. Если аккаунт уже есть — войди или восстанови пароль.');
@@ -1091,13 +1109,13 @@ function bindChat() {
 }
 function bindUI() {
   $('menu').onclick=()=>{$('nav').classList.toggle('open');$('menu').setAttribute('aria-expanded',String($('nav').classList.contains('open')));};
-  $('authOpen').onclick=()=>{if(user)page('account');else $('authDialog').showModal();};
-  $('clientSignupOpen').onclick=()=>{pendingAction='account';page('signup');};
-  $('accountOpen').onclick=()=>{try{if(user)page('account');else{pendingAction='account';page('signup');}}catch(e){notice(explain(e));}};
+  $('authOpen').onclick=()=>{pendingAction='';if(user)page('account');else $('authDialog').showModal();};
+  $('clientSignupOpen').onclick=()=>openSignup('client');
+  $('accountOpen').onclick=()=>{try{if(user)page('account');else openSignup('coach');}catch(e){notice(explain(e));}};
   document.addEventListener('click',e=>{
     const b=e.target.closest('button');if(!b)return;
     Promise.resolve().then(async()=>{
-      if(b.dataset.page){if(b.dataset.page==='match')resetMatchWizard(true);page(b.dataset.page);}
+      if(b.dataset.page){if(b.dataset.page==='match')resetMatchWizard(true);if(b.dataset.page==='signup')openSignup('client');else page(b.dataset.page);}
       if(b.dataset.action==='login')$('authDialog').showModal();
       if(b.hasAttribute('data-close'))b.closest('dialog').close();
       if(b.dataset.sport){$('sportFilter').value=b.dataset.sport;page('coaches');renderCatalogue();}
@@ -1116,7 +1134,7 @@ function bindUI() {
   $('coachLanguages').innerHTML=Object.entries(langs).map(([id,name])=>`<label class="check"><input type="checkbox" name="languages" value="${id}">${name}</label>`).join('');
   $('goals').innerHTML=goals.map(g=>`<option value="${esc(g)}"></option>`).join('');
   opt($('matchGoal'),goals.map(g=>[g,g]),'Пока не решил');
-  window.addEventListener('popstate',()=>{const trainer=new URLSearchParams(location.search).get('trainer');if(trainer){openProfile(trainer,false).catch(e=>notice(explain(e)));return;}const target=location.hash.slice(1);try{page($(target)?.classList.contains('page')?target:'home',false);}catch(e){notice(explain(e));}});
+  window.addEventListener('popstate',()=>{const query=new URLSearchParams(location.search),trainer=query.get('trainer');if(trainer){openProfile(trainer,false).catch(e=>notice(explain(e)));return;}const target=location.hash.slice(1);if(target==='signup')setSignupRole(query.get('signup'));try{page($(target)?.classList.contains('page')?target:'home',false);}catch(e){notice(explain(e));}});
   document.addEventListener('visibilitychange',()=>{if(!user || !db)return;if(document.visibilityState==='visible')startPresenceHeartbeat();else{stopPresenceHeartbeat();touchPresence(false).catch(()=>{});}});
   let index=0,paused=matchMedia('(prefers-reduced-motion: reduce)').matches;
   function hero(){if(!sports.length)return;$('heroImage').style.backgroundImage=`url('${sportImage(sports[index++%sports.length].id)}')`;}
@@ -1130,6 +1148,7 @@ async function init() {
   const callbackError=callback.get('error_description') || query.get('error_description');
   const requestedPage=location.hash.slice(1); // Считываем до обработки Auth SDK.
   const requestedTrainer=query.get('trainer');
+  setSignupRole(query.get('signup'));
   bindUI();bindAuth();bindClient();bindCoach();bindMedia();bindChat();
   notice('Подключаем FitGoIn…');
   try {
@@ -1142,7 +1161,11 @@ async function init() {
     else if(callback.get('type')==='recovery' && user){closeDialogs();$('resetDialog').showModal();}
     else if(requestedTrainer) await openProfile(requestedTrainer,false);
     else if($(requestedPage)?.classList.contains('page'))page(requestedPage,false);
-    if(user)await loadAccount();
+    if(user){
+      await loadAccount();
+      const newCoach=!own && user.user_metadata?.signup_intent==='coach';
+      if(!callbackError && callback.get('type')!=='recovery' && !requestedTrainer && (callback.get('type')==='signup' || newCoach && !$(requestedPage)?.classList.contains('page')))page('account');
+    }
   } catch(e){notice('Не удалось подключить все функции. '+explain(e));}
 }
 init();
