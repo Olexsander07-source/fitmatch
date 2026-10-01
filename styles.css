@@ -24,3 +24,5 @@ h1,h2,h3,.muted{overflow-wrap:anywhere}
 .match-summary{border:1px solid #66744f;background:#172013;border-radius:var(--radius);padding:26px}.match-summary h2{margin-bottom:14px}.match-summary .muted{margin-bottom:0}
 .match-card-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.match-card-actions .btn{width:100%;margin-top:0}
 @media(max-width:650px){.match-step{min-height:220px}.match-wizard-actions .btn{flex:1}.match-card-actions{grid-template-columns:1fr}}
+@media(max-width:650px){.header-actions.coach-nav{flex-wrap:wrap;justify-content:flex-end;max-width:calc(100% - 105px)}.header-actions.coach-nav #myProfile{max-width:148px;white-space:normal}}
+@media(max-width:370px){.header-actions.coach-nav #accountOpen{display:block}}
