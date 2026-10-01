@@ -340,11 +340,15 @@ function coachWorkspaceActive() {
 function renderAccountWorkspace() {
   const coachMode=coachWorkspaceActive(),form=$('coachForm');
   $('account').classList.toggle('trainer-account',coachMode);
-  $('workspaceBackdrop').hidden=!coachMode;
-  $('accountBackgroundPause').hidden=!coachMode;
-  $('accountTitle').innerHTML=coachMode?'Кабинет <em>тренера.</em>':'Твоё <em>пространство.</em>';
+  $('account').classList.toggle('client-account',Boolean(user && !coachMode));
+  $('account').classList.toggle('styled-account',Boolean(user));
+  $('workspaceBackdrop').hidden=!user;
+  $('accountBackgroundPause').hidden=!user;
+  $('accountTitle').innerHTML=coachMode?'Кабинет <em>тренера.</em>':'Кабинет <em>клиента.</em>';
   $('accountIntro').textContent=coachMode?'Анкета, фотографии и общение с клиентами — всё под рукой.':'Тренеры, сообщения и личные данные — всё под рукой.';
-  $('coachOverview').hidden=!coachMode;$('workspaceSidebar').hidden=!coachMode;
+  $('coachOverview').hidden=!user;$('workspaceSidebar').hidden=!coachMode;
+  $('clientSidebar').hidden=!user || coachMode;
+  $('workspaceIdentityLabel').textContent=coachMode?'ТВОЙ ПРОФИЛЬ':'ТВОЙ АККАУНТ';
   if(own){
     const profileURL=new URL(location.href);profileURL.searchParams.set('trainer',own.id);profileURL.searchParams.delete('signup');profileURL.hash='';
     $('coachOverview').setAttribute('href',profileURL.pathname+profileURL.search);
@@ -356,7 +360,8 @@ function renderAccountWorkspace() {
   form.hidden=!coachMode || accountTab!=='profile';
   $('workspaceMedia').hidden=!coachMode || accountTab!=='media';
   $('workspaceSettings').hidden=coachMode && accountTab!=='settings';
-  $('workspaceSettingsHeading').hidden=!coachMode;$('clientCoachStart').hidden=coachMode;
+  $('workspaceSettingsHeading').hidden=!user;$('clientCoachStart').hidden=coachMode;
+  $('workspaceSettingsIntro').textContent=coachMode?'Контакты твоего аккаунта. Имя в публичной анкете меняется отдельно.':'Имя и контактные данные твоего аккаунта.';
   $('mediaEditor').hidden=!own;$('mediaLock').hidden=Boolean(own);
   if(coachMode){
     $('workspaceSettings').setAttribute('role','tabpanel');
@@ -370,7 +375,20 @@ function renderAccountWorkspace() {
     const selected=button.dataset.accountTab===accountTab;
     button.setAttribute('aria-selected',String(selected));button.tabIndex=selected?0:-1;
   });
-  if(!coachMode){if(currentPage==='account')stopBackgroundRotation();return;}
+  if(!coachMode){
+    if(currentPage==='account'){
+      if(user)startBackgroundRotation(user.id,'fitness',[$('accountBackdrop'),$('workspaceBackdrop')]);else stopBackgroundRotation();
+    }
+    const name=$('clientForm').elements.full_name.value.trim() || profileRecord?.full_name || user?.user_metadata?.full_name || 'Твой аккаунт';
+    $('workspaceName').textContent=name;
+    $('workspaceSpecialty').textContent='Найди тренера, который подходит тебе.';
+    const photo={name},photoKey=JSON.stringify(photo);
+    if($('workspaceAvatar').dataset.photo!==photoKey){$('workspaceAvatar').innerHTML=photoHTML(photo,'workspace-photo');$('workspaceAvatar').dataset.photo=photoKey;}
+    $('workspacePublication').textContent='Клиент FitGoIn';
+    $('workspacePublication').classList.remove('is-published');
+    $('workspacePublicationHint').textContent='Выбирай тренеров и общайся напрямую.';
+    return;
+  }
   if(currentPage==='account')startBackgroundRotation(user.id,form.elements.sport.value || own?.sport || 'fitness',[$('accountBackdrop'),$('workspaceBackdrop')]);
   const name=form.elements.name.value.trim() || profileRecord?.full_name || 'Твой профиль';
   $('workspaceName').textContent=name;
@@ -421,11 +439,11 @@ function bindAccountWorkspace() {
 }
 function authUI() {
   const isCoach=coachWorkspaceActive();
-  $('authOpen').textContent=user?'Кабинет':'Войти';$('authOpen').hidden=isCoach;
+  $('authOpen').textContent=user?'Кабинет':'Войти';$('authOpen').hidden=Boolean(user);
   $('accountOpen').textContent=user?'Мой кабинет':'Стать тренером';
   $('clientSignupOpen').hidden=Boolean(user);
   $('accountFindCoach').hidden=isCoach;
-  document.querySelector('.header-actions').classList.toggle('coach-nav',isCoach);
+  document.querySelector('.header-actions').classList.toggle('account-nav',Boolean(user));
   document.querySelector('.header-actions').classList.toggle('guest-nav',!user);
   $('accountEmail').textContent=user?.email || user?.phone || '';
   renderAccountWorkspace();
@@ -604,7 +622,7 @@ function bindAuth() {
 }
 function bindClient() {
   bindAccountWorkspace();
-  $('clientForm').addEventListener('input',()=>{$('clientForm').dataset.dirty='1';$('clientForm').dataset.revision=String(Number($('clientForm').dataset.revision || 0)+1);});
+  $('clientForm').addEventListener('input',()=>{$('clientForm').dataset.dirty='1';$('clientForm').dataset.revision=String(Number($('clientForm').dataset.revision || 0)+1);renderAccountWorkspace();});
   bindForm('clientForm','clientMessage',async(f)=>{
     if(!requireUser('account'))return;
     const actor=user.id,epoch=authEpoch,revision=$('clientForm').dataset.revision;
