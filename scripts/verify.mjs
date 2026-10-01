@@ -81,6 +81,10 @@ if (!html.includes('id="matchAvailability"') || !html.includes('id="coachAvailab
 if (!js.includes("payload.availability=f.getAll('availability')")) throw new Error('Coach availability persistence is missing');
 if (!js.includes("[Boolean(p.availability),5")) throw new Error('Availability weight is missing from MATCH');
 if (!js.includes('.slice(0,3)')) throw new Error('MATCH top-three result limit is missing');
+if (!html.includes('id="clientSignupOpen"') || !html.includes('id="clientForm"') || !html.includes('id="clientCoachStart"') || !html.includes('id="becomeCoach"')) throw new Error('Client registration/account UI is missing');
+if (!js.includes("db.from('profiles').update({full_name,phone:phone || null})")) throw new Error('Client profile save flow is missing');
+if (!js.includes('bindUI();bindAuth();bindClient();bindCoach();bindMedia();bindChat();')) throw new Error('Client account bindings are missing');
+if (js.includes("update({role:") || js.includes("update({ role:")) throw new Error('Frontend must not update profile roles directly');
 
 const openSelects = (html.match(/<select\b/gi) || []).length;
 const closeSelects = (html.match(/<\/select\s*>/gi) || []).length;

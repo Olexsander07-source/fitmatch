@@ -26,7 +26,7 @@ const directions = [
   ['combat','Combat sports','единоборства','1549719386-74dfcbf7dbed'],
   ['football','Football','футбол','1579952363873-27f3bade9f55']
 ];
-let db, user = null, own = null, sports = [], coaches = [], threads = [], activeThread = null;
+let db, user = null, own = null, profileRecord = null, sports = [], coaches = [], threads = [], activeThread = null;
 let currentPage = 'home', pendingAction = '', authEpoch = 0, catalogueEpoch = 0, threadEpoch = 0;
 let chatRows = [], pendingMessage = null, chatBusy = false, inboxBusy = false, signupEmail = '';
 let pendingChatAttachment = null, pendingChatPreviewURL = '', pendingChatDurationMs = null, pendingMessageFile = null, chatMediaURLs = new Map();
@@ -253,12 +253,12 @@ async function openProfile(id, push = true) {
     catch(e){if(visibleProfile===id && $('profileGallery')) $('profileGallery').textContent=explain(e);}
   }
 }
-function authUI() { $('authOpen').textContent=user?'Кабинет':'Войти'; $('accountOpen').textContent=user?'Мой профиль':'Стать тренером'; $('accountEmail').textContent=user?.email || user?.phone || ''; }
+function authUI() { $('authOpen').textContent=user?'Кабинет':'Войти'; $('accountOpen').textContent=user?'Мой кабинет':'Стать тренером'; $('clientSignupOpen').hidden=Boolean(user); $('accountEmail').textContent=user?.email || user?.phone || ''; }
 function authChanged(event, session) {
   const previous=user,next=session?.user || null, changed=user?.id!==next?.id;
   user=next; authUI();
-  if(changed){authEpoch++;threadEpoch++;catalogueEpoch++;own=null;activeThread=null;threads=[];chatRows=[];pendingMessage=null;visibleProfile='';presence.clear();presenceFetchedAt=0;
-    cancelVoiceRecording();cleanupCallLocal();$('threads').replaceChildren();$('messages').replaceChildren();$('myGallery').replaceChildren();$('profileContent').replaceChildren();$('chatTitle').textContent='Выбери диалог';$('chatPresence').textContent='';$('messageForm').hidden=true;$('messageForm').reset();clearChatAttachment();chatMediaURLs.clear();$('coachForm').reset();delete $('coachForm').dataset.dirty;$('mediaEditor').hidden=true;
+  if(changed){authEpoch++;threadEpoch++;catalogueEpoch++;own=null;profileRecord=null;activeThread=null;threads=[];chatRows=[];pendingMessage=null;visibleProfile='';presence.clear();presenceFetchedAt=0;
+    cancelVoiceRecording();cleanupCallLocal();$('threads').replaceChildren();$('messages').replaceChildren();$('myGallery').replaceChildren();$('profileContent').replaceChildren();$('chatTitle').textContent='Выбери диалог';$('chatPresence').textContent='';$('messageForm').hidden=true;$('messageForm').reset();clearChatAttachment();chatMediaURLs.clear();$('clientForm').reset();$('coachForm').reset();delete $('coachForm').dataset.dirty;$('coachForm').hidden=true;$('clientCoachStart').hidden=false;$('myProfile').hidden=true;$('mediaEditor').hidden=true;
     stopPresenceHeartbeat();if(user)setTimeout(startPresenceHeartbeat,0);
     if(!user){coaches=coaches.filter(publicOnly);if(['account','inbox','profile'].includes(currentPage)) page('home');}
     setTimeout(()=>{loadCatalogue().then(()=>user?loadAccount():null).catch(e=>notice(explain(e)));},0);
@@ -273,20 +273,32 @@ async function afterLogin() {
 function redirectURL() { return location.origin+location.pathname; } // Сохраняет /имя-репозитория/ GitHub Pages.
 async function loadAccount() {
   if(!user) return; const epoch=authEpoch, id=user.id, version=++accountVersion;
-  const record=unwrap(await db.from('fgi_coaches').select('*').eq('id',id).maybeSingle());
-  if(epoch!==authEpoch || version!==accountVersion) return; own=record;
-  const form=$('coachForm');
-  if(form.dataset.dirty || form.dataset.busy) return; // Не затирать уже начатое редактирование поздним ответом.
-  for(const [name,control] of Object.entries(Object.fromEntries([...form.elements].filter(e=>e.name).map(e=>[e.name,e])))) {
-    if(name==='languages' || name==='availability') continue;
-    if(control.type==='checkbox') control.checked=record?.[name] ?? true;
-    else control.value=record?.[name] ?? (name==='name'?user.user_metadata?.full_name || '':name==='format'?'Онлайн':name==='period'?'занятие':'');
+  const [profileResult,coachResult]=await Promise.all([
+    db.from('profiles').select('id,full_name,phone,role,is_active').eq('id',id).maybeSingle(),
+    db.from('fgi_coaches').select('*').eq('id',id).maybeSingle()
+  ]);
+  const profile=unwrap(profileResult),record=unwrap(coachResult);
+  if(epoch!==authEpoch || version!==accountVersion) return;
+  profileRecord=profile;own=record;
+  const clientForm=$('clientForm');
+  if(!clientForm.dataset.busy){
+    clientForm.elements.full_name.value=profile?.full_name || user.user_metadata?.full_name || '';
+    clientForm.elements.phone.value=profile?.phone || user.phone || '';
   }
-  if(record?.sport && ![...$('coachSport').options].some(o=>o.value===record.sport)) $('coachSport').add(new Option(sportName(record.sport),record.sport));
-  if(record) $('coachSport').value=record.sport;
-  form.querySelectorAll('[name=languages]').forEach(i=>i.checked=record?.languages?.includes(i.value) || false);
-  form.querySelectorAll('[name=availability]').forEach(i=>i.checked=record?.availability?.includes(i.value) || false);
-  $('mediaEditor').hidden=!record; $('myProfile').hidden=!record;
+  const form=$('coachForm');
+  if(!form.dataset.dirty && !form.dataset.busy){
+    for(const [name,control] of Object.entries(Object.fromEntries([...form.elements].filter(e=>e.name).map(e=>[e.name,e])))) {
+      if(name==='languages' || name==='availability') continue;
+      if(control.type==='checkbox') control.checked=record?.[name] ?? true;
+      else control.value=record?.[name] ?? (name==='name'?(profile?.full_name || user.user_metadata?.full_name || ''):name==='format'?'Онлайн':name==='period'?'занятие':'');
+    }
+    if(record?.sport && ![...$('coachSport').options].some(o=>o.value===record.sport)) $('coachSport').add(new Option(sportName(record.sport),record.sport));
+    if(record) $('coachSport').value=record.sport;
+    form.querySelectorAll('[name=languages]').forEach(i=>i.checked=record?.languages?.includes(i.value) || false);
+    form.querySelectorAll('[name=availability]').forEach(i=>i.checked=record?.availability?.includes(i.value) || false);
+  }
+  form.hidden=!record;$('clientCoachStart').hidden=Boolean(record);
+  $('mediaEditor').hidden=!record;$('myProfile').hidden=!record;
   if(record) await loadMyGallery();
 }
 const actionTimes=new Map();
@@ -402,6 +414,25 @@ function bindAuth() {
   });
   $('signOut').onclick=()=>run($('signOut'),'coachMessage',async()=>{try{await endCurrentCall(true);}catch{}try{await touchPresence(false);}catch{}unwrap(await db.auth.signOut());authChanged('SIGNED_OUT',null);page('home');});
 }
+function bindClient() {
+  bindForm('clientForm','clientMessage',async(f)=>{
+    if(!requireUser('account'))return;
+    const actor=user.id,epoch=authEpoch;
+    const full_name=String(f.get('full_name')||'').trim();
+    const phone=String(f.get('phone')||'').trim();
+    if(!full_name)throw Error('Введи имя.');
+    const saved=unwrap(await db.from('profiles').update({full_name,phone:phone || null}).eq('id',actor).select('id,full_name,phone,role,is_active').single());
+    if(epoch!==authEpoch || user?.id!==actor)return;
+    profileRecord=saved;message('clientMessage','Данные клиента сохранены.');
+    if(!own && !$('coachForm').dataset.dirty)$('coachForm').elements.name.value=full_name;
+  });
+  $('becomeCoach').onclick=()=>{
+    if(!requireUser('account'))return;
+    const form=$('coachForm');form.hidden=false;$('clientCoachStart').hidden=true;
+    if(!form.elements.name.value)form.elements.name.value=profileRecord?.full_name || user.user_metadata?.full_name || '';
+    form.dataset.dirty='1';form.scrollIntoView({behavior:'smooth',block:'start'});
+  };
+}
 function bindCoach() {
   $('coachForm').addEventListener('input',()=>{$('coachForm').dataset.dirty='1';});
   bindForm('coachForm','coachMessage',async(f)=>{
@@ -421,7 +452,7 @@ function bindCoach() {
     if(epoch!==authEpoch) return;
     accountVersion++;own=saved;delete $('coachForm').dataset.dirty;
     message('coachMessage','Профиль сохранён. Теперь можно загрузить фотографии.');$('mediaEditor').hidden=false;$('myProfile').hidden=false;
-    await loadCatalogue();await loadMyGallery();
+    await loadCatalogue();await loadAccount();
   });
   $('myProfile').onclick=()=>{if(own) openProfile(own.id).catch(e=>notice(explain(e)));};
 }
@@ -903,7 +934,7 @@ async function contact(id) {
   const actor=user.id;
   let thread=unwrap(await db.from('fgi_threads').select('*').eq('coach_id',id).eq('client_id',actor).maybeSingle());
   if(!thread){
-    const result=await db.from('fgi_threads').insert({coach_id:id,client_id:actor,client_name:(String(user.user_metadata?.full_name || '').trim() || 'Клиент').slice(0,100)}).select().single();
+    const result=await db.from('fgi_threads').insert({coach_id:id,client_id:actor,client_name:(String(profileRecord?.full_name || user.user_metadata?.full_name || '').trim() || 'Клиент').slice(0,100)}).select().single();
     if(result.error?.code==='23505')thread=unwrap(await db.from('fgi_threads').select('*').eq('coach_id',id).eq('client_id',actor).single());else thread=unwrap(result);
   }
   if(user?.id!==actor)return;page('inbox');await openThread(thread);
@@ -1053,7 +1084,8 @@ function bindChat() {
 function bindUI() {
   $('menu').onclick=()=>{$('nav').classList.toggle('open');$('menu').setAttribute('aria-expanded',String($('nav').classList.contains('open')));};
   $('authOpen').onclick=()=>{if(user)page('account');else $('authDialog').showModal();};
-  $('accountOpen').onclick=()=>{try{page('account');}catch(e){notice(explain(e));}};
+  $('clientSignupOpen').onclick=()=>{pendingAction='account';page('signup');};
+  $('accountOpen').onclick=()=>{try{if(user)page('account');else{pendingAction='account';page('signup');}}catch(e){notice(explain(e));}};
   document.addEventListener('click',e=>{
     const b=e.target.closest('button');if(!b)return;
     Promise.resolve().then(async()=>{
@@ -1090,7 +1122,7 @@ async function init() {
   const callbackError=callback.get('error_description') || query.get('error_description');
   const requestedPage=location.hash.slice(1); // Считываем до обработки Auth SDK.
   const requestedTrainer=query.get('trainer');
-  bindUI();bindAuth();bindCoach();bindMedia();bindChat();
+  bindUI();bindAuth();bindClient();bindCoach();bindMedia();bindChat();
   notice('Подключаем FitGoIn…');
   try {
     const {createClient}=await import(CONFIG.sdk);
