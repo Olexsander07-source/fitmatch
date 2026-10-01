@@ -309,8 +309,7 @@ function rateGate(key, wait=10000) {
 }
 function assertStrongPassword(value) {
   const password=String(value || '');
-  const strong=password.length>=12 && /\p{Ll}/u.test(password) && /\p{Lu}/u.test(password) && /\p{N}/u.test(password) && /[\p{P}\p{S}]/u.test(password);
-  if(!strong) throw Error('Пароль: минимум 12 символов, строчная и заглавная буква, цифра и специальный знак.');
+  if(password.length<6) throw Error('Пароль: минимум 6 символов.');
   return password;
 }
 function normalizePhone(value) {
