@@ -15,6 +15,7 @@ const migrations = new Map([
   ['20260929111114_harden_call_stale_recovery.sql', 'fa31d04e2f2ee21c909da11cfcc35589'],
   ['20260929111231_index_call_foreign_keys.sql', 'e965606b67ec9e37992cdd01fd4ae857'],
   ['20260930210545_add_coach_match_availability.sql', '53c6d78aca7aa1a3ed5894c43ed0a643'],
+  ['20261002055725_grant_coach_availability_save.sql', 'cecde5c9ca8ecdfd1f3880da963f8274'],
 ]);
 for (const file of files) await access(new URL(`../${file}`, import.meta.url));
 for (const file of migrations.keys()) await access(new URL(`../supabase/migrations/${file}`, import.meta.url));
