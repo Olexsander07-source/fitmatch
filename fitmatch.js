@@ -34,7 +34,7 @@ let accountTab = 'profile';
 const backgroundMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let backgroundPaused = backgroundMotion.matches, backgroundRotation = null;
 let pendingChatAttachment = null, pendingChatPreviewURL = '', pendingChatDurationMs = null, pendingMessageFile = null, chatMediaURLs = new Map();
-let voiceRecorder = null, voiceStream = null, voiceChunks = [], voiceStartedAt = 0, voiceTick = 0, voiceCancelled = false, voiceContext = null;
+let voiceSession = null;
 let currentCall = null, incomingCall = null, callPeer = null, callLocalStream = null, callSignalLastId = 0, callPollBusy = false, callMuted = false, callCameraOff = false, callFacingMode = 'user', callClock = 0, callRemoteIce = [], lastIncomingCallPoll = 0, lastCallHeartbeat = 0;
 const CALL_ICE_SERVERS=[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302']}];
 let presence = new Map(), presenceFetchedAt = 0, presenceTimer = 0;
@@ -452,7 +452,7 @@ function authChanged(event, session) {
   const previous=user,next=session?.user || null, changed=user?.id!==next?.id;
   user=next;if(changed)own=null;
   if(changed){authEpoch++;threadEpoch++;catalogueEpoch++;own=null;profileRecord=null;activeThread=null;threads=[];chatRows=[];pendingMessage=null;visibleProfile='';presence.clear();presenceFetchedAt=0;
-    cancelVoiceRecording();cleanupCallLocal();$('threads').replaceChildren();$('messages').replaceChildren();$('myGallery').replaceChildren();$('profileContent').replaceChildren();$('chatTitle').textContent='Выбери диалог';$('chatPresence').textContent='';$('messageForm').hidden=true;$('messageForm').reset();clearChatAttachment();chatMediaURLs.clear();$('clientForm').reset();delete $('clientForm').dataset.dirty;$('coachForm').reset();delete $('coachForm').dataset.dirty;accountTab='profile';$('coachForm').hidden=true;$('clientCoachStart').hidden=false;$('mediaEditor').hidden=true;
+    cancelVoiceRecording();cleanupCallLocal();$('threads').replaceChildren();$('messages').replaceChildren();$('myGallery').replaceChildren();$('profileContent').replaceChildren();$('chatTitle').textContent='Выбери диалог';$('chatPresence').textContent='';$('messageForm').hidden=true;$('messageForm').reset();clearChatAttachment();clearChatMediaURLs();$('clientForm').reset();delete $('clientForm').dataset.dirty;$('coachForm').reset();delete $('coachForm').dataset.dirty;accountTab='profile';$('coachForm').hidden=true;$('clientCoachStart').hidden=false;$('mediaEditor').hidden=true;
     stopPresenceHeartbeat();if(user)setTimeout(startPresenceHeartbeat,0);
     if(!user){coaches=coaches.filter(publicOnly);if(['account','inbox','profile'].includes(currentPage)) page('home');}
     setTimeout(()=>{loadCatalogue().then(()=>user?loadAccount():null).catch(e=>notice(explain(e)));},0);
@@ -807,53 +807,153 @@ function setVoiceUI(recording) {
   $('voiceStart').hidden=recording;$('voiceStop').hidden=!recording;$('voiceCancel').hidden=!recording;
   if(!recording)$('voiceTimer').textContent='0:00';
 }
-function stopVoiceTracks() {
-  voiceStream?.getTracks().forEach(track=>track.stop());voiceStream=null;
-  if(voiceTick){clearInterval(voiceTick);voiceTick=0;}
+function stopVoiceTracks(session) {
+  session.stream?.getTracks().forEach(track=>track.stop());session.stream=null;
+  if(session.tick){clearInterval(session.tick);session.tick=0;}
 }
 function supportedVoiceMime() {
   if(typeof MediaRecorder==='undefined')return '';
-  for(const type of ['audio/webm;codecs=opus','audio/mp4','audio/webm','audio/ogg;codecs=opus'])if(MediaRecorder.isTypeSupported?.(type))return type;
+  for(const type of ['audio/mp4;codecs=mp4a.40.2','audio/mp4','audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus'])if(MediaRecorder.isTypeSupported?.(type))return type;
   return '';
 }
-function cancelVoiceRecording() {
-  voiceCancelled=true;
-  if(voiceRecorder && voiceRecorder.state!=='inactive'){voiceRecorder.stop();return;}
-  stopVoiceTracks();voiceRecorder=null;voiceChunks=[];voiceContext=null;setVoiceUI(false);
+async function fixVoiceWebMDuration(blob,durationMs) {
+  if(!String(blob.type).startsWith('audio/webm') || !Number.isFinite(durationMs) || durationMs<=0 || blob.size>15*1024*1024)return blob;
+  // MediaRecorder may omit WebM Duration. Only edit Info; encoded audio stays untouched.
+  // https://www.matroska.org/technical/elements.html (Duration, TimestampScale)
+  const bytes=new Uint8Array(await blob.arrayBuffer()),view=new DataView(bytes.buffer);
+  function element(offset,limit=bytes.length) {
+    let idLength=1,sizeLength=1;
+    while(idLength<=4 && !(bytes[offset] & (0x80>>(idLength-1))))idLength++;
+    if(idLength>4 || offset+idLength>=limit)return null;
+    const sizeOffset=offset+idLength;
+    while(sizeLength<=8 && !(bytes[sizeOffset] & (0x80>>(sizeLength-1))))sizeLength++;
+    if(sizeLength>8 || sizeOffset+sizeLength>limit)return null;
+    let id=0,size=BigInt(bytes[sizeOffset] & ((0x80>>(sizeLength-1))-1));
+    for(let i=0;i<idLength;i++)id=id*256+bytes[offset+i];
+    for(let i=1;i<sizeLength;i++)size=size*256n+BigInt(bytes[sizeOffset+i]);
+    const unknown=size===(1n<<BigInt(7*sizeLength))-1n,data=sizeOffset+sizeLength;
+    if(!unknown && size>BigInt(limit-data))return null;
+    return {id,offset,sizeOffset,sizeLength,data,end:unknown?limit:data+Number(size),unknown};
+  }
+  function sizeBytes(size,width) {
+    let value=BigInt(size);
+    while(width<=8 && value>=(1n<<BigInt(7*width))-1n)width++;
+    if(width>8)return null;
+    const result=new Uint8Array(width);
+    for(let i=width-1;i>=0;i--){result[i]=Number(value & 255n);value>>=8n;}
+    result[0]|=0x80>>(width-1);return result;
+  }
+  const header=element(0);
+  if(header?.id!==0x1a45dfa3 || header.unknown)return blob;
+  const segment=element(header.end);
+  if(segment?.id!==0x18538067)return blob;
+  let info=null,indexed=false;
+  for(let p=segment.data;p<segment.end;){
+    const entry=element(p,segment.end);if(!entry)return blob;
+    if(entry.id===0xbf)return blob;
+    if(entry.id===0x1549a966)info=entry;
+    if(entry.id===0x114d9b74 || entry.id===0x1c53bb6b)indexed=true;
+    if(entry.unknown)break;p=entry.end;
+  }
+  if(!info || info.unknown)return blob;
+  let scale=1000000,duration=null;
+  for(let p=info.data;p<info.end;){
+    const entry=element(p,info.end);if(!entry || entry.unknown || entry.id===0xbf)return blob;
+    if(entry.id===0x2ad7b1){scale=0;for(let i=entry.data;i<entry.end;i++)scale=scale*256+bytes[i];}
+    if(entry.id===0x4489)duration=entry;
+    p=entry.end;
+  }
+  if(!Number.isSafeInteger(scale) || scale<=0)return blob;
+  const ticks=durationMs*1000000/scale;
+  if(duration){
+    const length=duration.end-duration.data;if(length!==4 && length!==8)return blob;
+    const current=length===4?view.getFloat32(duration.data):view.getFloat64(duration.data);
+    if(Number.isFinite(current) && current>0)return blob;
+    if(length===4)view.setFloat32(duration.data,ticks);else view.setFloat64(duration.data,ticks);
+    return new Blob([bytes],{type:blob.type});
+  }
+  // Adding bytes would invalidate seek/cue offsets in indexed files. Those are left intact.
+  if(indexed)return blob;
+  const extra=new Uint8Array(11);extra.set([0x44,0x89,0x88]);new DataView(extra.buffer).setFloat64(3,ticks);
+  const infoSize=sizeBytes(info.end-info.data+extra.length,info.sizeLength);
+  if(!infoSize)return blob;
+  const delta=extra.length+infoSize.length-info.sizeLength;
+  if(!segment.unknown){
+    const segmentSize=sizeBytes(segment.end-segment.data+delta,segment.sizeLength);
+    if(!segmentSize || segmentSize.length!==segment.sizeLength)return blob;
+    bytes.set(segmentSize,segment.sizeOffset);
+  }
+  return new Blob([bytes.subarray(0,info.sizeOffset),infoSize,bytes.subarray(info.data,info.end),extra,bytes.subarray(info.end)],{type:blob.type});
 }
-function stopVoiceRecording() {
-  if(voiceRecorder && voiceRecorder.state!=='inactive')voiceRecorder.stop();
+function voiceContextIsCurrent(session) {
+  return voiceSession===session && !session.cancelled && user?.id===session.actor && activeThread?.id===session.threadId && threadEpoch===session.epoch && authEpoch===session.authEpoch;
+}
+function finishVoiceSession(session,result) {
+  stopVoiceTracks(session);session.resolve(result);
+  if(voiceSession===session){voiceSession=null;setVoiceUI(false);}
+}
+function cancelVoiceRecording() {
+  const session=voiceSession;if(!session)return;
+  session.cancelled=true;
+  if(session.recorder?.state!=='inactive')try{session.recorder?.stop();}catch{}
+  finishVoiceSession(session,{cancelled:true});
+}
+async function stopVoiceRecording() {
+  const session=voiceSession;if(!session)return;
+  if(!session.recorder)throw Error('Дождись начала записи.');
+  if(session.recorder.state!=='inactive'){
+    session.stoppedAt=performance.now();session.recorder.stop();message('chatMessage','Готовим голосовое…');
+  }
+  const result=await session.ready;
+  if(result.error)throw result.error;
+  return result;
 }
 async function startVoiceRecording() {
   if(!user || !activeThread)throw Error('Сначала выбери диалог.');
   if(!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder==='undefined')throw Error('Запись голосовых не поддерживается этим браузером.');
-  cancelVoiceRecording();clearChatAttachment();pendingMessage=null;pendingMessageFile=null;
-  const actor=user.id,threadId=activeThread.id;
-  const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
-  if(user?.id!==actor || activeThread?.id!==threadId){stream.getTracks().forEach(t=>t.stop());throw Error('Диалог изменился. Начни запись ещё раз.');}
-  const mimeType=supportedVoiceMime(),options=mimeType?{mimeType}:undefined;
-  const recorder=new MediaRecorder(stream,options);
-  voiceRecorder=recorder;voiceStream=stream;voiceChunks=[];voiceCancelled=false;voiceStartedAt=Date.now();voiceContext={actor,threadId};
-  recorder.ondataavailable=e=>{if(e.data?.size)voiceChunks.push(e.data);};
-  recorder.onerror=()=>{message('chatMessage','Ошибка записи голоса. Попробуй ещё раз.',true);cancelVoiceRecording();};
-  recorder.onstop=()=>{
-    const cancelled=voiceCancelled,ctx=voiceContext,chunks=voiceChunks.slice(),duration=Math.min(300000,Math.max(1,Date.now()-voiceStartedAt));
-    const type=String(recorder.mimeType || chunks[0]?.type || 'audio/webm').split(';')[0];
-    stopVoiceTracks();voiceRecorder=null;voiceChunks=[];voiceContext=null;setVoiceUI(false);
-    if(cancelled || !ctx || user?.id!==ctx.actor || activeThread?.id!==ctx.threadId)return;
-    try{
-      if(!CHAT_AUDIO_TYPES.has(type))throw Error('Формат записи не поддерживается. Попробуй другой браузер.');
-      const blob=new Blob(chunks,{type});if(!blob.size)throw Error('Запись получилась пустой. Попробуй ещё раз.');
-      if(blob.size>15*1024*1024)throw Error('Голосовое сообщение слишком большое.');
-      const file=new File([blob],`voice-${Date.now()}.${chatFileExtension(type)}`,{type});
-      showChatAttachment(file,duration);message('chatMessage','Голосовое готово. Нажми «Отправить».');
-    }catch(e){message('chatMessage',explain(e),true);}
-  };
-  recorder.start(1000);setVoiceUI(true);message('chatMessage','Идёт запись…');
-  voiceTick=setInterval(()=>{
-    const elapsed=Date.now()-voiceStartedAt;$('voiceTimer').textContent=formatVoiceTime(elapsed);
-    if(elapsed>=300000)stopVoiceRecording();
-  },250);
+  if(voiceSession)return;
+  clearChatAttachment();pendingMessage=null;pendingMessageFile=null;
+  const session={actor:user.id,threadId:activeThread.id,epoch:threadEpoch,authEpoch,chunks:[],cancelled:false};
+  session.ready=new Promise(resolve=>session.resolve=resolve);voiceSession=session;
+  setVoiceUI(true);message('chatMessage','Подключаем микрофон…');
+  try{
+    session.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+    if(!voiceContextIsCurrent(session)){finishVoiceSession(session,{cancelled:true});return;}
+    const mimeType=supportedVoiceMime(),options=mimeType?{mimeType}:undefined,stream=session.stream;
+    const recorder=new MediaRecorder(stream,options);session.recorder=recorder;
+    recorder.ondataavailable=e=>{if(e.data?.size && !session.cancelled)session.chunks.push(e.data);};
+    recorder.onerror=()=>{
+      const error=Error('Ошибка записи голоса. Попробуй ещё раз.');
+      if(voiceContextIsCurrent(session))message('chatMessage',explain(error),true);
+      session.cancelled=true;finishVoiceSession(session,{error});
+    };
+    recorder.onstop=async()=>{
+      const duration=Math.min(300000,Math.max(1,(session.stoppedAt??performance.now())-session.startedAt));
+      stopVoiceTracks(session);
+      if(!voiceContextIsCurrent(session)){finishVoiceSession(session,{cancelled:true});return;}
+      try{
+        const type=String(session.chunks[0]?.type || recorder.mimeType || '').split(';')[0].trim().toLowerCase();
+        if(!CHAT_AUDIO_TYPES.has(type))throw Error('Формат записи не поддерживается. Попробуй другой браузер.');
+        let blob=new Blob(session.chunks,{type});if(!blob.size)throw Error('Запись получилась пустой. Попробуй ещё раз.');
+        if(blob.size>15*1024*1024)throw Error('Голосовое сообщение слишком большое.');
+        blob=await fixVoiceWebMDuration(blob,duration);
+        if(!voiceContextIsCurrent(session)){finishVoiceSession(session,{cancelled:true});return;}
+        const file=new File([blob],`voice-${Date.now()}.${chatFileExtension(type)}`,{type});
+        showChatAttachment(file,duration);message('chatMessage',$('messageForm').dataset.busy?'Отправляем голосовое…':'Голосовое готово. Нажми «Отправить».');
+        finishVoiceSession(session,{file});
+      }catch(error){
+        if(voiceContextIsCurrent(session))message('chatMessage',explain(error),true);
+        finishVoiceSession(session,{error});
+      }
+    };
+    session.startedAt=performance.now();recorder.start();message('chatMessage','Идёт запись… Нажми «Отправить», когда закончишь.');
+    session.tick=setInterval(()=>{
+      const elapsed=performance.now()-session.startedAt;$('voiceTimer').textContent=formatVoiceTime(elapsed);
+      if(elapsed>=300000)stopVoiceRecording().catch(e=>message('chatMessage',explain(e),true));
+    },250);
+  }catch(error){
+    const current=voiceContextIsCurrent(session);finishVoiceSession(session,{error});if(current)throw error;
+  }
 }
 async function prepareChatAttachment(file,durationMs=null) {
   const mime=chatAttachmentMime(file);
@@ -908,23 +1008,60 @@ async function removeChatAttachment(path) {
   if(!path)return;
   unwrap(await db.storage.from(CONFIG.chatBucket).remove([path]));
 }
+function clearChatMediaURLs() {
+  for(const cached of chatMediaURLs.values())if(cached.blobURL)URL.revokeObjectURL(cached.blobURL);
+  chatMediaURLs.clear();
+}
 async function ensureChatMediaURLs(rows) {
-  const now=Date.now();
+  const now=Date.now(),epoch=threadEpoch,sessionEpoch=authEpoch;let changed=false;
   await Promise.all(rows.filter(m=>m.media_path).map(async m=>{
     const cached=chatMediaURLs.get(m.media_path);
     if(cached && cached.expires>now+60000)return;
     const data=unwrap(await db.storage.from(CONFIG.chatBucket).createSignedUrl(m.media_path,3600));
-    chatMediaURLs.set(m.media_path,{url:data.signedUrl,expires:now+3500000});
+    if(epoch!==threadEpoch || sessionEpoch!==authEpoch)return;
+    chatMediaURLs.set(m.media_path,{...cached,url:data.signedUrl,expires:now+3500000});changed=true;
   }));
+  return changed;
 }
 function chatMediaHTML(m) {
   if(!m.media_path)return '';
-  const url=chatMediaURLs.get(m.media_path)?.url || '';
+  const cached=chatMediaURLs.get(m.media_path),url=(m.kind==='audio' && cached?.blobURL) || cached?.url || '';
   if(!url)return '<span class="chat-media-loading">Вложение загружается…</span>';
   if(m.kind==='image')return `<a class="chat-media-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer"><img class="chat-message-image" src="${esc(url)}" alt="Фото в сообщении" loading="lazy"></a>`;
   if(m.kind==='video')return `<video class="chat-message-video" src="${esc(url)}" controls preload="metadata"></video>`;
-  if(m.kind==='audio')return `<audio class="chat-message-audio" src="${esc(url)}" controls preload="metadata"></audio>`;
+  if(m.kind==='audio')return `<audio class="chat-message-audio" src="${esc(url)}" controls preload="metadata"></audio><span class="chat-media-loading" data-audio-status>🎙️ Голосовое${m.duration_ms>0?` · ${formatVoiceTime(Math.max(1000,m.duration_ms))}`:''}</span>`;
   return '';
+}
+function syncChatAudioSource(audio,m) {
+  const cached=chatMediaURLs.get(m.media_path),url=cached?.blobURL || cached?.url;
+  if(!url || !audio.paused || audio.getAttribute('src')===url)return;
+  const position=audio.currentTime;
+  if(position>0)audio.addEventListener('loadedmetadata',()=>{if(Number.isFinite(audio.duration))audio.currentTime=Math.min(position,audio.duration);},{once:true});
+  audio.src=url;audio.load();
+}
+function bindChatAudio(audio,m) {
+  if(audio.dataset.bound)return;audio.dataset.bound='1';
+  const epoch=threadEpoch,sessionEpoch=authEpoch,status=audio.parentElement.querySelector('[data-audio-status]');
+  const label=`🎙️ Голосовое${m.duration_ms>0?` · ${formatVoiceTime(Math.max(1000,m.duration_ms))}`:''}`;
+  let attempted=false;
+  async function repairWebM() {
+    if(attempted || m.media_mime!=='audio/webm' || !(m.duration_ms>0) || m.media_size>15*1024*1024)return;
+    attempted=true;
+    const cached=chatMediaURLs.get(m.media_path);if(!cached || cached.blobURL)return;
+    try{
+      const response=await timedFetch(cached.url);
+      if(!response.ok)throw Error('Не удалось загрузить голосовое.');
+      const original=new Blob([await response.blob()],{type:'audio/webm'}),blob=await fixVoiceWebMDuration(original,m.duration_ms);
+      if(epoch!==threadEpoch || sessionEpoch!==authEpoch || !audio.isConnected || chatMediaURLs.get(m.media_path)!==cached)return;
+      if(blob===original)return;
+      cached.blobURL=URL.createObjectURL(blob);syncChatAudioSource(audio,m);
+    }catch{if(epoch===threadEpoch && sessionEpoch===authEpoch && audio.isConnected)status.textContent='Не удалось загрузить голосовое. Обнови диалог и попробуй ещё раз.';}
+  }
+  audio.addEventListener('loadedmetadata',()=>{if(!Number.isFinite(audio.duration) || audio.duration<=0)repairWebM();});
+  audio.addEventListener('canplay',()=>status.textContent=label);
+  audio.addEventListener('error',()=>{status.textContent='Не удалось воспроизвести голосовое. Обнови диалог и попробуй ещё раз.';repairWebM();});
+  audio.addEventListener('pause',()=>syncChatAudioSource(audio,m));
+  audio.addEventListener('ended',()=>syncChatAudioSource(audio,m));
 }
 function callThread(call){return threads.find(t=>t.id===call?.thread_id) || null;}
 function callPartnerName(call){const t=callThread(call);return t?threadTitle(t):'Пользователь FitGoIn';}
@@ -1203,17 +1340,25 @@ async function loadThreads() {
   } finally {inboxBusy=false;}
 }
 async function openThread(t) {
-  cancelVoiceRecording();activeThread=t;chatRows=[];pendingMessage=null;threadEpoch++;clearChatAttachment();
+  cancelVoiceRecording();activeThread=t;chatRows=[];pendingMessage=null;threadEpoch++;clearChatAttachment();clearChatMediaURLs();
   $('messages').replaceChildren();$('messageForm').hidden=false;$('messageForm').reset();$('audioCall').hidden=false;$('videoCall').hidden=false;$('chatTitle').textContent=threadTitle(t);message('chatMessage','');
   try{await loadPresence(true);}catch{} updateActivePresence();
   $('olderMessages').hidden=true;await pollMessages(true);await loadThreads();
 }
 function drawMessages(stick = false) {
   const box=$('messages'),atBottom=box.scrollHeight-box.scrollTop-box.clientHeight<70;
-  box.innerHTML=chatRows.map(m=>{
+  const existing=new Map([...box.children].map(node=>[node.dataset.messageId,node]));let cursor=box.firstElementChild;
+  for(const m of chatRows){
     const body=m.body?`<div class="message-body">${esc(m.body)}</div>`:'';
-    return `<div class="bubble ${m.sender_id===user?.id?'mine':''}">${chatMediaHTML(m)}${body}<time datetime="${esc(m.created_at)}">${esc(new Date(m.created_at).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}))}</time></div>`;
-  }).join('');
+    let node=existing.get(String(m.id));
+    if(!node){node=document.createElement('div');node.className=`bubble ${m.sender_id===user?.id?'mine':''}`;node.dataset.messageId=String(m.id);}
+    if(!node.childElementCount || node.querySelector('.chat-media-loading') && !node.querySelector('[data-audio-status]')){
+      node.innerHTML=`${chatMediaHTML(m)}${body}<time datetime="${esc(m.created_at)}">${esc(new Date(m.created_at).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}))}</time>`;
+    }
+    if(node!==cursor)box.insertBefore(node,cursor);cursor=node.nextElementSibling;
+    const audio=node.querySelector('audio');if(audio){bindChatAudio(audio,m);syncChatAudioSource(audio,m);}
+  }
+  while(cursor){const next=cursor.nextElementSibling;cursor.remove();cursor=next;}
   if(stick || atBottom)box.scrollTop=box.scrollHeight;
 }
 async function pollMessages(initial = false, older = false) {
@@ -1228,8 +1373,10 @@ async function pollMessages(initial = false, older = false) {
     if(epoch!==threadEpoch || actor!==user?.id)return;
     const box=$('messages'),height=box.scrollHeight,top=box.scrollTop;
     chatRows=[...new Map([...chatRows,...rows].map(m=>[m.id,m])).values()].sort((a,b)=>a.id-b.id);
-    try{await ensureChatMediaURLs(chatRows);}catch(e){message('chatMessage','Не удалось загрузить одно из вложений. '+explain(e),true);}
-    if(rows.length || initial)drawMessages(initial);
+    let mediaChanged=false;
+    try{mediaChanged=await ensureChatMediaURLs(chatRows);}catch(e){message('chatMessage','Не удалось загрузить одно из вложений. '+explain(e),true);}
+    if(epoch!==threadEpoch || actor!==user?.id)return;
+    if(rows.length || initial || mediaChanged)drawMessages(initial);
     if(older)box.scrollTop=top+(box.scrollHeight-height);
     if(initial || older)$('olderMessages').hidden=rows.length<50;
     if($('chatMessage').dataset.pollError){message('chatMessage','');delete $('chatMessage').dataset.pollError;}
@@ -1249,17 +1396,20 @@ function bindChat() {
   $('olderMessages').onclick=()=>pollMessages(false,true);
   $('chatFile').addEventListener('change',e=>{try{showChatAttachment(e.target.files?.[0]);message('chatMessage','');}catch(err){clearChatAttachment();message('chatMessage',explain(err),true);}});
   $('clearChatFile').onclick=()=>clearChatAttachment();
-  $('voiceStart').onclick=()=>startVoiceRecording().catch(e=>{cancelVoiceRecording();message('chatMessage',explain(e),true);});
-  $('voiceStop').onclick=()=>stopVoiceRecording();
+  $('voiceStart').onclick=()=>startVoiceRecording().catch(e=>message('chatMessage',explain(e),true));
+  $('voiceStop').onclick=()=>stopVoiceRecording().catch(e=>message('chatMessage',explain(e),true));
   $('voiceCancel').onclick=()=>{cancelVoiceRecording();message('chatMessage','Запись отменена.');};
   bindForm('messageForm','chatMessage',async(f,form)=>{
     if(!user || !activeThread)throw Error('Выбери диалог.');
+    const actor=user.id,thread=activeThread.id,epoch=threadEpoch,sessionEpoch=authEpoch;
+    const recording=await stopVoiceRecording();
+    if(recording?.cancelled || epoch!==threadEpoch || sessionEpoch!==authEpoch || actor!==user?.id || thread!==activeThread?.id)return;
     const body=String(f.get('body')).trim(),file=pendingChatAttachment;
     if(!body && !file)throw Error('Напиши сообщение, добавь файл или запиши голосовое.');
-    const actor=user.id,thread=activeThread.id,epoch=threadEpoch;
     if(!pendingMessage || pendingMessage.body!==body || pendingMessage.thread_id!==thread || pendingMessageFile!==file){
       let media=null;
       if(file)media=await uploadChatAttachment(file,actor,thread,pendingChatDurationMs);
+      if(epoch!==threadEpoch || sessionEpoch!==authEpoch || actor!==user?.id || thread!==activeThread?.id){if(media?.path)try{await removeChatAttachment(media.path);}catch{}return;}
       pendingMessageFile=file || null;
       pendingMessage={
         client_nonce:crypto.randomUUID(),thread_id:thread,sender_id:actor,body,
