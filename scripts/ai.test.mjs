@@ -1,0 +1,124 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {CONSENT_VERSION,normalizeProfile,missingProfile,limitedProfile,adaptWorkout,validatePlan,nutritionEstimate,cleanCitations,progressSeries,achievements} from '../fitgoin-ai-core.mjs';
+import {createAIHandler} from '../supabase/functions/fitgoin-ai/index.mjs';
+
+const USER='10000000-0000-4000-8000-000000000001',OTHER='10000000-0000-4000-8000-000000000002',CONV='20000000-0000-4000-8000-000000000001',REQUEST='30000000-0000-4000-8000-000000000001';
+const PROFILE=normalizeProfile({goal:'Похудение',sport:'fitness',age:28,height_cm:180,weight_kg:80,days_per_week:3,minutes:30,weekdays:[1,3,5],equipment:'Коврик',language:'ru'});
+const training=()=>({title:'Первые недели',summary:'Спокойная программа',progression:'При стабильной технике и восстановлении обсуди небольшое увеличение нагрузки.',workouts:[1,3,5].map(day=>({day,title:'Всё тело',minutes:30,warmup:'5 минут лёгкой разминки',cooldown:'3 минуты спокойного завершения',exercises:[{name:'Присед к стулу',sets:3,reps:'8–12',rest_seconds:60,minutes:5,technique:'Сохраняй устойчивое положение.',alternative:'Вставание со стула'},{name:'Отжимание от стены',sets:3,reps:'8–12',rest_seconds:60,minutes:5,technique:'Держи корпус ровно.',alternative:'Отжимание от высокой опоры'}]}))});
+const nutrition=()=>({title:'Примерный день',summary:'Количество продуктов приблизительное.',calories_low:1950,calories_high:2200,protein_g:120,fat_g:60,carbs_g:233,meals:[1,2,3].map(n=>({name:'Блюдо '+n,ingredients:['Курица 150 г','Рис 150 г','Овощи'],allergens:[],calories:650,protein_g:40,fat_g:20,carbs_g:77.5,recipe:'Приготовь продукты.',substitutions:['Индейка вместо курицы']})),shopping_list:['Курица','Рис','Овощи']});
+const providerResponse=(document={answer:'Начни с профиля.'},extras={})=>({status:'completed',output:[{type:'message',role:'assistant',content:[{type:'output_text',text:JSON.stringify(document),annotations:extras.citations||[]}]},...(extras.output||[])]});
+function setup(change={}) {
+  const calls=[];
+  let listing=0,providerCall=0;
+  const env={SUPABASE_URL:'https://test.supabase.co',SUPABASE_ANON_KEY:'public-test',SUPABASE_SERVICE_ROLE_KEY:'private-test',OPENAI_API_KEY:'provider-test',...change.env};
+  const fetcher=async(url,options={})=>{
+    const body=options.body instanceof FormData?options.body:options.body?JSON.parse(options.body):null;
+    calls.push({url,headers:options.headers,body,method:options.method});
+    const json=(data,status=200)=>new Response(JSON.stringify(data),{status});
+    if(url.endsWith('/auth/v1/user'))return json({id:USER},change.invalidAuth?401:200);
+    if(url.includes('/fgi_ai_profiles?'))return json(change.noConsent?[]:[{data:change.profile||PROFILE,consent_version:CONSENT_VERSION,updated_at:'2026-10-03T09:00:00Z'}]);
+    if(url.includes('/fgi_ai_conversations?'))return json(change.foreignConversation?[]:[{id:CONV}]);
+    if(url.endsWith('/rpc/fgi_ai_claim'))return json(change.claim||{remaining:29,search_remaining:3});
+    if(url.endsWith('/rpc/fgi_ai_claim_search'))return json(change.searchClaim||{search_remaining:2});
+    if(url.endsWith('/rpc/fgi_ai_complete'))return json(change.completeFails?{error:'consent_changed'}:null,change.completeFails?400:200);
+    if(url.includes('/rpc/'))return json(null);
+    if(url.includes('/storage/v1/object/list/'))return json(listing++===0?(change.photos||[]):[]);
+    if(url.includes('/storage/v1/object/'))return json([]);
+    if(url.endsWith('/audio/transcriptions'))return json({text:'Следующее упражнение'});
+    if(url.includes('api.openai.com'))return json(change.responses?.[providerCall++]||change.response||providerResponse());
+    if(url.includes('/rest/v1/'))return json([]);
+    throw Error('Unexpected endpoint');
+  };
+  const handle=createAIHandler({env,fetcher});
+  const request=(body={},headers={})=>handle(new Request('https://test.supabase.co/functions/v1/fitgoin-ai',{method:'POST',headers:{Authorization:'Bearer signed-user-token','Content-Type':'application/json',Origin:'https://fitgoin.com',...headers},body:JSON.stringify({action:'chat',request_id:REQUEST,conversation_id:CONV,message:'С чего начать?',...body})}));
+  return {handle,request,calls};
+}
+test('profile bounds, missing intake and medically restricted personalization',()=>{
+  const p=normalizeProfile({age:-5,height_cm:999,weight_kg:'NaN',days_per_week:100,language:'unknown',weekdays:[1,1,8],allergies:['milk','made-up']});
+  assert.equal(p.age,null);assert.equal(p.days_per_week,3);assert.deepEqual(p.weekdays,[1]);assert.deepEqual(p.allergies,['milk']);assert(missingProfile(p,true).includes('weight_kg'));
+  assert(limitedProfile({...PROFILE,age:17}));assert(limitedProfile({...PROFILE,needs_professional:true}));assert.equal(limitedProfile(PROFILE),false);
+});
+test('time adaptation preserves rests and keeps recorded plan immutable',()=>{
+  const w=training().workouts[0],copy=structuredClone(w),adapted=adaptWorkout(w,12,{sleep:5,energy:2});
+  assert.deepEqual(w,copy);assert(adapted.exercises.length>0);assert(adapted.exercises.reduce((s,e)=>s+e.minutes,8)<=12);assert(adapted.exercises.every(e=>e.rest_seconds===60&&e.sets<3));
+});
+test('training validation rejects impossible durations, extra data and duplicate days',()=>{
+  assert.equal(validatePlan('training',training(),PROFILE).title,'Первые недели');
+  const impossible=training();impossible.workouts[0].exercises[0].minutes=.5;assert.throws(()=>validatePlan('training',impossible,PROFILE),/invalid_plan/);
+  const duplicate=training();duplicate.workouts[1].day=1;assert.throws(()=>validatePlan('training',duplicate,PROFILE));
+  assert.throws(()=>validatePlan('training',{...training(),user_id:OTHER},PROFILE));
+  assert.throws(()=>validatePlan('training',training(),{...PROFILE,needs_professional:true}));
+});
+test('nutrition estimate and meal totals cannot silently become extreme or allergenic',()=>{
+  assert.deepEqual([nutritionEstimate(PROFILE).calories_low,nutritionEstimate(PROFILE).calories_high],[1950,2200]);
+  validatePlan('nutrition',nutrition(),PROFILE);
+  const n=nutrition();n.calories_low=900;assert.throws(()=>validatePlan('nutrition',n,PROFILE));
+  const mismatched=nutrition();mismatched.meals[0].calories=1500;assert.throws(()=>validatePlan('nutrition',mismatched,PROFILE));
+  const allergic=nutrition();allergic.meals[0].allergens=['milk'];assert.throws(()=>validatePlan('nutrition',allergic,{...PROFILE,allergies:['milk']}));
+});
+test('citations require HTTPS; progress uses actual data rather than sample points',()=>{
+  assert.deepEqual(cleanCitations([{url:'javascript:alert(1)',title:'evil'},{url:'https://who.int/a',title:'WHO'},{url:'https://who.int/a',title:'WHO'}]),[{url:'https://who.int/a',title:'WHO'}]);
+  assert.deepEqual(progressSeries([{recorded_on:'2026-10-02',weight_kg:null},{recorded_on:'2026-10-01',weight_kg:80},{recorded_on:'2026-10-03',weight_kg:79}]),[{date:'2026-10-01',value:80},{date:'2026-10-03',value:79}]);
+  assert.deepEqual(achievements([{completed_at:'now',data:{sets:[]}}]),[]);
+});
+test('public readiness has no credentials and performs no provider or database call',async()=>{
+  const s=setup({env:{OPENAI_API_KEY:''}}),response=await s.handle(new Request('https://test.supabase.co/functions/v1/fitgoin-ai'));
+  const body=await response.json();assert.equal(body.configured,false);assert(!JSON.stringify(body).includes('private-test'));assert.equal(s.calls.length,0);
+});
+test('invalid sessions, foreign conversations and missing consent cannot spend tokens',async()=>{
+  for(const options of [{invalidAuth:true},{foreignConversation:true},{noConsent:true},{env:{OPENAI_API_KEY:''}}]){
+    const s=setup(options),r=await s.request();assert(r.status>=400);assert(!s.calls.some(x=>x.url.includes('api.openai.com')||x.url.includes('fgi_ai_claim')));
+  }
+});
+test('server identity is verified and ignores body user_id, quota and model overrides',async()=>{
+  const s=setup(),r=await s.request({user_id:OTHER,model:'expensive',limit:100000});assert.equal(r.status,200);
+  assert.equal(s.calls.find(x=>x.url.includes('fgi_ai_claim')).body.p_user,USER);
+  assert.equal(s.calls.find(x=>x.url.includes('fgi_ai_complete')).body.p_user,USER);
+  const payload=s.calls.find(x=>x.url.includes('api.openai.com')).body;assert.equal(payload.model,'gpt-4.1');assert.equal(payload.store,false);assert.equal(payload.text.format.strict,true);assert(!payload.instructions.includes('private-test'));
+});
+test('idempotent result and quota exhaustion do not repeat an external API call',async()=>{
+  const cached=setup({claim:{cached:{answer:'Saved',remaining:20}}});assert.equal((await (await cached.request()).json()).answer,'Saved');assert(!cached.calls.some(x=>x.url.includes('api.openai.com')));
+  const quota=setup({claim:{error:'daily_limit'}});assert.equal((await quota.request()).status,429);assert(!quota.calls.some(x=>x.url.includes('api.openai.com')));
+});
+test('web search omits profile/history and requires actual retrieved evidence',async()=>{
+  const options={response:providerResponse({answer:'Исследования с ограничениями.'},{output:[{type:'web_search_call',status:'completed'}],citations:[{type:'url_citation',url:'https://pubmed.ncbi.nlm.nih.gov/123/',title:'Research'}]})};
+  const s=setup(options);assert.equal((await s.request({action:'search',message:'Найди исследования о белке.'})).status,200);
+  const payload=s.calls.find(x=>x.url.includes('api.openai.com')).body;assert.equal(payload.input.length,1);assert(!JSON.stringify(payload.input).includes('weight_kg'));assert(payload.tools[0].filters.allowed_domains.includes('pubmed.ncbi.nlm.nih.gov'));assert.equal(payload.tool_choice.type,'web_search');
+  const fake=setup({response:providerResponse({answer:'Я поискал в интернете.'})});assert.equal((await fake.request({action:'search'})).status,502);assert(!fake.calls.some(x=>x.url.includes('fgi_ai_complete')));
+});
+test('invalid plan/refusal/incomplete result is not stored; failure releases pending claim',async()=>{
+  for(const response of [{status:'incomplete',output:[]},{status:'completed',output:[{type:'message',content:[{type:'refusal',refusal:'No'}]}]},providerResponse({...training(),workouts:[]})]){
+    const s=setup({response});assert((await s.request({action:'training'})).status>=400);assert(!s.calls.some(x=>x.url.includes('fgi_ai_complete')));assert(s.calls.some(x=>x.url.includes('fgi_ai_fail')));
+  }
+});
+test('profile restriction and consent cancellation prevent a plan being stored',async()=>{
+  const restricted=setup({profile:{...PROFILE,age:17}});assert.equal((await restricted.request({action:'training'})).status,422);assert(!restricted.calls.some(x=>x.url.includes('api.openai.com')));
+  const deleted=setup({completeFails:true});assert.equal((await deleted.request()).status,503);assert(deleted.calls.some(x=>x.url.includes('fgi_ai_fail')));
+});
+test('transcription is explicit, bounded, not stored and does not execute a command',async()=>{
+  const s=setup();const r=await s.request({action:'transcribe',audio:btoa('x'.repeat(300)),mime:'audio/webm',duration:3});assert.equal(r.status,200);assert.equal((await r.json()).text,'Следующее упражнение');assert(!s.calls.some(x=>x.url.includes('fgi_ai_complete')));
+  const tooLong=setup();assert.equal((await tooLong.request({action:'transcribe',audio:'a',mime:'audio/webm',duration:900})).status,400);assert(!tooLong.calls.some(x=>x.url.includes('api.openai.com')));
+});
+test('data deletion works without an OpenAI key and deletes only the authenticated folder',async()=>{
+  const photo='40000000-0000-4000-8000-000000000001.jpg',s=setup({env:{OPENAI_API_KEY:''},photos:[{id:'photo',name:photo},{id:'evil',name:'../../other.jpg'}]});
+  const response=await s.request({action:'delete_data',confirm:'wrong'});assert.equal(response.status,400);
+  assert.equal((await s.request({action:'delete_data',confirm:CONSENT_VERSION,user_id:OTHER})).status,200);
+  assert.deepEqual(s.calls.find(x=>x.method==='DELETE').body.prefixes,[`${USER}/${photo}`]);
+  const empty=setup({env:{OPENAI_API_KEY:''}});assert.equal((await empty.request({action:'delete_data',confirm:CONSENT_VERSION,user_id:OTHER})).status,200);assert.equal(empty.calls.find(x=>x.url.includes('fgi_ai_delete')).body.p_user,USER);assert(!empty.calls.some(x=>x.url.includes('api.openai.com')));
+});
+test('uncertainty automatically invokes a separate search with only a generic topic',async()=>{
+  const first=providerResponse({answer:'Нужно проверить исследования.',needs_search:true,search_query:'protein intake resistance training systematic review'});
+  const second=providerResponse({answer:'Исследования показывают диапазон.',needs_search:false,search_query:''},{output:[{type:'web_search_call',status:'completed'}],citations:[{type:'url_citation',url:'https://pubmed.ncbi.nlm.nih.gov/456/',title:'Study'}]});
+  const s=setup({responses:[first,second]});assert.equal((await s.request()).status,200);
+  const queries=s.calls.filter(x=>x.url.includes('api.openai.com'));assert.equal(queries.length,2);assert.equal(queries[1].body.input.length,1);assert(!JSON.stringify(queries[1].body.input).includes('profile'));assert(s.calls.some(x=>x.url.includes('fgi_ai_claim_search')));
+  const privateQuery=setup({response:providerResponse({answer:'Search',needs_search:true,search_query:'fitness for 28 year old in Paris'})});assert.equal((await privateQuery.request()).status,422);assert.equal(privateQuery.calls.filter(x=>x.url.includes('api.openai.com')).length,1);
+});
+test('CORS rejects an unapproved origin before authentication or any mutation',async()=>{
+  const s=setup();assert.equal((await s.request({}, {Origin:'https://evil.example'})).status,403);assert.equal(s.calls.length,0);
+});
+test('deployment bundle includes only the public module; private endpoints are not static assets',async()=>{
+  const build=await readFile(new URL('./build.mjs',import.meta.url),'utf8');assert(build.includes("'fitgoin-ai.js'"));assert(build.includes("'fitgoin-ai-core.mjs'"));assert(!build.includes('supabase/functions'));
+  const sql=await readFile(new URL('../supabase/migrations/20261003091539_create_fitgoin_ai.sql',import.meta.url),'utf8');assert(sql.includes('ENABLE ROW LEVEL SECURITY'));assert(sql.includes('SECURITY INVOKER'));assert(!sql.includes('SECURITY DEFINER'));assert(sql.includes('REVOKE ALL ON FUNCTION'));assert(sql.includes('ON DELETE CASCADE'));assert(sql.includes("'fgi-ai','fgi-ai',false"));
+});

@@ -1,7 +1,7 @@
 import { copyFile, mkdir, rm } from 'node:fs/promises';
 
 const out = new URL('../.deploy/', import.meta.url);
-const files = ['index.html', 'fitmatch.js', 'styles.css', 'cookie-consent.js', 'robots.txt', 'sitemap.xml', 'favicon.svg', 'site.webmanifest', 'privacy.html', 'terms.html', 'legal.html', 'cookies.html', 'support.html', '_headers'];
+const files = ['index.html', 'fitmatch.js', 'styles.css', 'fitgoin-ai.js', 'fitgoin-ai-core.mjs', 'fitgoin-ai.css', 'cookie-consent.js', 'robots.txt', 'sitemap.xml', 'favicon.svg', 'site.webmanifest', 'privacy.html', 'terms.html', 'legal.html', 'cookies.html', 'support.html', '_headers'];
 
 await rm(out, { recursive: true, force: true });
 await mkdir(out, { recursive: true });
