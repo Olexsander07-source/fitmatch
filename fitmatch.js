@@ -1,5 +1,7 @@
 /* FitGoIn production frontend.
    Здесь используется только публичный ключ. Никогда не вставляйте service_role или Stripe secret key. */
+import {mountFitGoInAI} from './fitgoin-ai.js?v=20261003-ai';
+let aiAssistant=null;
 const CONFIG = Object.freeze({
   url: 'https://ypbhcgcwkpiujcakvaji.supabase.co',
   key: 'sb_publishable_Lsrk07A5aXJH7YypVR8QGQ_TQPwhfOV',
@@ -166,6 +168,7 @@ function closeDialogs() { document.querySelectorAll('dialog[open]:not(#callDialo
 function page(id, push = true) {
   if (!$(id)?.classList.contains('page')) id = 'home';
   if (['account','inbox'].includes(id) && !requireUser(id)) return;
+  if(currentPage==='ai' && id!=='ai')aiAssistant?.leave();
   closeDialogs(); stopBackgroundRotation(); currentPage = id;
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === id));
   document.querySelectorAll('[data-page]').forEach(b => b.classList.toggle('active', b.dataset.page === id));
@@ -179,6 +182,7 @@ function page(id, push = true) {
   window.scrollTo({top:0,behavior:'instant'});
   if (id === 'inbox') loadThreads().catch(e => message('chatMessage',explain(e),true));
   if (id === 'account') loadAccount().catch(e => message('coachMessage',explain(e),true));
+  if (id === 'ai') aiAssistant?.open();
 }
 async function run(form, target, work) {
   if (form.dataset.busy) return;
@@ -451,6 +455,7 @@ function authUI() {
 function authChanged(event, session) {
   const previous=user,next=session?.user || null, changed=user?.id!==next?.id;
   user=next;if(changed)own=null;
+  aiAssistant?.setSession(user);
   if(changed){authEpoch++;threadEpoch++;catalogueEpoch++;own=null;profileRecord=null;activeThread=null;threads=[];chatRows=[];pendingMessage=null;visibleProfile='';presence.clear();presenceFetchedAt=0;
     cancelVoiceRecording();cleanupCallLocal();$('threads').replaceChildren();$('messages').replaceChildren();$('myGallery').replaceChildren();$('profileContent').replaceChildren();$('chatTitle').textContent='Выбери диалог';$('chatPresence').textContent='';$('messageForm').hidden=true;$('messageForm').reset();clearChatAttachment();clearChatMediaURLs();$('clientForm').reset();delete $('clientForm').dataset.dirty;$('coachForm').reset();delete $('coachForm').dataset.dirty;accountTab='profile';$('coachForm').hidden=true;$('clientCoachStart').hidden=false;$('mediaEditor').hidden=true;
     stopPresenceHeartbeat();if(user)setTimeout(startPresenceHeartbeat,0);
@@ -1490,8 +1495,15 @@ async function init() {
   try {
     const {createClient}=await import(CONFIG.sdk);
     db=createClient(CONFIG.url,CONFIG.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'implicit'},global:{fetch:timedFetch}});
+    aiAssistant=mountFitGoInAI($('fitgoinAI'),{
+      getDB:()=>db,getUser:()=>user,endpoint:CONFIG.url+'/functions/v1/fitgoin-ai',
+      login:()=>requireUser('ai'),navigate:page,prepareImage,openCoach:openProfile,contact,
+      sports:()=>directions.map(([key,name])=>[key,name]),coachName:id=>coaches.find(c=>c.id===id)?.name||'Тренер',
+      matches:p=>coaches.filter(publicOnly).filter(c=>c.id!==user?.id).map(coach=>({coach,match:calculateMatch(coach,{...p,budget:p.budget??''})})).filter(x=>x.match)
+        .sort((a,b)=>b.match.percent-a.match.percent||Number(b.coach.rating||0)-Number(a.coach.rating||0)||Number(b.coach.score||0)-Number(a.coach.score||0)).slice(0,3)
+    });
     db.auth.onAuthStateChange(authChanged); // Callback синхронный: никаких вложенных вызовов Supabase Auth.
-    const data=unwrap(await db.auth.getSession());user=data.session?.user || null;authUI();if(user)startPresenceHeartbeat();
+    const data=unwrap(await db.auth.getSession());user=data.session?.user || null;authUI();aiAssistant.setSession(user);if(user)startPresenceHeartbeat();
     await loadCatalogue();
     if(callbackError){closeDialogs();$('authDialog').showModal();message('authMessage','Ссылка недействительна: '+callbackError,true);history.replaceState(null,'',redirectURL());}
     else if(callback.get('type')==='recovery' && user){closeDialogs();$('resetDialog').showModal();}

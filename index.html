@@ -20,8 +20,9 @@
   <link rel="manifest" href="./site.webmanifest">
   <title>FitGoIn — Find the one who fits you.</title>
   <link rel="stylesheet" href="./styles.css?v=20261001-client-workspace">
+  <link rel="stylesheet" href="./fitgoin-ai.css?v=20261003-ai">
   <script defer src="./cookie-consent.js?v=20260929"></script>
-  <script type="module" src="./fitmatch.js?v=20261001-client-workspace"></script>
+  <script type="module" src="./fitmatch.js?v=20261003-ai"></script>
 </head>
 <body>
 <a class="skip" href="#main">К содержимому</a>
@@ -31,6 +32,7 @@
     <button data-page="sports">Спорт</button><button data-page="coaches">Тренеры</button>
     <button data-page="ranking">Рейтинг</button><button data-page="match">MATCH</button>
     <button data-page="inbox">Сообщения</button>
+    <button data-page="ai">FitGoIn AI</button>
   </nav>
   <div class="header-actions guest-nav"><button id="authOpen" class="btn small">Войти</button><button id="accountOpen" class="btn primary small">Стать тренером</button><button id="clientSignupOpen" class="btn small" aria-label="Регистрация клиента">Стать клиентом</button></div>
   <button id="menu" class="menu" aria-label="Меню" aria-controls="nav" aria-expanded="false">☰</button>
@@ -78,6 +80,11 @@
     <div id="matchSummary" class="match-summary section-small" hidden></div><div id="matchResults" class="coach-grid section-small" aria-live="polite"></div>
   </section>
   <section id="profile" class="page container section"><div id="profileBackdrop" class="page-backdrop" aria-hidden="true"></div><div id="profileContent"></div></section>
+  <section id="ai" class="page container section fgi-ai">
+    <p class="eyebrow">FITGOIN AI · ТВОЙ СПОРТИВНЫЙ ПОМОЩНИК</p><h1>Твоя цель.<br>Твой <em>следующий шаг.</em></h1>
+    <p class="lead">Тренировки, питание, прогресс и подходящий тренер — с помощником, который помнит тебя.</p>
+    <div id="fitgoinAI"><p class="muted">Подключаем помощника…</p></div>
+  </section>
   <section id="account" class="page container section">
     <div id="workspaceBackdrop" class="page-backdrop" aria-hidden="true" hidden></div>
     <div id="accountCover" class="account-cover"><div id="accountBackdrop" class="sport-backdrop" aria-hidden="true"></div>

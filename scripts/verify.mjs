@@ -1,7 +1,7 @@
 import { access, readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 
-const files = ['index.html', 'fitmatch.js', 'styles.css', 'cookie-consent.js', 'robots.txt', 'sitemap.xml', 'favicon.svg', 'site.webmanifest', 'privacy.html', 'terms.html', 'legal.html', 'cookies.html', 'support.html'];
+const files = ['index.html', 'fitmatch.js', 'styles.css', 'fitgoin-ai.js', 'fitgoin-ai-core.mjs', 'fitgoin-ai.css', 'cookie-consent.js', 'robots.txt', 'sitemap.xml', 'favicon.svg', 'site.webmanifest', 'privacy.html', 'terms.html', 'legal.html', 'cookies.html', 'support.html'];
 const migrations = new Map([
   ['20260927144002_fitgoin_stage1_foundation.sql', '0033aacf37052dc6ce150b0dca9669e9'],
   ['20260929062004_add_fgi_messages_sender_index.sql', '38fe7f22d0fac6cf8e667fc80842f7bd'],
@@ -16,6 +16,8 @@ const migrations = new Map([
   ['20260929111231_index_call_foreign_keys.sql', 'e965606b67ec9e37992cdd01fd4ae857'],
   ['20260930210545_add_coach_match_availability.sql', '53c6d78aca7aa1a3ed5894c43ed0a643'],
   ['20261002055725_grant_coach_availability_save.sql', 'cecde5c9ca8ecdfd1f3880da963f8274'],
+  ['20261003091539_create_fitgoin_ai.sql', '85260269487fce5693b180ffae87093a'],
+  ['20261003093815_index_ai_messages_and_merge_share_read_policy.sql', 'ea07021693a06e116657c66f48bf3e4c'],
 ]);
 for (const file of files) await access(new URL(`../${file}`, import.meta.url));
 for (const file of migrations.keys()) await access(new URL(`../supabase/migrations/${file}`, import.meta.url));
@@ -26,6 +28,7 @@ const js = await readFile(new URL('../fitmatch.js', import.meta.url), 'utf8');
 if (!html.includes('<title>FitGoIn')) throw new Error('FitGoIn title is missing');
 if (!html.includes('fitmatch.js')) throw new Error('fitmatch.js is not linked');
 if (!html.includes('styles.css')) throw new Error('styles.css is not linked');
+if ((html.match(/<script\b/gi)||[]).length !== (html.match(/<\/script\s*>/gi)||[]).length) throw new Error('Unclosed script tag prevents the page from rendering');
 if (!js.includes('supabase')) throw new Error('Expected Supabase integration was not found');
 if ((html.match(/minlength="6" maxlength="128"/g) || []).length !== 3) throw new Error('Password minimum is not enforced in signup/reset forms');
 if (!js.includes('function assertStrongPassword')) throw new Error('Strong password validation is missing');
