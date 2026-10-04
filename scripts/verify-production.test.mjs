@@ -15,6 +15,7 @@ async function build(t) {
     ['fitmatch.js', ['import "./premium.mjs";', 'text/javascript']],
     ['premium.mjs', ['export const ready = true;', 'application/javascript']],
     ['styles.css', ['body { color: white; }', 'text/css']],
+    ['release.json', ['{"build_id":"current-build"}', 'application/json']],
     ['assets/hero.webp', ['fixture-image-bytes', 'image/webp']],
     ['_headers', ['/*\n  X-Frame-Options: DENY', 'text/plain']],
   ]);
@@ -30,7 +31,7 @@ async function build(t) {
 test('complete deployed build includes modules and images, excluding hosting controls', async t => {
   const report = await verifyProduction(await build(t));
   assert.equal(report.status, 'passed');
-  assert.equal(report.assets.length, 5);
+  assert.equal(report.assets.length, 6);
   assert(report.assets.some(asset => asset.file === 'premium.mjs'));
   assert(report.assets.some(asset => asset.file === 'assets/hero.webp'));
 });
@@ -53,6 +54,12 @@ test('a stale release is rejected even when it has the right title', async t => 
   const options = await build(t), original = options.fetchAsset;
   options.fetchAsset = url => new URL(url).pathname.endsWith('index.html') ? new Response('<title>FitGoIn</title>old release', { headers: { 'Content-Type': 'text/html' } }) : original(url);
   await assert.rejects(verifyProduction(options), /index\.html: content differs/);
+});
+
+test('a stale upload manifest cannot pass with an older release marker', async t => {
+  const options = await build(t), original = options.fetchAsset;
+  options.fetchAsset = url => new URL(url).pathname.endsWith('release.json') ? new Response('{"build_id":"previous-build"}', { headers: { 'Content-Type': 'application/json' } }) : original(url);
+  await assert.rejects(verifyProduction(options), /release\.json: content differs/);
 });
 
 test('transient missing assets are retried before declaring success', async t => {
