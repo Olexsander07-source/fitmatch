@@ -1,0 +1,71 @@
+{
+  "at": "2026-10-04T20:59:44.118Z",
+  "base": "https://fitgoin.com/",
+  "fixture": false,
+  "viewports": [
+    {
+      "width": 360,
+      "status": "passed",
+      "scenarios": [
+        "client registration button",
+        "trainer registration button",
+        "header and homepage login buttons",
+        "cookie settings",
+        "no horizontal overflow",
+        "automatic background changes",
+        "pause freezes background",
+        "resume changes background again"
+      ]
+    },
+    {
+      "width": 390,
+      "status": "passed",
+      "scenarios": [
+        "client registration button",
+        "trainer registration button",
+        "header and homepage login buttons",
+        "cookie settings",
+        "no horizontal overflow"
+      ]
+    },
+    {
+      "width": 768,
+      "status": "passed",
+      "scenarios": [
+        "client registration button",
+        "trainer registration button",
+        "header and homepage login buttons",
+        "cookie settings",
+        "no horizontal overflow"
+      ]
+    },
+    {
+      "width": 1440,
+      "status": "passed",
+      "scenarios": [
+        "client registration button",
+        "trainer registration button",
+        "header and homepage login buttons",
+        "cookie settings",
+        "no horizontal overflow"
+      ]
+    }
+  ],
+  "pageErrors": [],
+  "failedRequests": [],
+  "status": "passed",
+  "release": "cfad1bd8344861d5bcb34ef50e16a71d8c3ef8ce",
+  "cloudflareVersion": "3d8b4dd0-05db-45f6-85f0-3a2b91e487bb",
+  "buildId": "4ea60eee-391f-4733-9f54-17eacac8b226",
+  "reducedMotion": {
+    "at": "2026-10-04T20:59:52.957Z",
+    "width": 390,
+    "preference": "reduce",
+    "scenarios": [
+      "background initially paused",
+      "paused background stays still",
+      "enable background starts slideshow"
+    ],
+    "status": "passed"
+  }
+}

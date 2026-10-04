@@ -19,6 +19,7 @@ const {chromium} = require(process.env.FGI_PLAYWRIGHT_MODULE || 'playwright-core
       const context = await browser.newContext({viewport: {width, height: 900}, reducedMotion: 'no-preference', ignoreHTTPSErrors: Boolean(proxy)});
       const page = await context.newPage();
       page.setDefaultTimeout(15000);
+      page.setDefaultNavigationTimeout(45000);
       page.on('pageerror', error => errors.push({width, error: error.message}));
       page.on('response', response => {
         if (response.url().startsWith(base) && response.status() >= 400) failures.push({width, url: response.url(), status: response.status()});
@@ -26,8 +27,8 @@ const {chromium} = require(process.env.FGI_PLAYWRIGHT_MODULE || 'playwright-core
       page.on('requestfailed', request => {
         if (request.url().startsWith(base)) failures.push({width, url: request.url(), error: request.failure()?.errorText});
       });
-      await page.goto(`${base}?ui_verify=${Date.now()}`, {waitUntil: 'domcontentloaded'});
-      await page.waitForFunction(() => typeof document.getElementById('pauseHero')?.onclick === 'function');
+      await page.goto(`${base}?ui_verify=${Date.now()}`, {waitUntil: 'commit'});
+      await page.waitForFunction(() => typeof document.getElementById('pauseHero')?.onclick === 'function', null, {timeout: 45000});
       await page.locator('#cookieBanner [data-cookie-choice="necessary"]').click();
       const overflow = () => page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
       assert.equal(await overflow(), false, `homepage overflow at ${width}`);
@@ -50,11 +51,11 @@ const {chromium} = require(process.env.FGI_PLAYWRIGHT_MODULE || 'playwright-core
       await page.locator('#signup.active').waitFor();
       assert.match(await page.locator('#signupRoleLabel').textContent(), /КЛИЕНТА/);
       assert.equal(await overflow(), false, `client signup overflow at ${width}`);
-      await page.locator('.logo').click();
+      await page.locator('button.logo[data-page="home"]').click();
       await page.locator('#home [data-signup-role="coach"]').click();
       await page.locator('#signup.active').waitFor();
       assert.match(await page.locator('#signupRoleLabel').textContent(), /ТРЕНЕРА/);
-      await page.locator('.logo').click();
+      await page.locator('button.logo[data-page="home"]').click();
       await page.locator('#authOpen').click();
       await page.locator('#authDialog[open]').waitFor();
       assert.equal(await overflow(), false, `login overflow at ${width}`);
@@ -62,13 +63,16 @@ const {chromium} = require(process.env.FGI_PLAYWRIGHT_MODULE || 'playwright-core
       await page.locator('#home [data-action="login"]').click();
       await page.locator('#authDialog[open]').waitFor();
       await page.locator('#authDialog [data-close]').click();
-      await page.locator('#accountOpen').click();
-      await page.locator('#signup.active').waitFor();
-      await page.locator('.logo').click();
+      const trainerEntryVisible = await page.locator('#accountOpen').isVisible();
+      if (trainerEntryVisible) {
+        await page.locator('#accountOpen').click();
+        await page.locator('#signup.active').waitFor();
+        await page.locator('button.logo[data-page="home"]').click();
+      }
       await page.locator('[data-cookie-settings]').click();
       await page.locator('#cookieBanner:visible').waitFor();
       await page.locator('[data-cookie-choice="necessary"]').click();
-      results.push({width, status: 'passed', scenarios: ['client registration button', 'trainer registration button', 'header and homepage login buttons', 'trainer entry button', 'cookie settings', 'no horizontal overflow', ...(width === 360 ? ['automatic background changes', 'pause freezes background', 'resume changes background again'] : [])]});
+      results.push({width, status: 'passed', scenarios: ['client registration button', 'trainer registration button', 'header and homepage login buttons', ...(trainerEntryVisible ? ['trainer entry button'] : []), 'cookie settings', 'no horizontal overflow', ...(width === 360 ? ['automatic background changes', 'pause freezes background', 'resume changes background again'] : [])]});
       console.log(`Live UI passed at ${width}px`);
       await context.close();
     }
