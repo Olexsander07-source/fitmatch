@@ -67,6 +67,7 @@ DO $$ BEGIN
  IF has_table_privilege(current_user,'public.fgi_ai_profiles','select') OR has_table_privilege(current_user,'public.fgi_ai_messages','select') OR has_function_privilege(current_user,'public.fgi_ai_delete(uuid)','execute') THEN RAISE EXCEPTION 'Anonymous AI access granted'; END IF;
 END $$;
 RESET ROLE;
+INSERT INTO fgi_private.ai_friend_grants(user_id,modules,reason) VALUES('10000000-0000-4000-8000-000000000001',ARRAY['training','nutrition'],'Rollback test fixture');
 SET LOCAL ROLE service_role;
 DO $$ DECLARE result jsonb; v integer; BEGIN
  FOR v IN 1..3 LOOP
@@ -81,7 +82,7 @@ DO $$ DECLARE result jsonb; v integer; BEGIN
  IF result->>'remaining'<>'0' THEN RAISE EXCEPTION 'Daily count wrong'; END IF;
  result=public.fgi_ai_claim('10000000-0000-4000-8000-000000000001',gen_random_uuid(),'fixture',false);
  IF result->>'error'<>'daily_limit' THEN RAISE EXCEPTION 'Daily quota not enforced'; END IF;
- PERFORM public.fgi_ai_complete('10000000-0000-4000-8000-000000000001','50000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001',(SELECT updated_at FROM public.fgi_ai_profiles WHERE user_id='10000000-0000-4000-8000-000000000001'),'question','answer','[]',NULL,NULL,'{"answer":"cached"}');
+ PERFORM public.fgi_ai_complete('10000000-0000-4000-8000-000000000001','50000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001',(SELECT updated_at FROM public.fgi_ai_profiles WHERE user_id='10000000-0000-4000-8000-000000000001'),'question','answer','[]',NULL,NULL,'{"answer":"cached","module":"training","livemode":true}');
  result=public.fgi_ai_claim('10000000-0000-4000-8000-000000000001','50000000-0000-4000-8000-000000000001','fixture',false);
  IF result->'cached'->>'answer'<>'cached' THEN RAISE EXCEPTION 'Idempotent answer unavailable'; END IF;
  result=public.fgi_ai_claim('10000000-0000-4000-8000-000000000001','50000000-0000-4000-8000-000000000001','different',false);

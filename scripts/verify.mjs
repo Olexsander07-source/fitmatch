@@ -1,7 +1,7 @@
 import { access, readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 
-const files = ['index.html', 'fitmatch.js', 'styles.css', 'fitgoin-ai.js', 'fitgoin-ai-core.mjs', 'fitgoin-ai.css', 'cookie-consent.js', 'robots.txt', 'sitemap.xml', 'favicon.svg', 'site.webmanifest', 'privacy.html', 'terms.html', 'legal.html', 'cookies.html', 'support.html'];
+const files = ['index.html', 'fitmatch.js', 'styles.css', 'fitgoin-ai.js', 'fitgoin-ai-core.mjs', 'fitgoin-ai-paid.mjs', 'fitgoin-ai-media.mjs', 'fitgoin-ai.css', 'cookie-consent.js', 'robots.txt', 'sitemap.xml', 'favicon.svg', 'site.webmanifest', 'privacy.html', 'terms.html', 'legal.html', 'cookies.html', 'support.html'];
 const migrations = new Map([
   ['20260927144002_fitgoin_stage1_foundation.sql', '0033aacf37052dc6ce150b0dca9669e9'],
   ['20260929062004_add_fgi_messages_sender_index.sql', '38fe7f22d0fac6cf8e667fc80842f7bd'],

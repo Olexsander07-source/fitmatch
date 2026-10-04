@@ -24,8 +24,8 @@ export function normalizeProfile(v={}) {
 }
 export function missingProfile(v, nutrition=false) {
   const p=normalizeProfile(v), missing=[];
-  if(!p.goal) missing.push('goal'); if(!p.sport)missing.push('sport'); if(!p.age)missing.push('age');
-  if(p.weekdays.length!==p.days_per_week)missing.push('weekdays');
+  if(!p.goal) missing.push('goal'); if(!p.age)missing.push('age');
+  if(!nutrition){if(!p.sport)missing.push('sport');if(p.weekdays.length!==p.days_per_week)missing.push('weekdays');}
   if(nutrition){ if(!p.weight_kg)missing.push('weight_kg'); if(!p.height_cm)missing.push('height_cm'); }
   return missing;
 }
@@ -72,8 +72,9 @@ function insist(ok) { if(!ok)throw new AIError('invalid_plan',502); }
 function short(v,max=2000) { return typeof v==='string'&&v.trim().length>0&&v.length<=max; }
 // A rest interval is never shortened to squeeze a workout into the available time.
 export function adaptWorkout(workout, minutes, readiness={}) {
+  if(readiness.pain)throw new AIError('professional_required',422);
   const total=Math.max(10,Math.min(90,Math.floor(Number(minutes)||workout.minutes)));
-  const tired=Number(readiness.sleep)<6 || Number(readiness.energy)<=2;
+  const tired=(Number.isFinite(readiness.sleep)&&readiness.sleep<6) || (Number.isFinite(readiness.energy)&&readiness.energy<=2) || Number(readiness.soreness)>=4;
   const allowance=Math.max(2,total-8); // Keep time for warm-up and cooldown.
   let budget=allowance;
   const exercises=[];
@@ -83,11 +84,19 @@ export function adaptWorkout(workout, minutes, readiness={}) {
     e.sets=tired?Math.max(1,e.sets-1):e.sets;
     const perSet=Math.max(.75,(original.minutes/original.sets));
     e.sets=Math.min(e.sets,Math.floor(budget/perSet));
+    while(e.sets>0&&Math.max(perSet*e.sets,(e.sets*20+(e.sets-1)*e.rest_seconds)/60)>budget)e.sets--;
     if(e.sets<1)continue;
-    e.minutes=Math.round(perSet*e.sets*10)/10;
+    e.minutes=Math.max(1,Math.ceil(Math.max(perSet*e.sets,(e.sets*20+(e.sets-1)*e.rest_seconds)/60)*10)/10);
+    if(e.minutes>budget)continue;
     budget-=e.minutes;exercises.push(e);
   }
-  return {...workout,minutes:total,exercises,adaptation:tired?'Лёгкая тренировка: меньше подходов, без увеличения нагрузки.':'Объём сокращён под доступное время; отдых сохраняется.'};
+  return {...workout,minutes:total,exercises,adaptation:tired?'Из-за усталости уменьшаем число подходов. Разминка и отдых сохраняются; нагрузку не увеличиваем.':total<workout.minutes?'Уменьшаем объём под доступное время. Разминка и отдых сохраняются.':'Оставляем запланированный объём. Учитывай технику и самочувствие.'};
+}
+export function weeklyReview(sessions,profile,now=Date.now()) {
+  const p=normalizeProfile(profile),recent=sessions.filter(s=>s.completed_at&&Date.parse(s.completed_at)>=now-7*86400000&&Date.parse(s.completed_at)<=now);
+  const completed=recent.filter(s=>s.data?.status==='completed'&&s.data?.sets?.length);
+  const sets=completed.flatMap(s=>s.data.sets),rpe=sets.map(s=>Number(s.rpe)).filter(x=>Number.isFinite(x)&&x>=1&&x<=10);
+  return {completed:completed.length,planned:p.days_per_week,sets:sets.length,average_rpe:rpe.length?Math.round(rpe.reduce((s,x)=>s+x,0)/rpe.length*10)/10:null,stopped_for_pain:recent.some(s=>s.data?.stopped_for_pain),message:recent.some(s=>s.data?.stopped_for_pain)?'Есть остановка из-за боли. Не увеличивай нагрузку; нужна оценка специалиста.':completed.length<p.days_per_week?'Не компенсируй пропуски двойной нагрузкой. Продолжи с посильного объёма и дня восстановления.':'Оцени восстановление и технику перед изменением программы. Число занятий само по себе не означает готовность увеличить вес.'};
 }
 export function validatePlan(kind, document, profile) {
   const p=normalizeProfile(profile);

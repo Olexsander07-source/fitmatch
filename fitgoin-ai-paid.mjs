@@ -30,8 +30,14 @@ export function validateImages(images,action,consent) {
 }
 const validText=(s,n=1200)=>typeof s==='string'&&s.trim().length>0&&s.length<=n;
 const validList=s=>Array.isArray(s)&&s.length<=12&&s.every(x=>validText(x));
+function matches(value,schema){
+  if(schema.type==='object')return value&&typeof value==='object'&&!Array.isArray(value)&&Object.keys(value).length===schema.required.length&&schema.required.every(k=>Object.hasOwn(value,k)&&matches(value[k],schema.properties[k]));
+  if(schema.type==='array')return Array.isArray(value)&&value.length<=12&&value.every(v=>matches(v,schema.items));
+  if(schema.type==='number')return Number.isFinite(value);
+  return typeof value===schema.type;
+}
 export function validateMedia(action,d) {
-  if(!d||!validText(d.title,120)||JSON.stringify(d).length>15000)throw new AIError('invalid_analysis',502);
+  if(!matches(d,action==='food_photo'?FOOD_SCHEMA:TECHNIQUE_SCHEMA)||!validText(d.title,120)||JSON.stringify(d).length>15000)throw new AIError('invalid_analysis',502);
   if(action==='food_photo') {
     if(!validText(d.uncertainty)||!validList(d.questions)||!validList(d.warnings)||!Array.isArray(d.items)||d.items.length>12)throw new AIError('invalid_analysis',502);
     for(const item of d.items){
@@ -53,7 +59,7 @@ export function analysisText(action,d) {
   return [d.title,...d.observations,...d.suggestions,...d.limitations].join('\n');
 }
 export function normalizeFood(v={}) {
-  const finite=(x,max)=>Number.isFinite(Number(x))&&Number(x)>=0&&Number(x)<=max?Number(x):null;
+  const finite=(x,max)=>x!==null&&x!==undefined&&String(x).trim()!==''&&Number.isFinite(Number(x))&&Number(x)>=0&&Number(x)<=max?Number(x):null;
   const row={name:String(v.name||'').trim().slice(0,160),calories_low:finite(v.calories_low,5000),calories_high:finite(v.calories_high,5000),protein_g:finite(v.protein_g,600),fat_g:finite(v.fat_g,600),carbs_g:finite(v.carbs_g,600)};
   if(!row.name||Object.values(row).some(x=>x===null)||row.calories_high<row.calories_low)throw new AIError('invalid_food');return row;
 }
@@ -61,7 +67,9 @@ function calendarText(s){return String(s).replace(/\\/g,'\\\\').replace(/\r?\n/g
 export function trainingCalendar(profile,hour='18:00',now=new Date()) {
   if(!/^\d{2}:\d{2}$/.test(hour)||Number(hour.slice(0,2))>23||Number(hour.slice(3))>59)throw new AIError('invalid_time');
   const days=[...new Set((profile.weekdays||[]).filter(x=>Number.isInteger(x)&&x>=0&&x<=6))];if(!days.length)throw new AIError('profile_incomplete');
-  const date=new Date(now.getFullYear(),now.getMonth(),now.getDate());while(!days.includes(date.getDay()))date.setDate(date.getDate()+1);
+  const date=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  if(days.includes(date.getDay())&&Number(hour.replace(':',''))<=now.getHours()*100+now.getMinutes())date.setDate(date.getDate()+1);
+  while(!days.includes(date.getDay()))date.setDate(date.getDate()+1);
   const stamp=`${date.getFullYear()}${String(date.getMonth()+1).padStart(2,'0')}${String(date.getDate()).padStart(2,'0')}T${hour.replace(':','')}00`;
   const weekday=['SU','MO','TU','WE','TH','FR','SA'];
   // Floating local time: the calendar uses the user's local timezone and DST.

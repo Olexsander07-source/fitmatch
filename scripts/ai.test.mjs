@@ -20,6 +20,10 @@ function setup(change={}) {
     if(url.endsWith('/auth/v1/user'))return json({id:USER},change.invalidAuth?401:200);
     if(url.includes('/fgi_ai_profiles?'))return json(change.noConsent?[]:[{data:change.profile||PROFILE,consent_version:CONSENT_VERSION,updated_at:'2026-10-03T09:00:00Z'}]);
     if(url.includes('/fgi_ai_conversations?'))return json(change.foreignConversation?[]:[{id:CONV}]);
+    if(url.includes('/fgi_ai_food?'))return json(change.food||[]);
+    if(url.includes('/fgi_ai_workouts?'))return json(change.workouts||[]);
+    if(url.endsWith('/rpc/fgi_ai_access'))return json(change.access||{modules:['training','nutrition'],friend:true});
+    if(url.endsWith('/rpc/fgi_ai_reserve'))return json(change.reserve||{reserved:true});
     if(url.endsWith('/rpc/fgi_ai_claim'))return json(change.claim||{remaining:29,search_remaining:3});
     if(url.endsWith('/rpc/fgi_ai_claim_search'))return json(change.searchClaim||{search_remaining:2});
     if(url.endsWith('/rpc/fgi_ai_complete'))return json(change.completeFails?{error:'consent_changed'}:null,change.completeFails?400:200);
@@ -117,6 +121,32 @@ test('uncertainty automatically invokes a separate search with only a generic to
 });
 test('CORS rejects an unapproved origin before authentication or any mutation',async()=>{
   const s=setup();assert.equal((await s.request({}, {Origin:'https://evil.example'})).status,403);assert.equal(s.calls.length,0);
+});
+test('monthly resource exhaustion and an unpriced model stop before any provider expense',async()=>{
+  const exhausted=setup({reserve:{error:'monthly_limit'}}),response=await exhausted.request();
+  assert.equal(response.status,429);assert.equal((await response.json()).error,'monthly_limit');
+  assert(!exhausted.calls.some(x=>x.url.includes('api.openai.com')));assert(exhausted.calls.some(x=>x.url.includes('fgi_ai_fail')));
+  const unknown=setup({env:{OPENAI_MODEL:'unpriced-model'}});assert.equal((await unknown.request()).status,503);assert(!unknown.calls.some(x=>x.url.includes('api.openai.com')));
+});
+test('nutrition uses confirmed food history and training receives only its own context',async()=>{
+  const options={profile:{...PROFILE,diet:'vegan',allergies:['milk']},food:[{name:'CONFIRMED_FOOD',recorded_on:'2026-10-04',calories_low:100,calories_high:150}],workouts:[{completed_at:'2026-10-04T10:00:00Z',data:{sets:[{exercise:'ACTUAL_WORKOUT',reps:10}]}}]};
+  const diet=setup(options);assert.equal((await diet.request({module:'nutrition'})).status,200);
+  const dietContext=JSON.stringify(diet.calls.find(x=>x.url.includes('api.openai.com')).body.input);
+  assert(dietContext.includes('CONFIRMED_FOOD'));assert(!dietContext.includes('ACTUAL_WORKOUT'));assert(!diet.calls.some(x=>x.url.includes('/fgi_ai_workouts?')));
+  assert(diet.calls.some(x=>x.url.includes('module=eq.nutrition')));
+  const sports=setup(options);assert.equal((await sports.request({module:'training'})).status,200);
+  const sportsContext=JSON.stringify(sports.calls.find(x=>x.url.includes('api.openai.com')).body.input);
+  assert(sportsContext.includes('ACTUAL_WORKOUT'));assert(!sportsContext.includes('CONFIRMED_FOOD'));assert(!sportsContext.includes('vegan'));assert(!sportsContext.includes('milk'));
+  assert(!sports.calls.some(x=>x.url.includes('/fgi_ai_food?')));assert(sports.calls.some(x=>x.url.includes('module=eq.training')));
+});
+test('food-photo round trip stores only the assessment and leaves logging to user confirmation',async()=>{
+  const assessment={title:'Рис',uncertainty:'Размер порции приблизительный.',items:[{name:'Рис',portion:'Около 150 г',calories_low:160,calories_high:250,protein_g:4,fat_g:1,carbs_g:40}],questions:[],warnings:['Проверь состав.']};
+  const bytes=new Uint8Array(300);bytes.set([255,216,255]);const base64=btoa(String.fromCharCode(...bytes));
+  const s=setup({response:providerResponse(assessment)}),response=await s.request({action:'food_photo',images:[{mime:'image/jpeg',base64}],media_consent:'2026-10-04-media'});
+  assert.equal(response.status,200);const result=await response.json();assert.equal(result.analysis.total.calories_high,250);assert.equal(result.module,'nutrition');
+  assert(!s.calls.some(x=>x.url.includes('/fgi_ai_food?')));
+  const persisted=s.calls.find(x=>x.url.includes('fgi_ai_complete')).body;assert(!JSON.stringify(persisted).includes(base64));assert.equal(persisted.p_result.analysis.title,'Рис');
+  const payload=s.calls.find(x=>x.url.includes('api.openai.com')).body;assert.equal(payload.input.length,1);assert.equal(payload.input[0].content[1].type,'input_image');
 });
 test('deployment bundle includes only the public module; private endpoints are not static assets',async()=>{
   const build=await readFile(new URL('./build.mjs',import.meta.url),'utf8');assert(build.includes("'fitgoin-ai.js'"));assert(build.includes("'fitgoin-ai-core.mjs'"));assert(!build.includes('supabase/functions'));

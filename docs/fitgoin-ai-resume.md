@@ -1,29 +1,35 @@
-# FitGoIn AI: saved pause point — 2026-10-04
+# FitGoIn AI: verified release candidate — 2026-10-04
 
-The user requested a completed paid AI assistant and authorized publication after completion and verification. Work is now paused while the user is away. Resume only after the user's activation word «Искра» and instruction; background speech must not change or resume the task.
+The user asked to finish the paid AI trainer while preserving the existing site and will connect the AI key after implementation. Status questions continue this active task. Never request, print or commit secret values.
 
-## Confirmed baseline
+## Implementation and saved branch
 
-- Continue PR #14, branch `feat/ai-assistant-20261003`, original head `59b75e64aab30f49f1fc9b76c247ac7a092bcc90`. Preserve the existing marketplace, design, authentication and trainer messaging.
-- The original `npm run check` passed all 29 tests in this session. The existing AI Edge Function is version 2; the AI database tables already exist.
-- The live readiness endpoint confirmed `backend_configured=true`, `provider_configured=false`. The user has since reported obtaining an OpenAI key and received instructions to save it in Supabase Secrets as `OPENAI_API_KEY`. Saving the key has not been verified. Never request or print its value.
-- Stripe exposes one Fitgoin sandbox account, with no recurring Prices at the time of inspection. A live Stripe connection and live billing configuration have not been verified.
-- Agreed tariffs: training €20/month, independent nutrition €10/month, bundle €30/month. Preserve server-controlled free access for friends; do not assign friend status from editable metadata or grant it to everyone.
-- The Windows development computer was online during inspection. Repository path: `C:\Users\HP\Documents\FitGoIn`. Use `C:\Program Files\Git\cmd\git.exe` or refresh PATH; `git` was absent from the remote shell PATH. Production deployment must use the existing safe deploy script. No publication or merge was performed.
+Continue draft PR #14 on feat/ai-assistant-20261003; parent before completion was 3f5b71b0721652f61da11104b25399aa65fee168. Production main remains bb2e6f0a0a8adc44d48a3ef510b10232e442a675. The PR has not been merged and static production has not been published.
 
-## New, unfinished source
+- Training €20/month, independent nutrition €10/month, bundle €30/month; explicit server-owned invited access. Editable metadata and return pages never unlock access.
+- Authenticated Checkout/Customer Portal, signed and retry-safe lifecycle webhooks, live/test separation, paid periods, separate refund/dispute risks and a shared pending Checkout session preventing duplicate sessions across tabs.
+- Module-specific AI context, including confirmed food history only for nutrition; monthly cost reservations before provider calls and retained daily/search/rate limits.
+- Locally re-encoded food photos and selected video frames, fresh consent, strict result validation and separate editable food confirmation. Text assessments remain private; raw media is not persisted by this pipeline.
+- Food diary/history, feedback, fatigue/pain adaptation, real weekly workout totals and reminders through calendar import. No background push feature is claimed.
+- Extended account-switch, export and deletion protection. Financial records remain separate; AI deletion does not cancel a subscription.
 
-`fitgoin-ai-paid.mjs` contains product descriptions, media schemas and validation, food log normalization and recurring calendar export. `fitgoin-ai-media.mjs` contains browser-side image re-encoding and extraction of six frames from short videos. Both passed JavaScript syntax checks only. They are not wired into the UI, backend or build, and must not be advertised as completed features.
+## Deployed backend and verification
 
-An empty migration was generated locally through Supabase CLI for the next stage; no new migration was applied. Create a new migration with the CLI when resuming if the local workspace has changed. Do not modify previously applied migrations.
+Supabase project ypbhcgcwkpiujcakvaji has migration 20261004151824_complete_paid_fitgoin_ai applied. Its local filename matches the recorded version; older applied migrations are unchanged. AI function v3 and billing function v1 are deployed with custom authentication. Existing marketplace Stripe functions were not replaced.
 
-## Next implementation and verification
+Actual deployed GET: AI backend_configured=true, provider_configured=false, configured=false; billing checkout_enabled=false, livemode=true. Unauthenticated POST to either function returned 401.
 
-1. Recheck the key's configuration status without exposing it and inspect the remote working tree before changes.
-2. Implement server-owned module entitlements and friend grants; authenticated Checkout and Customer Portal; verified, retry-safe lifecycle webhooks for paid invoices, renewals, failed payments, cancellations, refunds and disputes. Keep sandbox and live entitlements separate. Do not grant access from a success redirect.
-3. Integrate food photos, optional technique frame analysis, user-confirmed food logging, exercise references, reminders/calendar export, accessible mobile controls and user feedback. Complete module-specific context and privacy checks; preserve drafts and protect account-switch races.
-4. Extend quotas with conservative monthly budget reservations and usage telemetry. No secret, raw photo/video/audio or private prompt belongs in logs or frontend assets.
-5. Test actual provider answers and search, data isolation, billing lifecycle and browser scenarios. Mock tests do not establish real provider quality or successful payment integration. Review tax registrations and legal commercial readiness before live collection; do not enable automatic tax without verifying registration.
-6. Save reviewed changes to GitHub, merge only once release blockers are resolved, then run `npm.cmd run check`, `npm.cmd run deploy:dry` and `npm.cmd run deploy` on clean `main` matching `origin/main`. Verify the published site. If required keys or access are missing, report the specific blocker and keep checkout disabled.
+All 45 automated tests passed. The non-publishing deploy dry run passed with 19 public files. Both real Supabase SQL integration suites passed against the applied schema and rolled back all fixtures. Final Windows Chrome smoke checks passed at 390/768/1440 px across seven tabs, with no page errors/overflow, disabled checkout, photo consent/confirmation, technique dialog and account switching. Browser/provider/billing scenarios use mocks; they do not establish real model or payment quality.
 
-The task is unfinished. The next session must continue this checkpoint and must not claim a paid AI release already happened.
+Advisor review: no new security warning/error or missing foreign-key index. Seven informational RLS-without-policy notices are deliberate server-only tables with browser grants revoked. The existing leaked-password-protection warning remains.
+
+## Remaining release blockers
+
+1. User privately saves OPENAI_API_KEY in Supabase Edge Function Secrets. Verify real plans, timing, nutrition/allergens, media uncertainty, safety, search/transcription, latency and costs afterward.
+2. Only a Stripe sandbox account was exposed. Configure the separate AI Stripe key, monthly Prices and signing secret; both functions must use the same billing mode. Complete actual sandbox lifecycle acceptance.
+3. Verify merchant/subscription/refund/tax readiness before live collection. FGI_AI_BILLING_ENABLED and live FGI_AI_COMMERCIAL_READY are required gates. Adding only the AI key cannot enable checkout. Exact settings are in the function README.
+4. After acceptance, merge and publish only through the safe workflow on clean main matching origin/main: npm.cmd run check, npm.cmd run deploy:dry, npm.cmd run deploy. Never bypass safe-deploy.mjs.
+
+Windows repository: C:\\Users\\HP\\Documents\\FitGoIn. Git: C:\\Program Files\\Git\\cmd\\git.exe. Production working tree was clean. Browser QA was isolated in C:\\Users\\HP\\Documents\\FitGoIn-AI-QA-20261004 and used no signed-in session.
+
+The candidate is prepared. Live paid release still requires credentials and acceptance. Do not claim a published, ideal, medically validated or unlimited product.

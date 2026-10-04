@@ -31,8 +31,11 @@ if (local !== remote) throw new Error('Refusing deploy: local main differs from 
 run(node, ['--check', 'fitmatch.js']);
 run(node, ['--check', 'fitgoin-ai.js']);
 run(node, ['--check', 'supabase/functions/fitgoin-ai/index.mjs']);
+run(node, ['--check', 'fitgoin-ai-paid.mjs']);
+run(node, ['--check', 'fitgoin-ai-media.mjs']);
+run(node, ['--check', 'supabase/functions/fitgoin-ai-billing/index.mjs']);
 run(node, ['scripts/verify.mjs']);
-run(node, ['--test', 'scripts/voice.test.mjs', 'scripts/ai.test.mjs']);
+run(node, ['--test', 'scripts/voice.test.mjs', 'scripts/ai.test.mjs', 'scripts/ai-paid.test.mjs']);
 run(node, ['scripts/build.mjs']);
 run(node, [wrangler, 'deploy', '--dry-run']);
 run(node, [wrangler, 'deploy']);
