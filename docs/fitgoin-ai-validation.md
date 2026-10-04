@@ -1,6 +1,6 @@
 # FitGoIn AI — validation, 4 October 2026
 
-The existing AI workspace now has a paid release candidate. Static production publication and PR merge are deferred. Supabase migration 20261004151824_complete_paid_fitgoin_ai, AI function v5 and billing function v1 are deployed. The user connected the OpenAI key and authorized publication if checks pass. Actual requests were attempted, but OpenAI rejected them due to API quota/account limits. Checkout remains disabled. No successful AI answer or Stripe payment acceptance has been established.
+The existing AI workspace now has a paid release candidate. Static production publication and PR merge are deferred. Supabase migration 20261004151824_complete_paid_fitgoin_ai, AI function v5 and billing function v2 are deployed. The user connected the OpenAI key and authorized publication if checks pass. Actual requests were attempted, but OpenAI rejected them due to API quota/account limits. Checkout remains disabled. No successful AI answer or Stripe payment acceptance has been established.
 
 ## Automated verification
 
@@ -30,7 +30,7 @@ Reproduce with scripts/ai-ui-smoke.cjs and an independently installed playwright
 - Billing GET: checkout_enabled=false, livemode=true.
 - Unauthenticated POST to either: HTTP 401.
 
-Status booleans establish configuration only. Two real requests using a temporary invited account returned HTTP 503; the underlying 429 was initially provider_busy, then correctly provider_quota after the diagnostic fix. Provider credit/usage/spend failure cannot be resolved by code retries. No secret value was retrieved/printed. Existing marketplace Stripe functions were not replaced.
+Status booleans establish configuration only. Two real requests using a temporary invited account returned HTTP 503; the underlying 429 was initially provider_busy, then correctly provider_quota after the diagnostic fix. The safe provider log confirms HTTP 429 credit_balance_exhausted at 2026-10-04T15:38:57Z. The official OpenAI error guide identifies this as no prepaid credits remaining. Provider credit/usage/spend failure cannot be resolved by code retries. No secret value was retrieved/printed. Existing marketplace Stripe functions were not replaced.
 
 Additional actual deployed HTTP checks passed: Auth sign-in, unauthenticated denial, disallowed origin, foreign conversation denial, unpaid access denial, editable friend metadata not granting access, media consent enforcement, disabled Checkout, owner food insert/foreign read-write denial and underage personalized-plan refusal. These checks made no provider call. Both temporary accounts were signed out, sessions/users deleted, fixture grants/profiles confirmed absent and temporary credential file removed.
 
@@ -43,3 +43,9 @@ Resolve OpenAI API balance/quota and organization/project spend limits first; OP
 Configure the separate AI Stripe key, three EUR monthly Prices, webhook signing secret and consistent mode. Exercise actual sandbox Checkout → signed webhook → entitlement → renewal/failure/cancellation/refund/dispute → Portal, including concurrent Checkout attempts and mode isolation. Only a sandbox connection has been observed; live readiness is unverified.
 
 After merchant/subscription/refund/tax readiness and acceptance, merge/publish through the existing safe deploy script. Until then the PR stays draft and checkout stays disabled. Imported calendar reminders are implemented; automatic push/email reminders are not.
+
+## Final release-preparation rerun
+
+npm.cmd run deploy:dry passed on the current candidate: 46/46 automated tests and all 19 public assets. The expanded browser smoke script passed again at 390/768/1440 px. It now verifies that quota, authentication and permission failures show their separate support messages, and quota does not invite repeated retries. The prior seven tabs, disabled Checkout, food consent/confirmation, technique dialog and account switching also passed. This browser check uses an isolated mock backend and does not establish real AI or payment quality.
+
+Supabase read-back confirms AI v5 and billing v2 ACTIVE with the existing custom authentication. The AI v5 source exactly matches the saved candidate. The two temporary real-acceptance user IDs have zero rows in auth.users. Stripe sandbox active Prices and webhook endpoint inventories were rechecked and remain empty. The production frontend and checkout were left unchanged, as requested for this preparation stage.

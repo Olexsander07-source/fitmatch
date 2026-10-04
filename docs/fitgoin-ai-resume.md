@@ -1,6 +1,6 @@
 # FitGoIn AI: verified release candidate — 2026-10-04
 
-The user asked to finish the paid AI trainer while preserving the existing site, has now connected the AI key and authorized publication if verification passes. Status questions continue this active task. Never request, print or commit secret values.
+The user asked to finish the paid AI trainer while preserving the existing site, has now connected the AI key and authorized publication if verification passes. The latest user instruction is to finish release preparation now, then complete real acceptance and publication in the following stage. Status questions continue this active task. Never request, print or commit secret values.
 
 ## Implementation and saved branch
 
@@ -15,7 +15,7 @@ Continue draft PR #14 on feat/ai-assistant-20261003; parent before completion wa
 
 ## Deployed backend and verification
 
-Supabase project ypbhcgcwkpiujcakvaji has migration 20261004151824_complete_paid_fitgoin_ai applied. Its local filename matches the recorded version; older applied migrations are unchanged. AI function v5 and billing function v1 are deployed with custom authentication. Existing marketplace Stripe functions were not replaced. Provider failure diagnostics now distinguish quota, credentials, permissions and temporary rate limits; logs contain only bounded status/code/request ID, never raw provider messages, prompts or keys.
+Supabase project ypbhcgcwkpiujcakvaji has migration 20261004151824_complete_paid_fitgoin_ai applied. Its local filename matches the recorded version; older applied migrations are unchanged. AI function v5 and billing function v2 are deployed with custom authentication. Existing marketplace Stripe functions were not replaced. Provider failure diagnostics now distinguish quota, credentials, permissions and temporary rate limits; logs contain only bounded status/code/request ID, never raw provider messages, prompts or keys.
 
 Latest deployed GET: AI backend_configured=true, provider_configured=true, configured=true; billing checkout_enabled=false, livemode=true. Configuration=true means the secret exists, not a successful answer. Two real test requests failed: the initial 429 was generically reported as provider_busy; after the diagnostic fix it was correctly classified as provider_quota. No successful provider answer was obtained.
 
@@ -25,7 +25,7 @@ Advisor review: no new security warning/error or missing foreign-key index. Seve
 
 ## Remaining release blockers
 
-1. The key is present, but OpenAI returns a quota/account-limit error. The user must verify API Billing balance and organization/project usage/spend limits. Do not repeatedly retry or request the secret. After resolving this, verify real plans, timing, nutrition/allergens, media uncertainty, safety, search/transcription, latency and costs.
+1. The key is present, but the real provider log records HTTP 429 with code credit_balance_exhausted (2026-10-04T15:38:57Z): no prepaid API credits remain. Resolve API Billing balance first; check usage/spend limits if a different quota code follows. Do not repeatedly retry or request the secret. After resolving this, verify real plans, timing, nutrition/allergens, media uncertainty, safety, search/transcription, latency and costs.
 2. Only a Stripe sandbox account was exposed. Its active Price and webhook endpoint lists are empty. Configure the separate AI Stripe key, monthly Prices and signing secret; both functions must use the same billing mode. Complete actual sandbox lifecycle acceptance.
 3. Verify merchant/subscription/refund/tax readiness before live collection. FGI_AI_BILLING_ENABLED and live FGI_AI_COMMERCIAL_READY are required gates. Adding only the AI key cannot enable checkout. Exact settings are in the function README.
 4. After acceptance, merge and publish only through the safe workflow on clean main matching origin/main: npm.cmd run check, npm.cmd run deploy:dry, npm.cmd run deploy. Never bypass safe-deploy.mjs.
@@ -33,3 +33,9 @@ Advisor review: no new security warning/error or missing foreign-key index. Seve
 Windows repository: C:\\Users\\HP\\Documents\\FitGoIn. Git: C:\\Program Files\\Git\\cmd\\git.exe. Production working tree was clean. Browser QA was isolated in C:\\Users\\HP\\Documents\\FitGoIn-AI-QA-20261004 and used no signed-in session.
 
 The candidate is prepared. Live paid release still requires credentials and acceptance. Do not claim a published, ideal, medically validated or unlimited product.
+
+## Final preparation check
+
+The current candidate passed npm.cmd run deploy:dry again: 46/46 automated tests and 19 public assets. The expanded scripts/ai-ui-smoke.cjs passed at 390/768/1440 px, now including the distinct quota/credential/permission messages as well as the previous seven-tab/consent/account-switch checks. The deployed AI v5 source exactly matches the saved candidate. No additional provider requests, billing activation, main merge or frontend publication occurred in this preparation stage.
+
+The Russian handover and acceptance order are in docs/fitgoin-ai-release.md. Preserve this checkpoint and continue with the outstanding real provider/payment checks, not a rebuild.
