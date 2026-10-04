@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { verifyProduction } from './verify-production.mjs';
+import { parseUploadedVersion, verifyProduction } from './verify-production.mjs';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const winGit = 'C:\\Program Files\\Git\\cmd\\git.exe';
@@ -41,7 +41,12 @@ run(node, ['--test', 'scripts/voice.test.mjs', 'scripts/ai.test.mjs', 'scripts/a
 process.env.FGI_RELEASE_COMMIT = local;
 run(node, ['scripts/build.mjs']);
 run(node, [wrangler, 'deploy', '--dry-run']);
-run(node, [wrangler, 'deploy']);
+// Publish the exact uploaded version. Domain/subdomain triggers are already
+// configured; rewriting them after upload was activating a different version.
+const upload = run(node, [wrangler, 'versions', 'upload', '--tag', local.slice(0, 12), '--message', `Verified release ${local}`], true);
+console.log(upload);
+const versionId = parseUploadedVersion(upload);
+run(node, [wrangler, 'versions', 'deploy', `${versionId}@100`, '--yes', '--message', `Verified release ${local}`]);
 
 const report = await verifyProduction();
 console.log(`Production verification passed: ${report.assets.length} matching files at ${report.base}`);
