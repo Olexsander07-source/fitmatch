@@ -1,4 +1,10 @@
-# FitGoIn AI: verified release candidate — 2026-10-04
+# FitGoIn AI: release checkpoint — 2026-10-04
+
+## Current frontend publication status
+
+The premium frontend is now published and verified at https://fitgoin.com. Release commit: `02b9095c57a649129279eb6068079040a62c688c` (PR #15). Cloudflare version: `1c3cc769-4d63-4164-b709-32f82f39b050`. The authorized safe deploy on clean main completed with exit code 0; 49/49 tests passed. The git bundle transfer is complete and its SHA-256 matches. All 28 public files match the release bytes; real guest-browser checks passed at 360/390/768/1440 px without page errors, failed requests, own-resource HTTP errors or horizontal overflow. Current public billing status is `checkout_enabled=false`, `livemode=true`. No new real provider-generation or payment acceptance was performed. See `premium-redesign-release.md` and `qa/premium/production-results-20261004.json`.
+
+Do not repeat the transfer, merge, or frontend publication. Next work is real AI-provider availability/answer acceptance, then Stripe sandbox lifecycle acceptance before enabling collection. The candidate/main/unpublished statements below describe the historical AI preparation stage and are superseded by this publication checkpoint.
 
 > Later release instruction, 2026-10-04: the user authorized finishing and publishing the premium redesign after verification, then explicitly asked to retry checking and publication. The current redesign report is `docs/premium-redesign-release.md`. Publish the verified frontend through the safe workflow with AI Checkout disabled. The real AI provider/payment acceptance blockers below remain; do not claim successful live AI or activate collection. Earlier statements that main/frontend were untouched describe the historical AI preparation stage.
 
