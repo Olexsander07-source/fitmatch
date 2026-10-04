@@ -38,6 +38,7 @@ run(node, ['--check', 'fitgoin-ai-media.mjs']);
 run(node, ['--check', 'supabase/functions/fitgoin-ai-billing/index.mjs']);
 run(node, ['scripts/verify.mjs']);
 run(node, ['--test', 'scripts/voice.test.mjs', 'scripts/ai.test.mjs', 'scripts/ai-paid.test.mjs', 'scripts/premium.test.mjs', 'scripts/verify-production.test.mjs']);
+process.env.FGI_RELEASE_COMMIT = local;
 run(node, ['scripts/build.mjs']);
 run(node, [wrangler, 'deploy', '--dry-run']);
 run(node, [wrangler, 'deploy']);
