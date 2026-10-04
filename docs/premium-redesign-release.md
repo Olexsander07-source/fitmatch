@@ -78,4 +78,3 @@
 Полный список изменений этого выпуска относительно прежнего production main сохранён в `premium-release-files.txt`, включая подготовленный ранее AI backend. Основные новые файлы редизайна: `fitgoin-premium.js`, `fitgoin-premium-core.mjs`, `fitgoin-premium.css`, `fitgoin-i18n.mjs`; изменены `index.html`, `fitmatch.js`, `fitgoin-ai.js`, favicon, manifest и сценарии проверки/сборки/безопасной публикации. Добавлены шесть изображений, сценарии UI/RLS/unit QA, скриншоты и отчёты.
 
 Production развёртывается только через `npm.cmd run deploy` и `scripts/safe-deploy.mjs` на чистой ветке main, совпадающей с origin/main. Подтверждение фактического выпуска публикуется после проверки https://fitgoin.com.
-
