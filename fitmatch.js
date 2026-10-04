@@ -1,7 +1,11 @@
 /* FitGoIn production frontend.
    Здесь используется только публичный ключ. Никогда не вставляйте service_role или Stripe secret key. */
-import {mountFitGoInAI} from './fitgoin-ai.js?v=20261003-ai';
+import {mountFitGoInAI} from './fitgoin-ai.js?v=20261004-premium';
+import {mountPremium} from './fitgoin-premium.js';
+import {workspaceRole,BRAND_IMAGES} from './fitgoin-premium-core.mjs';
+import {t} from './fitgoin-i18n.mjs';
 let aiAssistant=null;
+let premium=null;
 const CONFIG = Object.freeze({
   url: 'https://ypbhcgcwkpiujcakvaji.supabase.co',
   key: 'sb_publishable_Lsrk07A5aXJH7YypVR8QGQ_TQPwhfOV',
@@ -51,15 +55,11 @@ function sportKey(id) {
   return aliases[value] || directions.find(d => d.slice(0,3).some(v => norm(v) === value))?.[0] || norm(id);
 }
 function sportImage(id) {
-  const d = directions.find(d => d[0] === sportKey(id)) || directions[1];
-  return `https://images.unsplash.com/photo-${d[3]}?auto=format&fit=crop&w=1000&q=80`;
+  const name=sportKey(id)==='combat'?'boxing':sportKey(id)==='yoga'?'online':'coaching';
+  return `./assets/brand/${name}-${matchMedia('(max-width:650px)').matches?800:1600}.webp`;
 }
 function sportBackgrounds(id) {
-  const key=sportKey(id),strength=['fitness','bodybuilding','crossfit'],endurance=['running','cycling','swimming'];
-  const related=key==='yoga'?[]:strength.includes(key)?strength:endurance.includes(key)?endurance:[key,'fitness','running'];
-  const photos=[sportImage(id),...related.map(sportImage)];
-  if(key==='yoga')photos.push('https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=1000&q=80');
-  return [...new Set(photos)];
+  return [...new Set([sportImage(id),...BRAND_IMAGES.map(name=>`./assets/brand/${name}-${matchMedia('(max-width:650px)').matches?800:1600}.webp`)])];
 }
 function updateBackgroundControls() {
   document.querySelectorAll('[data-background-pause]').forEach(button=>{
@@ -167,7 +167,11 @@ function requireUser(action = '') {
 function closeDialogs() { document.querySelectorAll('dialog[open]:not(#callDialog):not(#incomingCallDialog)').forEach(d => d.close()); }
 function page(id, push = true) {
   if (!$(id)?.classList.contains('page')) id = 'home';
-  if (['account','inbox'].includes(id) && !requireUser(id)) return;
+  const routed=premium?.route(id)||id;
+  if(routed==='login'){requireUser(id);return;}
+  if(routed==='own-profile'){openProfile(user.id,push).catch(e=>notice(explain(e)));return;}
+  id=routed;
+  if (['account','inbox','ai','welcome','dashboard','match','matches','coaches','sports','ranking'].includes(id) && !requireUser(id)) return;
   if(currentPage==='ai' && id!=='ai')aiAssistant?.leave();
   closeDialogs(); stopBackgroundRotation(); currentPage = id;
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === id));
@@ -183,6 +187,7 @@ function page(id, push = true) {
   if (id === 'inbox') loadThreads().catch(e => message('chatMessage',explain(e),true));
   if (id === 'account') loadAccount().catch(e => message('coachMessage',explain(e),true));
   if (id === 'ai') aiAssistant?.open();
+  premium?.entered(id);
 }
 async function run(form, target, work) {
   if (form.dataset.busy) return;
@@ -267,6 +272,7 @@ function moveMatchStep(direction) {
   const steps=[...document.querySelectorAll('#matchForm .match-step')];
   if(direction>0){const required=steps[matchStep]?.querySelector('[required]');if(required && !required.reportValidity())return;}
   matchStep=Math.max(0,Math.min(matchStep+direction,steps.length-1));updateMatchWizard();
+  premium?.saveMatch(matchStep);
 }
 function resetMatchWizard(clear=false) {
   if(clear)$('matchForm')?.reset();matchStep=0;
@@ -303,15 +309,19 @@ function matchPreferenceSummary(p) {
   ].filter(Boolean);
   return items.map(v=>`<span class="tag">${esc(v)}</span>`).join('');
 }
-function findMatch(form) {
+async function findMatch(form) {
+  if(!requireUser('match'))return;
+  const epoch=authEpoch;premium?.saveMatch(matchStep);page('searching');
+  await new Promise(resolve=>setTimeout(resolve,backgroundMotion.matches?0:650));
+  if(epoch!==authEpoch||currentPage!=='searching')return;
   const p=Object.fromEntries(new FormData(form));notice('');
-  const ranked=coaches.filter(publicOnly).map(c=>({c,m:calculateMatch(c,p)})).filter(x=>x.m)
+  const ranked=coaches.filter(publicOnly).filter(c=>c.id!==user?.id).map(c=>({c,m:calculateMatch(c,p)})).filter(x=>x.m)
     .sort((a,b)=>b.m.percent-a.m.percent || Number(b.c.rating||0)-Number(a.c.rating||0) || Number(b.c.score||0)-Number(a.c.score||0))
     .slice(0,3);
   const summary=$('matchSummary');summary.hidden=false;
   summary.innerHTML=`<p class="eyebrow">ТВОЙ MATCH</p><h2>${ranked.length?`Нашли ${ranked.length} ${ranked.length===1?'подходящего тренера':'лучших совпадения'}`:'Пока нет точного совпадения'}</h2><div class="tags">${matchPreferenceSummary(p)}</div><p class="muted">Процент рассчитан только по выбранным тобой параметрам. Он показывает совпадение анкет, а не гарантирует результат тренировок.</p>`;
   $('matchResults').innerHTML=ranked.map(x=>card(x.c,x.m)).join('') || `<p class="empty">${esc(catalogueError || 'Тренеров по этому спорту пока нет. Попробуй другой вид спорта или вернись позже.')}</p>`;
-  summary.scrollIntoView({behavior:'smooth',block:'start'});
+  page('matches');
 }
 async function openProfile(id, push = true) {
   const c=coaches.find(c=>c.id===id); if(!c) throw Error('Профиль не найден. Обнови каталог.');
@@ -325,12 +335,14 @@ async function openProfile(id, push = true) {
       </div>
     </header>
     <article class="profile-layout profile-details"><div class="portrait">${photoHTML(c)}</div><div class="profile-info panel">
-      <p class="workspace-kicker">ТРЕНИРОВКИ С ТРЕНЕРОМ</p><h2>${esc(priceText(c))}</h2><div class="actions">${!c.legacy?`<button class="btn primary" data-contact="${esc(c.id)}">Написать тренеру ↗</button>`:'<p class="hint">Этот тренер ещё не подключил сообщения в новой версии.</p>'}${c.id===user?.id?'<button class="btn" data-page="account">Редактировать</button>':''}</div>
+      <p class="workspace-kicker">ТРЕНИРОВКИ С ТРЕНЕРОМ</p><h2>${esc(priceText(c))}</h2><div class="actions">${c.id===user?.id?'<button class="btn primary" data-coach-edit>Редактировать профиль</button>':!c.legacy?`<button class="btn primary" data-contact="${esc(c.id)}">Написать тренеру ↗</button>`:'<p class="hint">Этот тренер ещё не подключил сообщения в новой версии.</p>'}</div>
       ${payment?`<p class="section-small"><a class="btn" href="${esc(payment)}" target="_blank" rel="noopener noreferrer">${new URL(payment).pathname.startsWith('/test_')?'Тестовая оплата Stripe':'Оплатить у тренера'} ↗</a></p><p class="hint">Ссылку добавил тренер. Проверь продавца, услугу, сумму и период на странице Stripe. Подтверждение платежа приходит от Stripe; здесь статус оплаты не отслеживается.</p>`:'<p class="hint">Онлайн-оплата пока не подключена. Обсуди стоимость с тренером.</p>'}
       <h3 class="section-small">О тренере</h3><p class="multiline">${esc(c.bio || 'Описание пока не добавлено.')}</p><p>Опыт: ${c.experience_years==null?'не указан':esc(c.experience_years)+' лет'}</p>
       ${[['Цели / специализация',c.goal],['Образование',c.education],['Титулы',c.titles],['Достижения',c.achievements]].map(([t,v])=>v?`<h3>${t}</h3><p class="multiline">${esc(v)}</p>`:'').join('')}
+      ${c.availability.length?`<h3>Удобное время</h3><div class="profile-schedule">${c.availability.map(key=>`<span class="tag">${esc(availabilityLabels[key]||key)}</span>`).join('')}</div>`:''}
       <p class="hint">Достижения и титулы указаны тренером. Рейтинг: ${Number(c.rating)>0?Number(c.rating).toFixed(1):'ещё не сформирован'}.</p>
     </div></article><div id="profileGallery" class="section-small"></div>`;
+  premium?.profileRendered(c);
   startBackgroundRotation(c.id,c.sport,[$('profileBackdrop'),$('profileContent').querySelector('.sport-backdrop')]);
   if(!c.legacy) {
     try { const items=unwrap(await db.from('fgi_media').select('*').eq('coach_id',c.id).order('created_at',{ascending:false})); if(visibleProfile===id && $('profileGallery')) $('profileGallery').innerHTML=galleryHTML(items,false); }
@@ -338,8 +350,7 @@ async function openProfile(id, push = true) {
   }
 }
 function coachWorkspaceActive() {
-  // Выбирает только интерфейс. Права на данные по-прежнему проверяет Supabase.
-  return Boolean(user && (own || user.user_metadata?.signup_intent==='coach' || pendingAction==='coach-onboarding' || $('coachForm').dataset.dirty));
+  return Boolean(user && workspaceRole(profileRecord,own)==='coach');
 }
 function renderAccountWorkspace() {
   const coachMode=coachWorkspaceActive(),form=$('coachForm');
@@ -451,36 +462,44 @@ function authUI() {
   document.querySelector('.header-actions').classList.toggle('guest-nav',!user);
   $('accountEmail').textContent=user?.email || user?.phone || '';
   renderAccountWorkspace();
+  premium?.decorate();
 }
 function authChanged(event, session) {
   const previous=user,next=session?.user || null, changed=user?.id!==next?.id;
   user=next;if(changed)own=null;
+  premium?.setSession(user);
   aiAssistant?.setSession(user);
   if(changed){authEpoch++;threadEpoch++;catalogueEpoch++;own=null;profileRecord=null;activeThread=null;threads=[];chatRows=[];pendingMessage=null;visibleProfile='';presence.clear();presenceFetchedAt=0;
     cancelVoiceRecording();cleanupCallLocal();$('threads').replaceChildren();$('messages').replaceChildren();$('myGallery').replaceChildren();$('profileContent').replaceChildren();$('chatTitle').textContent='Выбери диалог';$('chatPresence').textContent='';$('messageForm').hidden=true;$('messageForm').reset();clearChatAttachment();clearChatMediaURLs();$('clientForm').reset();delete $('clientForm').dataset.dirty;$('coachForm').reset();delete $('coachForm').dataset.dirty;accountTab='profile';$('coachForm').hidden=true;$('clientCoachStart').hidden=false;$('mediaEditor').hidden=true;
-    stopPresenceHeartbeat();if(user)setTimeout(startPresenceHeartbeat,0);
-    if(!user){coaches=coaches.filter(publicOnly);if(['account','inbox','profile'].includes(currentPage)) page('home');}
+    resetMatchWizard(true);stopPresenceHeartbeat();if(user)setTimeout(startPresenceHeartbeat,0);
+    if(!user){coaches=coaches.filter(publicOnly);if(currentPage!=='home'&&currentPage!=='signup') page('home');}
     setTimeout(()=>{loadCatalogue().then(()=>user?loadAccount():null).catch(e=>notice(explain(e)));},0);
   }
   authUI();
   if(event==='PASSWORD_RECOVERY') {pendingAction='';closeDialogs();$('resetDialog').showModal();}
 }
 async function afterLogin() {
-  closeDialogs(); const action=pendingAction;
+  closeDialogs(); const action=pendingAction;premium?.setSession(user);aiAssistant?.setSession(user);
   await loadCatalogue(); await loadAccount();
-  if(action==='coach-onboarding' && !own)$('coachForm').dataset.dirty='1';
+  if((action==='coach-onboarding'||user.user_metadata?.signup_intent==='coach')&&!coachWorkspaceActive())await startCoachOnboarding();
+  await premium?.accountLoaded();
   pendingAction='';authUI();
-  if(action.startsWith('contact:')) await contact(action.slice(8)); else page(action==='coach-onboarding'?'account':action || 'account');
+  if(action.startsWith('contact:')) await contact(action.slice(8));
+  else if(coachWorkspaceActive()&&own)await openProfile(own.id);
+  else page(coachWorkspaceActive()?'account':!action||action==='account'?premium?.startPage()||'welcome':action);
 }
 function redirectURL() { return location.origin+location.pathname; } // Сохраняет /имя-репозитория/ GitHub Pages.
 function setSignupRole(role) {
   signupRole=role==='coach'?'coach':'client';
   const coach=signupRole==='coach';
   $('signupRoleLabel').textContent=coach?'РЕГИСТРАЦИЯ ТРЕНЕРА':'РЕГИСТРАЦИЯ КЛИЕНТА';
-  $('signupTitle').innerHTML=coach?'Создай профиль <em>тренера.</em>':'Создай свой <em>кабинет.</em>';
-  $('signupHint').textContent=coach?'После подтверждения email ты перейдёшь к заполнению анкеты тренера: укажешь свой спорт, опыт и условия тренировок.':'После регистрации ты сможешь проходить MATCH, писать тренерам и пользоваться своим кабинетом.';
+  $('signupTitle').textContent=t(coach?'signupCoach':'signupClient');
+  $('signupHint').textContent=t(coach?'signupCoachHint':'signupClientHint');
+  $('signupNextStep').textContent=t(coach?'coachProfile':'goal');
 }
 function openSignup(role) {
+  $('signupForm').closest('.narrow').removeAttribute('data-signup-confirmed');
+  message('signupMessage','');
   setSignupRole(role);pendingAction=signupRole==='coach'?'coach-onboarding':'account';page('signup');
 }
 async function loadAccount() {
@@ -501,7 +520,7 @@ async function loadAccount() {
   if(!form.dataset.dirty && !form.dataset.busy){
     for(const [name,control] of Object.entries(Object.fromEntries([...form.elements].filter(e=>e.name).map(e=>[e.name,e])))) {
       if(name==='languages' || name==='availability') continue;
-      if(control.type==='checkbox') control.checked=record?.[name] ?? true;
+      if(control.type==='checkbox') control.checked=record?.[name] ?? false;
       else control.value=record?.[name] ?? (name==='name'?(profile?.full_name || user.user_metadata?.full_name || ''):name==='format'?'Онлайн':name==='period'?'занятие':'');
     }
     if(record?.sport && ![...$('coachSport').options].some(o=>o.value===record.sport)) $('coachSport').add(new Option(sportName(record.sport),record.sport));
@@ -511,7 +530,16 @@ async function loadAccount() {
     $('coachPayment').open=Boolean(record?.payment_url);
   }
   authUI();
+  await premium?.accountLoaded();
   if(record) await loadMyGallery();
+}
+async function startCoachOnboarding() {
+  if(!requireUser('coach-onboarding'))return;
+  const epoch=authEpoch;
+  unwrap(await db.rpc('fgi_start_trainer_onboarding'));
+  if(epoch!==authEpoch)return;
+  await loadAccount();
+  if(!coachWorkspaceActive())throw Error('Не удалось подтвердить роль тренера. Обнови страницу.');
 }
 const actionTimes=new Map();
 function rateGate(key, wait=10000) {
@@ -605,7 +633,7 @@ function bindAuth() {
     const data=unwrap(await db.auth.signUp({email:signupEmail,password:assertStrongPassword(f.get('password')),options:{emailRedirectTo:redirectURL(),data:{full_name:name,signup_intent:signupRole}}}));
     form.elements.password.value='';
     if(data.session){user=data.user;authUI();message('signupMessage','Аккаунт создан.');await afterLogin();}
-    else message('signupMessage','Запрос принят. Если адрес можно зарегистрировать, придёт письмо со ссылкой подтверждения. Проверь входящие и спам. Если аккаунт уже есть — войди или восстанови пароль.');
+    else {message('signupMessage',t('confirmationHint'));$('signupForm').closest('.narrow').setAttribute('data-signup-confirmed','true');}
   });
   $('resend').onclick=()=>run($('resend'),'signupMessage',async()=>{rateGate('resend',15000);
     const email=$('signupForm').elements.email.value.trim() || signupEmail;
@@ -640,12 +668,7 @@ function bindClient() {
     if(!own && !$('coachForm').dataset.dirty)$('coachForm').elements.name.value=full_name;
     renderAccountWorkspace();
   });
-  $('becomeCoach').onclick=()=>{
-    if(!requireUser('account'))return;
-    const form=$('coachForm');form.hidden=false;$('clientCoachStart').hidden=true;
-    if(!form.elements.name.value)form.elements.name.value=profileRecord?.full_name || user.user_metadata?.full_name || '';
-    form.dataset.dirty='1';accountTab='profile';authUI();form.scrollIntoView({behavior:'smooth',block:'start'});
-  };
+  $('becomeCoach').onclick=()=>run($('becomeCoach'),'clientMessage',async()=>{await startCoachOnboarding();accountTab='profile';page('account');});
 }
 function bindCoach() {
   $('coachForm').addEventListener('input',()=>{const form=$('coachForm');form.dataset.dirty='1';form.dataset.revision=String(Number(form.dataset.revision || 0)+1);renderAccountWorkspace();});
@@ -659,7 +682,7 @@ function bindCoach() {
     payload.price=f.get('price')===''?null:Number(f.get('price'));
     if(payload.price!=null && (!Number.isFinite(payload.price) || payload.price<0 || payload.price>100)) throw Error('Цена должна быть от 0 до 100 €.');
     payload.experience_years=f.get('experience_years')===''?null:Number(f.get('experience_years'));
-    payload.languages=f.getAll('languages');payload.availability=f.getAll('availability');payload.published=f.has('published');
+    payload.languages=f.getAll('languages');payload.availability=f.getAll('availability');payload.published=own?.published===true&&f.has('published');
     if(payload.payment_url && !safeURL(payload.payment_url,true)) throw Error('Допускается только Payment Link вида https://buy.stripe.com/… без параметров после ссылки.');
     if(payload.payment_url)payload.payment_url=safeURL(payload.payment_url,true);
     const saved=unwrap(await db.from('fgi_coaches').upsert(payload,{onConflict:'id'}).select().single());
@@ -667,6 +690,7 @@ function bindCoach() {
     accountVersion++;own=saved;if(revision===$('coachForm').dataset.revision)delete $('coachForm').dataset.dirty;
     message('coachMessage','Профиль сохранён. Теперь можно загрузить фотографии.');$('mediaEditor').hidden=false;authUI();
     await loadCatalogue();await loadAccount();
+    await premium?.coachSaved(payload.published);
   });
   $('coachOverview').onclick=event=>{if(own && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey){event.preventDefault();openProfile(own.id).catch(e=>notice(explain(e)));}};
 }
@@ -1449,12 +1473,12 @@ function bindUI() {
   $('menu').onclick=()=>{$('nav').classList.toggle('open');$('menu').setAttribute('aria-expanded',String($('nav').classList.contains('open')));};
   $('authOpen').onclick=()=>{pendingAction='';if(user)page('account');else $('authDialog').showModal();};
   $('clientSignupOpen').onclick=()=>openSignup('client');
-  $('accountOpen').onclick=()=>{try{if(user)page('account');else openSignup('coach');}catch(e){notice(explain(e));}};
+  $('accountOpen').onclick=()=>{try{if(user&&coachWorkspaceActive()&&own)openProfile(own.id).catch(e=>notice(explain(e)));else if(user)page(coachWorkspaceActive()?'account':premium?.startPage()||'dashboard');else openSignup('coach');}catch(e){notice(explain(e));}};
   document.addEventListener('click',e=>{
     const b=e.target.closest('button');if(!b)return;
     Promise.resolve().then(async()=>{
       if(b.hasAttribute('data-background-pause')){backgroundPaused=!backgroundPaused;scheduleBackgroundRotation();}
-      if(b.dataset.page){if(b.dataset.page==='match')resetMatchWizard(true);if(b.dataset.page==='signup')openSignup('client');else page(b.dataset.page);}
+      if(b.dataset.page){if(b.dataset.page==='signup')openSignup('client');else page(b.dataset.page);}
       if(b.dataset.action==='login')$('authDialog').showModal();
       if(b.hasAttribute('data-close'))b.closest('dialog').close();
       if(b.dataset.sport){$('sportFilter').value=b.dataset.sport;page('coaches');renderCatalogue();}
@@ -1468,7 +1492,7 @@ function bindUI() {
   document.addEventListener('error',e=>{if(e.target.tagName==='IMG'){const box=document.createElement('div');box.className='initials';box.textContent='Фото недоступно';box.style.fontSize='18px';e.target.replaceWith(box);}},true);
   $('search').oninput=renderCatalogue;$('sportFilter').onchange=renderCatalogue;$('formatFilter').onchange=renderCatalogue;
   $('matchPrev').onclick=()=>moveMatchStep(-1);$('matchNext').onclick=()=>moveMatchStep(1);
-  $('matchForm').onsubmit=e=>{e.preventDefault();findMatch(e.target);};
+  $('matchForm').onsubmit=e=>{e.preventDefault();findMatch(e.target).catch(e=>notice(explain(e)));};
   opt($('matchLanguage'),Object.entries(langs),'Не важно');
   $('coachLanguages').innerHTML=Object.entries(langs).map(([id,name])=>`<label class="check"><input type="checkbox" name="languages" value="${id}">${name}</label>`).join('');
   $('goals').innerHTML=goals.map(g=>`<option value="${esc(g)}"></option>`).join('');
@@ -1477,12 +1501,7 @@ function bindUI() {
   document.addEventListener('visibilitychange',()=>{if(!user || !db)return;if(document.visibilityState==='visible')startPresenceHeartbeat();else{stopPresenceHeartbeat();touchPresence(false).catch(()=>{});}});
   document.addEventListener('visibilitychange',scheduleBackgroundRotation);
   backgroundMotion.addEventListener('change',event=>{backgroundPaused=event.matches;scheduleBackgroundRotation();});
-  let index=0,paused=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  function hero(){if(!sports.length)return;$('heroImage').style.backgroundImage=`url('${sportImage(sports[index++%sports.length].id)}')`;}
-  const pauseButton=$('pauseHero');pauseButton.textContent=paused?'Включить смену фона':'Пауза фона';
-  pauseButton.onclick=()=>{paused=!paused;pauseButton.textContent=paused?'Включить смену фона':'Пауза фона';};
-  sports=directions.map(d=>({id:d[0],name:d[1]}));renderSports();renderCatalogue();updateMatchWizard();hero();
-  setInterval(()=>{if(!paused && currentPage==='home' && document.visibilityState==='visible')hero();},7000);
+  sports=directions.map(d=>({id:d[0],name:d[1]}));renderSports();renderCatalogue();updateMatchWizard();
 }
 async function init() {
   const callback=new URLSearchParams(location.hash.slice(1)),query=new URLSearchParams(location.search);
@@ -1491,6 +1510,9 @@ async function init() {
   const requestedTrainer=query.get('trainer');
   setSignupRole(query.get('signup'));
   bindUI();bindAuth();bindClient();bindCoach();bindMedia();bindChat();
+  premium=mountPremium({getDB:()=>db,getUser:()=>user,getProfile:()=>profileRecord,getCoach:()=>own,getPage:()=>currentPage,getAccountTab:()=>accountTab,setAccountTab,
+    getMatchStep:()=>matchStep,setMatchStep:value=>{matchStep=Number(value)||0;updateMatchWizard();},signup:openSignup,navigate:page,notice,explain,
+    openOwn:()=>openProfile(user.id),reload:async()=>{await loadCatalogue();await loadAccount();}});
   notice('Подключаем FitGoIn…');
   try {
     const {createClient}=await import(CONFIG.sdk);
@@ -1498,12 +1520,13 @@ async function init() {
     aiAssistant=mountFitGoInAI($('fitgoinAI'),{
       getDB:()=>db,getUser:()=>user,endpoint:CONFIG.url+'/functions/v1/fitgoin-ai',
       login:()=>requireUser('ai'),navigate:page,prepareImage,openCoach:openProfile,contact,
+      savedIds:()=>premium.savedIds(),toggleSaved:id=>premium.toggleSaved(id),clearSaved:()=>premium.clearSaved(),
       sports:()=>directions.map(([key,name])=>[key,name]),coachName:id=>coaches.find(c=>c.id===id)?.name||'Тренер',
       matches:p=>coaches.filter(publicOnly).filter(c=>c.id!==user?.id).map(coach=>({coach,match:calculateMatch(coach,{...p,budget:p.budget??''})})).filter(x=>x.match)
         .sort((a,b)=>b.match.percent-a.match.percent||Number(b.coach.rating||0)-Number(a.coach.rating||0)||Number(b.coach.score||0)-Number(a.coach.score||0)).slice(0,3)
     });
     db.auth.onAuthStateChange(authChanged); // Callback синхронный: никаких вложенных вызовов Supabase Auth.
-    const data=unwrap(await db.auth.getSession());user=data.session?.user || null;authUI();aiAssistant.setSession(user);if(user)startPresenceHeartbeat();
+    const data=unwrap(await db.auth.getSession());user=data.session?.user || null;premium.setSession(user);authUI();aiAssistant.setSession(user);if(user)startPresenceHeartbeat();
     await loadCatalogue();
     if(callbackError){closeDialogs();$('authDialog').showModal();message('authMessage','Ссылка недействительна: '+callbackError,true);history.replaceState(null,'',redirectURL());}
     else if(callback.get('type')==='recovery' && user){closeDialogs();$('resetDialog').showModal();}
@@ -1511,8 +1534,11 @@ async function init() {
     else if($(requestedPage)?.classList.contains('page'))page(requestedPage,false);
     if(user){
       await loadAccount();
-      const newCoach=!own && user.user_metadata?.signup_intent==='coach';
-      if(!callbackError && callback.get('type')!=='recovery' && !requestedTrainer && (callback.get('type')==='signup' || newCoach && !$(requestedPage)?.classList.contains('page')))page('account');
+      if(!coachWorkspaceActive()&&user.user_metadata?.signup_intent==='coach')await startCoachOnboarding();
+      if(!callbackError&&callback.get('type')!=='recovery'&&!requestedTrainer){
+        if(!requestedPage||callback.get('type')==='signup'){if(own&&coachWorkspaceActive())await openProfile(own.id);else page(premium.startPage());}
+        else page(requestedPage,false);
+      }
     }
   } catch(e){notice('Не удалось подключить все функции. '+explain(e));}
 }

@@ -1,5 +1,7 @@
 # FitGoIn AI: verified release candidate — 2026-10-04
 
+> Later release instruction, 2026-10-04: the user authorized finishing and publishing the premium redesign after verification, then explicitly asked to retry checking and publication. The current redesign report is `docs/premium-redesign-release.md`. Publish the verified frontend through the safe workflow with AI Checkout disabled. The real AI provider/payment acceptance blockers below remain; do not claim successful live AI or activate collection. Earlier statements that main/frontend were untouched describe the historical AI preparation stage.
+
 The user asked to finish the paid AI trainer while preserving the existing site, has now connected the AI key and authorized publication if verification passes. The latest user instruction is to finish release preparation now, then complete real acceptance and publication in the following stage. Status questions continue this active task. Never request, print or commit secret values.
 
 ## Implementation and saved branch
