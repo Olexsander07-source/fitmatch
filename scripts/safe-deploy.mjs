@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { verifyProduction } from './verify-production.mjs';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const winGit = 'C:\\Program Files\\Git\\cmd\\git.exe';
@@ -36,17 +37,10 @@ run(node, ['--check', 'fitgoin-ai-paid.mjs']);
 run(node, ['--check', 'fitgoin-ai-media.mjs']);
 run(node, ['--check', 'supabase/functions/fitgoin-ai-billing/index.mjs']);
 run(node, ['scripts/verify.mjs']);
-run(node, ['--test', 'scripts/voice.test.mjs', 'scripts/ai.test.mjs', 'scripts/ai-paid.test.mjs', 'scripts/premium.test.mjs']);
+run(node, ['--test', 'scripts/voice.test.mjs', 'scripts/ai.test.mjs', 'scripts/ai-paid.test.mjs', 'scripts/premium.test.mjs', 'scripts/verify-production.test.mjs']);
 run(node, ['scripts/build.mjs']);
 run(node, [wrangler, 'deploy', '--dry-run']);
 run(node, [wrangler, 'deploy']);
 
-let ok = false;
-for (let attempt = 1; attempt <= 3; attempt++) {
-  const response = await fetch(`https://fitgoin.com/?deploy_verify=${Date.now()}`, { cache: 'no-store' });
-  const body = await response.text();
-  if (response.ok && body.includes('<title>FitGoIn')) { ok = true; break; }
-  await new Promise((resolve) => setTimeout(resolve, 2000));
-}
-if (!ok) throw new Error('Deploy completed, but production verification failed.');
-console.log('Production verification passed: https://fitgoin.com/');
+const report = await verifyProduction();
+console.log(`Production verification passed: ${report.assets.length} matching files at ${report.base}`);
