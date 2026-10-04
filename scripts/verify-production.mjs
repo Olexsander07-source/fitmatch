@@ -5,6 +5,13 @@ import { pathToFileURL } from 'node:url';
 const controls = new Set(['_headers', '_redirects']);
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 
+export function parseUploadedVersion(output) {
+  const plain = String(output).replace(/\x1b\[[0-9;]*m/g, '');
+  const ids = [...plain.matchAll(/^Worker Version ID:\s*([a-f\d]{8}-(?:[a-f\d]{4}-){3}[a-f\d]{12})\s*$/gim)];
+  if (ids.length !== 1) throw new Error('Upload did not identify exactly one Worker version; refusing to publish.');
+  return ids[0][1];
+}
+
 async function assetsIn(directory, prefix = '') {
   const files = [];
   for (const entry of await readdir(directory, { withFileTypes: true })) {

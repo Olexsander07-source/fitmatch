@@ -4,7 +4,21 @@ import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { verifyProduction } from './verify-production.mjs';
+import { parseUploadedVersion, verifyProduction } from './verify-production.mjs';
+
+test('publish uses the exact version identified by the upload, including coloured CLI output', () => {
+  assert.equal(parseUploadedVersion('Uploaded assets\nWorker Version ID: \x1b[32m3c41785e-d6b0-4236-8827-00f456c0838e\x1b[0m\n'), '3c41785e-d6b0-4236-8827-00f456c0838e');
+});
+
+test('missing or incomplete upload identifiers cannot start publication', () => {
+  assert.throws(() => parseUploadedVersion('Upload failed'), /refusing to publish/);
+  assert.throws(() => parseUploadedVersion('Worker Version ID: incomplete'), /refusing to publish/);
+  assert.throws(() => parseUploadedVersion('Current Version ID: 3c41785e-d6b0-4236-8827-00f456c0838e'), /refusing to publish/);
+});
+
+test('ambiguous upload output cannot publish an arbitrary version', () => {
+  assert.throws(() => parseUploadedVersion('Worker Version ID: 3c41785e-d6b0-4236-8827-00f456c0838e\nWorker Version ID: 6a447710-bf5b-4f94-af8b-cd4d70d4f595\n'), /refusing to publish/);
+});
 
 async function build(t) {
   const dir = await mkdtemp(join(tmpdir(), 'fitgoin-deploy-test-'));
