@@ -3,8 +3,8 @@
   "short_name": "FitGoIn",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#101310",
-  "theme_color": "#101310",
+  "background_color": "#101c29",
+  "theme_color": "#101c29",
   "icons": [
     {
       "src": "/favicon.svg",
