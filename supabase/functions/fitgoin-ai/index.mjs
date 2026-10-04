@@ -43,7 +43,17 @@ export function createAIHandler({env,fetcher=fetch}={}) {
     let result;
     try {result=await fetcher(`https://api.openai.com/v1/${transcription?'audio/transcriptions':'responses'}`,{method:'POST',headers:{Authorization:`Bearer ${apiKey}`,...(!transcription?{'Content-Type':'application/json'}:{})},body:transcription?payload:JSON.stringify(payload),signal:AbortSignal.timeout(Math.max(1,Math.min(40000,deadline-Date.now())))});}
     catch {throw new AIError('provider_unavailable',503);}
-    if(!result.ok)throw new AIError(result.status===429?'provider_busy':'provider_unavailable',503);
+    if(!result.ok){
+      // Safe operational diagnostics: never log provider messages, bodies,
+      // credentials, user IDs, prompts or media.
+      let failure;try{failure=await result.json();}catch{}
+      const codes=new Set(['insufficient_quota','credit_balance_exhausted','organization_spend_limit_exceeded','project_spend_limit_exceeded','organization_usage_limit_exceeded','rate_limit_exceeded','rate_limit_error','slow_down','invalid_api_key','model_not_found','server_is_overloaded']);
+      const code=codes.has(failure?.error?.code)?failure.error.code:'unclassified';
+      const requestId=result.headers.get('x-request-id');
+      console.warn(JSON.stringify({event:'fgi_ai_provider_error',status:result.status,code,...(requestId&&/^[A-Za-z0-9_-]{1,100}$/.test(requestId)?{request_id:requestId}:{})}));
+      const quota=['insufficient_quota','credit_balance_exhausted','organization_spend_limit_exceeded','project_spend_limit_exceeded','organization_usage_limit_exceeded'].includes(code);
+      throw new AIError(quota?'provider_quota':result.status===401?'provider_authentication':result.status===403?'provider_permissions':result.status===429?'provider_busy':'provider_unavailable',503);
+    }
     const value=await result.json();
     if(meter){
       if(transcription)meter.cost+=meter.duration*.006/60;

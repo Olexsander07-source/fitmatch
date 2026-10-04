@@ -1,10 +1,10 @@
 # FitGoIn AI — validation, 4 October 2026
 
-The existing AI workspace now has a paid release candidate. Static production publication and PR merge are deferred. Supabase migration 20261004151824_complete_paid_fitgoin_ai, AI function v3 and billing function v1 are deployed. Actual GET confirms missing OpenAI configuration and disabled checkout. Real OpenAI answers and Stripe payments have not been tested.
+The existing AI workspace now has a paid release candidate. Static production publication and PR merge are deferred. Supabase migration 20261004151824_complete_paid_fitgoin_ai, AI function v5 and billing function v1 are deployed. The user connected the OpenAI key and authorized publication if checks pass. Actual requests were attempted, but OpenAI rejected them due to API quota/account limits. Checkout remains disabled. No successful AI answer or Stripe payment acceptance has been established.
 
 ## Automated verification
 
-npm run check passed all 45 tests: original AI/voice regressions plus server access, billing configuration/signature/mode/ownership, lifecycle reconciliation, duplicate Checkout protection, media/schema validation, fatigue/calendar behavior, monthly denial, module context and a food-photo handler round trip. Provider and Stripe objects in these tests are mocks.
+npm run check passed all 46 tests: original AI/voice regressions plus server access, billing configuration/signature/mode/ownership, lifecycle reconciliation, duplicate Checkout protection, media/schema validation, fatigue/calendar behavior, monthly denial, module context, a food-photo handler round trip and safe distinction of provider quota/credential/permission/rate failures. Provider and Stripe objects in these tests are mocks.
 
 npm run deploy:dry passed and prepared 19 public assets. Private backend source and credentials are excluded. No Cloudflare production publication occurred.
 
@@ -26,15 +26,19 @@ Reproduce with scripts/ai-ui-smoke.cjs and an independently installed playwright
 
 ## Actual deployed endpoint checks
 
-- AI GET: backend_configured=true, provider_configured=false, configured=false.
+- AI GET after the user's key configuration: backend_configured=true, provider_configured=true, configured=true.
 - Billing GET: checkout_enabled=false, livemode=true.
 - Unauthenticated POST to either: HTTP 401.
 
-Status booleans establish configuration only. No secret value was retrieved/printed. Existing marketplace Stripe functions were not replaced.
+Status booleans establish configuration only. Two real requests using a temporary invited account returned HTTP 503; the underlying 429 was initially provider_busy, then correctly provider_quota after the diagnostic fix. Provider credit/usage/spend failure cannot be resolved by code retries. No secret value was retrieved/printed. Existing marketplace Stripe functions were not replaced.
+
+Additional actual deployed HTTP checks passed: Auth sign-in, unauthenticated denial, disallowed origin, foreign conversation denial, unpaid access denial, editable friend metadata not granting access, media consent enforcement, disabled Checkout, owner food insert/foreign read-write denial and underage personalized-plan refusal. These checks made no provider call. Both temporary accounts were signed out, sessions/users deleted, fixture grants/profiles confirmed absent and temporary credential file removed.
+
+The only available Stripe account is Fitgoin sandbox. Active Prices and webhook endpoint lists were empty. No live account configuration or actual billing lifecycle is inferred.
 
 ## Live acceptance still required
 
-Privately configure OPENAI_API_KEY, then verify actual day completeness/durations, nutritional estimates/allergens, missing questions, safety/refusals, media uncertainty, search citations/automatic research, languages, microphone transcription, latency and costs. Configuration=true alone proves none of those.
+Resolve OpenAI API balance/quota and organization/project spend limits first; OPENAI_API_KEY is already stored. Then verify actual day completeness/durations, nutritional estimates/allergens, missing questions, safety/refusals, media uncertainty, search citations/automatic research, languages, microphone transcription, latency and costs. Configuration=true alone proves none of those.
 
 Configure the separate AI Stripe key, three EUR monthly Prices, webhook signing secret and consistent mode. Exercise actual sandbox Checkout → signed webhook → entitlement → renewal/failure/cancellation/refund/dispute → Portal, including concurrent Checkout attempts and mode isolation. Only a sandbox connection has been observed; live readiness is unverified.
 

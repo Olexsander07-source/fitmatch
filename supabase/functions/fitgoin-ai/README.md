@@ -35,6 +35,8 @@ Data deletion removes AI profile, plans, messages, progress, shared summaries, f
 
 ## Verification and release
 
+Provider HTTP failures are classified as quota, authentication, permissions, temporary rate limit or unavailable. A quota failure does not instruct users to repeatedly retry. Operational logs contain only an allowlisted error code, HTTP status and a bounded provider request ID; raw error messages/body, keys and personal content are excluded. The October 4 real request check reached the provider but failed on quota/account limits; resolve API Billing/limits before acceptance or publication.
+
 `npm run check`: syntax, existing voice tests and AI/paid tests. `npm run deploy:dry`: required non-publishing build check. On Windows use `npm.cmd`. Run both `scripts/ai-rls.test.sql` and `scripts/ai-paid-rls.test.sql` with administrator credentials; fixtures roll back. Mock tests and successful configuration booleans do not establish live AI quality, transcription/search, real payments or medical reliability.
 
 Before live collection: verify actual provider responses, training plan/time/allergy checks, real search citations and voice transcription; Stripe sandbox Checkout → webhook → entitlement → renewal/failure/cancellation/refund/dispute → Portal; account switch/privacy and mobile controls. Complete merchant/tax/refund readiness, then save/merge the reviewed PR and deploy only through `npm.cmd run deploy` on clean main matching origin/main. Never bypass `scripts/safe-deploy.mjs` or publish a paid offer just because mock tests pass.

@@ -1,6 +1,6 @@
 # FitGoIn AI: verified release candidate — 2026-10-04
 
-The user asked to finish the paid AI trainer while preserving the existing site and will connect the AI key after implementation. Status questions continue this active task. Never request, print or commit secret values.
+The user asked to finish the paid AI trainer while preserving the existing site, has now connected the AI key and authorized publication if verification passes. Status questions continue this active task. Never request, print or commit secret values.
 
 ## Implementation and saved branch
 
@@ -15,18 +15,18 @@ Continue draft PR #14 on feat/ai-assistant-20261003; parent before completion wa
 
 ## Deployed backend and verification
 
-Supabase project ypbhcgcwkpiujcakvaji has migration 20261004151824_complete_paid_fitgoin_ai applied. Its local filename matches the recorded version; older applied migrations are unchanged. AI function v3 and billing function v1 are deployed with custom authentication. Existing marketplace Stripe functions were not replaced.
+Supabase project ypbhcgcwkpiujcakvaji has migration 20261004151824_complete_paid_fitgoin_ai applied. Its local filename matches the recorded version; older applied migrations are unchanged. AI function v5 and billing function v1 are deployed with custom authentication. Existing marketplace Stripe functions were not replaced. Provider failure diagnostics now distinguish quota, credentials, permissions and temporary rate limits; logs contain only bounded status/code/request ID, never raw provider messages, prompts or keys.
 
-Actual deployed GET: AI backend_configured=true, provider_configured=false, configured=false; billing checkout_enabled=false, livemode=true. Unauthenticated POST to either function returned 401.
+Latest deployed GET: AI backend_configured=true, provider_configured=true, configured=true; billing checkout_enabled=false, livemode=true. Configuration=true means the secret exists, not a successful answer. Two real test requests failed: the initial 429 was generically reported as provider_busy; after the diagnostic fix it was correctly classified as provider_quota. No successful provider answer was obtained.
 
-All 45 automated tests passed. The non-publishing deploy dry run passed with 19 public files. Both real Supabase SQL integration suites passed against the applied schema and rolled back all fixtures. Final Windows Chrome smoke checks passed at 390/768/1440 px across seven tabs, with no page errors/overflow, disabled checkout, photo consent/confirmation, technique dialog and account switching. Browser/provider/billing scenarios use mocks; they do not establish real model or payment quality.
+All 46 automated tests and the final non-publishing deploy dry run passed with 19 public files. Both real Supabase SQL integration suites passed against the applied schema and rolled back all fixtures. Windows Chrome smoke checks passed at 390/768/1440 px across seven tabs. Those browser/provider/billing scenarios use mocks. New real deployed HTTP checks passed for authentication, origin, foreign conversation, unpaid access, forged friend metadata, photo consent, disabled Checkout, owner/foreign food RLS and underage-plan refusal. Temporary test users, sessions, grants and credentials were removed; SQL confirmed zero remaining fixture users/profiles/grants. No successful AI quality or payment acceptance is claimed.
 
 Advisor review: no new security warning/error or missing foreign-key index. Seven informational RLS-without-policy notices are deliberate server-only tables with browser grants revoked. The existing leaked-password-protection warning remains.
 
 ## Remaining release blockers
 
-1. User privately saves OPENAI_API_KEY in Supabase Edge Function Secrets. Verify real plans, timing, nutrition/allergens, media uncertainty, safety, search/transcription, latency and costs afterward.
-2. Only a Stripe sandbox account was exposed. Configure the separate AI Stripe key, monthly Prices and signing secret; both functions must use the same billing mode. Complete actual sandbox lifecycle acceptance.
+1. The key is present, but OpenAI returns a quota/account-limit error. The user must verify API Billing balance and organization/project usage/spend limits. Do not repeatedly retry or request the secret. After resolving this, verify real plans, timing, nutrition/allergens, media uncertainty, safety, search/transcription, latency and costs.
+2. Only a Stripe sandbox account was exposed. Its active Price and webhook endpoint lists are empty. Configure the separate AI Stripe key, monthly Prices and signing secret; both functions must use the same billing mode. Complete actual sandbox lifecycle acceptance.
 3. Verify merchant/subscription/refund/tax readiness before live collection. FGI_AI_BILLING_ENABLED and live FGI_AI_COMMERCIAL_READY are required gates. Adding only the AI key cannot enable checkout. Exact settings are in the function README.
 4. After acceptance, merge and publish only through the safe workflow on clean main matching origin/main: npm.cmd run check, npm.cmd run deploy:dry, npm.cmd run deploy. Never bypass safe-deploy.mjs.
 

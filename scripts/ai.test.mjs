@@ -31,7 +31,7 @@ function setup(change={}) {
     if(url.includes('/storage/v1/object/list/'))return json(listing++===0?(change.photos||[]):[]);
     if(url.includes('/storage/v1/object/'))return json([]);
     if(url.endsWith('/audio/transcriptions'))return json({text:'Следующее упражнение'});
-    if(url.includes('api.openai.com'))return json(change.responses?.[providerCall++]||change.response||providerResponse());
+    if(url.includes('api.openai.com'))return json(change.responses?.[providerCall++]||change.response||providerResponse(),change.providerStatus||200);
     if(url.includes('/rest/v1/'))return json([]);
     throw Error('Unexpected endpoint');
   };
@@ -121,6 +121,17 @@ test('uncertainty automatically invokes a separate search with only a generic to
 });
 test('CORS rejects an unapproved origin before authentication or any mutation',async()=>{
   const s=setup();assert.equal((await s.request({}, {Origin:'https://evil.example'})).status,403);assert.equal(s.calls.length,0);
+});
+test('provider credit, credential and rate failures are distinguished without leaking error bodies',async()=>{
+  const logs=[],original=console.warn;console.warn=value=>logs.push(value);
+  try{
+    for(const [status,code,expected] of [[429,'insufficient_quota','provider_quota'],[429,'credit_balance_exhausted','provider_quota'],[429,'rate_limit_exceeded','provider_busy'],[401,'invalid_api_key','provider_authentication'],[403,'model_not_found','provider_permissions']]){
+      const s=setup({providerStatus:status,response:{error:{code,message:'DO_NOT_LOG_PRIVATE_PROVIDER_BODY'}}});
+      const response=await s.request();assert.equal(response.status,503);assert.equal((await response.json()).error,expected);
+      assert(!s.calls.some(x=>x.url.includes('fgi_ai_complete')));assert(s.calls.some(x=>x.url.includes('fgi_ai_fail')));
+    }
+    assert.equal(logs.length,5);assert(!logs.join('').includes('DO_NOT_LOG_PRIVATE_PROVIDER_BODY'));assert(!logs.join('').includes('provider-test'));
+  }finally{console.warn=original;}
 });
 test('monthly resource exhaustion and an unpriced model stop before any provider expense',async()=>{
   const exhausted=setup({reserve:{error:'monthly_limit'}}),response=await exhausted.request();
