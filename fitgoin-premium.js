@@ -44,14 +44,19 @@ export function mountPremium(opts) {
   function decorate() {
     const trainer=actor&&role()==='coach';
     document.querySelectorAll('[data-client-nav]').forEach(el=>el.hidden=!actor||trainer);
+    document.querySelectorAll('[data-user-nav]').forEach(el=>el.hidden=!actor);
     document.querySelectorAll('[data-coach-nav]').forEach(el=>el.hidden=!trainer);
+    document.querySelectorAll('#home [data-signup-role]').forEach(el=>{
+      el.dataset.i18n=trainer?(el.dataset.signupRole==='coach'?'trainerCard':'ranking'):(el.dataset.signupRole==='coach'?'join':'find');
+    });
+    document.querySelector('#home .hero-login').hidden=Boolean(actor);
     $('accountOpen').textContent=actor?(trainer?t('trainerCard'):t('space')):t('join');
     $('coachOnboardingBar').hidden=!trainer||opts.getPage()!=='account'||opts.getAccountTab()==='settings';
     if(trainer)updateCoachSteps();
     translate();
   }
   function route(id) {
-    if(id==='home'&&actor) return entryPage(opts.getProfile(),opts.getCoach(),state)==='profile'?'own-profile':entryPage(opts.getProfile(),opts.getCoach(),state);
+    if(id==='home'&&actor&&role()!=='coach') return entryPage(opts.getProfile(),opts.getCoach(),state);
     return guardedPage(id,Boolean(actor),role());
   }
   function entered(id) {

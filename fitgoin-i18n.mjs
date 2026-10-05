@@ -3,7 +3,7 @@ export const messages = {
   ru: {
     platform:'GLOBAL TRAINER PLATFORM', tagline:'Find the one who fits you.',
     heroCopy:'Твой спорт. Твои цели. Свой человек рядом.', find:'Найти моего тренера', join:'Стать тренером', login:'Войти', already:'Уже с нами?',
-    home:'Главная', space:'Моё пространство', trainerCard:'Моя карточка', edit:'Редактировать профиль', inbox:'Сообщения', ai:'FitGoIn AI', match:'Найти тренера', settings:'Настройки',
+    home:'Главная', ranking:'Рейтинг тренеров', space:'Моё пространство', trainerCard:'Моя карточка', edit:'Редактировать профиль', inbox:'Сообщения', ai:'FitGoIn AI', match:'Найти тренера', settings:'Настройки',
     welcomeEyebrow:'ТВОЙ ПЕРВЫЙ ШАГ', welcomeTitle:'Двигаться к цели проще вместе.', welcomeCopy:'С чего начнём? Помощник сохранит твой спортивный профиль, а MATCH поможет найти специалиста на FitGoIn.',
     aiTitle:'Свой спортивный помощник', aiCopy:'Персональные тренировки, питание и история прогресса. AI-ответы доступны по подписке; профиль и дневник — без оплаты.', aiStart:'Начать с AI',
     humanTitle:'Тренер, который понимает тебя', humanCopy:'Опыт, формат, язык и твои цели. Несколько коротких вопросов — и подходящие реальные тренеры.', humanStart:'Найти своего тренера',
@@ -25,7 +25,7 @@ export const messages = {
   },
   en: {
     platform:'GLOBAL TRAINER PLATFORM', tagline:'Find the one who fits you.', heroCopy:'Your sport. Your goals. Your person.', find:'Find my trainer', join:'Join as trainer', login:'Log in', already:'Already with us?',
-    home:'Home', space:'My space', trainerCard:'My trainer card', edit:'Edit profile', inbox:'Messages', ai:'FitGoIn AI', match:'Find a trainer', settings:'Settings',
+    home:'Home', ranking:'Trainer rankings', space:'My space', trainerCard:'My trainer card', edit:'Edit profile', inbox:'Messages', ai:'FitGoIn AI', match:'Find a trainer', settings:'Settings',
     welcomeEyebrow:'YOUR FIRST STEP', welcomeTitle:'Better together. Your way.', welcomeCopy:'Where shall we start? AI remembers your sports profile, while MATCH helps you find the right professional on FitGoIn.',
     aiTitle:'Your sports assistant', aiCopy:'Personal training, nutrition and progress history. AI responses require a subscription; your profile and diary are free.', aiStart:'Start with AI',
     humanTitle:'A trainer who gets you', humanCopy:'Experience, format, language and your goals. A few short questions connect you with real trainers.', humanStart:'Find my trainer',

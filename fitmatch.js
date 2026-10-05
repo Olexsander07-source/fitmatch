@@ -180,7 +180,7 @@ function page(id, push = true) {
   if (push) {
     const u=new URL(location.href);u.searchParams.delete('trainer');
     if(id==='signup')u.searchParams.set('signup',signupRole);else u.searchParams.delete('signup');
-    u.hash=id==='home'?'':`#${id}`;
+    u.hash=id==='home'&&!user?'':`#${id}`;
     history.pushState({page:id},'',u.pathname+u.search+u.hash);
   }
   window.scrollTo({top:0,behavior:'instant'});
@@ -485,6 +485,7 @@ async function afterLogin() {
   await premium?.accountLoaded();
   pendingAction='';authUI();
   if(action.startsWith('contact:')) await contact(action.slice(8));
+  else if(['home','ranking','ai','coaches','sports','inbox'].includes(action))page(action);
   else if(coachWorkspaceActive()&&own)await openProfile(own.id);
   else page(coachWorkspaceActive()?'account':!action||action==='account'?premium?.startPage()||'welcome':action);
 }
@@ -498,6 +499,10 @@ function setSignupRole(role) {
   $('signupNextStep').textContent=t(coach?'coachProfile':'goal');
 }
 function openSignup(role) {
+  if(user&&coachWorkspaceActive()){
+    if(role==='coach')$('accountOpen').click();else page('ranking');
+    return;
+  }
   $('signupForm').closest('.narrow').removeAttribute('data-signup-confirmed');
   message('signupMessage','');
   setSignupRole(role);pendingAction=signupRole==='coach'?'coach-onboarding':'account';page('signup');
