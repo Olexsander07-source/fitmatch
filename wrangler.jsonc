@@ -1,6 +1,7 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "fitgoin",
+  "name": "fitgoin-production",
+  "account_id": "5604e87732eb7e972fe87990a0f04be7",
   "compatibility_date": "2026-09-14",
   "workers_dev": false,
   "build": {
@@ -9,10 +10,5 @@
   "assets": {
     "directory": "./.deploy"
   },
-  "routes": [
-    {
-      "pattern": "fitgoin.com",
-      "custom_domain": true
-    }
-  ]
+  "routes": []
 }

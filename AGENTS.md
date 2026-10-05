@@ -4,7 +4,8 @@ This repository is the existing FitGoIn production site. Do not rebuild it from 
 
 ## Production
 - Domain: https://fitgoin.com
-- Cloudflare Worker: `fitgoin`
+- Cloudflare Worker: `fitgoin-production`
+- The legacy `fitgoin` Worker receives incomplete automatic Git builds. Do not point the production domain back to it. `scripts/safe-deploy.mjs` attaches the domain after publishing the complete version; keep generic Wrangler routes empty.
 - Source files: `index.html`, `fitmatch.js`, `styles.css`
 - Supabase is the application backend; never commit private keys or service-role credentials.
 
