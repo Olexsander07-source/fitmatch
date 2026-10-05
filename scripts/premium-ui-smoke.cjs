@@ -37,7 +37,7 @@ async function trainerAccess(page,width){
  assert.equal(new URL(page.url()).hash,'#home');await overflow(page,'trainer homepage '+width);
  assert.equal(await page.locator('#home .hero-login').isVisible(),false);
  assert.match(await page.locator('#home [data-signup-role=client]').textContent(),/Рейтинг/);
- await page.reload();await page.locator('#home.active').waitFor();
+ await page.reload();await page.locator('#nav [data-page=home]:not([hidden])').waitFor({state:'attached'});await page.locator('#home.active').waitFor();
  await page.locator('#home [data-signup-role=client]').click();await page.locator('#ranking.active').waitFor();
  await page.locator('#rankingList [data-profile="90000000-0000-4000-8000-000000000003"]').click();await page.locator('#profile.active').waitFor();
  assert((await page.locator('#profileContent h1').textContent()).includes('Camille'));
@@ -51,7 +51,7 @@ async function trainerAccess(page,width){
  assert.equal(await page.evaluate(()=>qaRows.fgi_coaches.find(c=>c.id===qaActor()).published),true);
  assert.equal(await page.evaluate(()=>qaRows.fgi_ai_profiles.some(p=>p.user_id===qaActor())),false,'AI consent is not granted by opening the page');
  assert.equal(await page.evaluate(()=>qaCalls.filter(c=>['chat','search','training','nutrition'].includes(c.action)).length),0);
- await page.reload();await page.locator('#ai.active').waitFor();await page.locator('[data-ai-form=profile]').waitFor();
+ await page.reload();await page.locator('#nav [data-page=home]:not([hidden])').waitFor({state:'attached'});await page.locator('#ai.active').waitFor();await page.locator('[data-ai-form=profile]').waitFor();
  await mainNav(page,'ranking');await page.locator('#ranking.active').waitFor();await overflow(page,'trainer ranking '+width);
  await page.locator('#accountOpen').click();await page.locator('#profile.active').waitFor();
  await mainNav(page,'home');await page.locator('#home.active').waitFor();
