@@ -8,6 +8,7 @@ const DAYS=['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
 const labels={goal:'цель',sport:'спорт',age:'возраст',weekdays:'дни недели',weight_kg:'вес',height_cm:'рост'};
 const ERRORS={authentication_required:'Войди в аккаунт снова.',ai_not_configured:'Сервер AI ещё не подключён. Профиль и дневник доступны; ответы появятся после подключения.',consent_required:'Открой профиль и дай согласие на работу AI.',profile_incomplete:'Сначала заполни обязательные поля спортивного профиля.',professional_required:'Для персональной программы с этими данными нужна оценка тренера или врача. AI может отвечать на общие вопросы.',daily_limit:'Дневной лимит AI исчерпан. Он обновится в 00:00 UTC. Сохранённые планы и дневник остаются доступными.',rate_limit:'Слишком много запросов подряд. Повтори через минуту.',request_pending:'Этот запрос ещё выполняется. Подожди и обнови историю.',request_failed:'Предыдущая попытка не завершилась. Отправь новый запрос.',request_conflict:'Повторный запрос отличается от исходного. Отправь его заново.',provider_busy:'AI временно занят. Повтори позже.',provider_unavailable:'AI сейчас недоступен. Повтори позже.',provider_refused:'AI не смог выполнить этот запрос. Попробуй задать вопрос о спорте иначе.',invalid_plan:'AI-план не прошёл проверку времени, нагрузки или питания и не был сохранён. Попробуй уточнить запрос.',provider_incomplete:'AI не закончил ответ. Повтори запрос.',search_unverified:'Поиск не вернул проверяемые источники. AI не будет выдавать это за найденное исследование.',invalid_audio:'Не удалось распознать запись. Запиши до 30 секунд ещё раз.',backend_unavailable:'Не удалось сохранить или загрузить данные. Повтори позже.',delete_retry:'Не все фотографии удалены. Повтори удаление.',invalid_conversation:'Этот диалог больше недоступен. Обнови раздел AI.'};
 Object.assign(ERRORS,{provider_quota:'AI недоступен из-за лимита сервиса. Свяжись с поддержкой FitGoIn; повторные попытки сейчас не помогут.',provider_authentication:'AI временно недоступен: требуется проверка подключения. Свяжись с поддержкой FitGoIn.',provider_permissions:'AI временно недоступен: требуется проверка доступа сервиса. Свяжись с поддержкой FitGoIn.'});
+Object.assign(ERRORS,{progress_save_unconfirmed:'Не удалось подтвердить сохранение записи. Фото сохранено в личном хранилище. Обнови историю перед повторной загрузкой.',progress_cleanup_pending:'Запись не сохранена; не удалось удалить загруженное фото. Обратись в поддержку FitGoIn.'});
 const field=(title,input)=>`<label>${title}${input}</label>`;
 const options=(values,current)=>values.map(v=>{const [key,label]=Array.isArray(v)?v:[v,v];return `<option value="${esc(key)}"${key===current?' selected':''}>${esc(label)}</option>`;}).join('');
 const select=(name,values,current)=>`<select name="${name}">${options(values,current)}</select>`;
@@ -59,6 +60,12 @@ export function mountFitGoInAI(root,opts) {
       const response=await fetch(billing?billingEndpoint:opts.endpoint,{method:'POST',headers:{Authorization:`Bearer ${data.session.access_token}`,'Content-Type':'application/json'},body:JSON.stringify(body),signal:requestController.signal});
       const result=await response.json();assert(e);if(!response.ok)throw Error(result.error||'provider_unavailable');return result;
     } finally{clearTimeout(timeout);if(controller===requestController)controller=null;}
+  }
+  async function checkReadiness() {
+    try {
+      const response=await fetch(opts.endpoint,{method:'GET',signal:AbortSignal.timeout(10000)});
+      configured=Boolean(response.ok&&(await response.json())?.configured);
+    } catch { configured=false; }
   }
   async function load(e=epoch) {
     if(!actor)return;const id=actor;
@@ -119,7 +126,7 @@ export function mountFitGoInAI(root,opts) {
   }
   function messageHTML(m) {
     const citations=cleanCitations(m.citations),isAssistant=m.role==='assistant';
-    return `<article class="fgi-ai-message ${isAssistant?'':'from-user'}"><strong>${isAssistant?'✧ FitGoIn AI':'Ты'}</strong><p dir="auto">${esc(m.body)}</p>${citations.length?`<ol class="fgi-ai-sources" aria-label="${t('source')}">${citations.map(c=>`<li><a href="${esc(c.url)}" target="_blank" rel="noopener noreferrer">${esc(c.title)}</a></li>`).join('')}</ol>`:''}${isAssistant?`<div class="ai-message-actions">${button('copy',t('copy'),false,`data-message-id="${esc(m.id)}"`)}${button('save',savedIds.includes(m.id)?t('removeSaved'):t('save'),false,`data-message-id="${esc(m.id)}" aria-pressed="${savedIds.includes(m.id)}"${!opts.toggleSaved?' disabled':''}`)}${button('speak','Прослушать',false,`data-message-id="${esc(m.id)}"`)}${m.id===messages.filter(x=>x.role==='assistant').at(-1)?.id?button('regenerate',t('regenerate'),false,`data-message-id="${esc(m.id)}" title="Новый запрос расходует лимит AI"`):''}${[['account','Мой кабинет'],['inbox','Сообщения'],['match','MATCH'],['coaches','Тренеры']].filter(([id])=>new RegExp('#'+id+'\b').test(m.body)).map(([id,label])=>button('platform-link',label,false,`data-destination="${id}"`)).join('')}${button('feedback','Полезно',false,`data-message-id="${esc(m.id)}" data-useful="true"`)}${button('feedback','Есть проблема',false,`data-message-id="${esc(m.id)}" data-useful="false"`)}</div>`:''}</article>`;
+    return `<article class="fgi-ai-message ${isAssistant?'':'from-user'}"><strong>${isAssistant?'✧ FitGoIn AI':'Ты'}</strong><p dir="auto">${esc(m.body)}</p>${citations.length?`<ol class="fgi-ai-sources" aria-label="${t('source')}">${citations.map(c=>`<li><a href="${esc(c.url)}" target="_blank" rel="noopener noreferrer">${esc(c.title)}</a></li>`).join('')}</ol>`:''}${isAssistant?`<div class="ai-message-actions">${button('copy',t('copy'),false,`data-message-id="${esc(m.id)}"`)}${button('save',savedIds.includes(m.id)?t('removeSaved'):t('save'),false,`data-message-id="${esc(m.id)}" aria-pressed="${savedIds.includes(m.id)}"${!opts.toggleSaved?' disabled':''}`)}${button('speak','Прослушать',false,`data-message-id="${esc(m.id)}"`)}${m.id===messages.filter(x=>x.role==='assistant').at(-1)?.id?button('regenerate',t('regenerate'),false,`data-message-id="${esc(m.id)}" title="Новый запрос расходует лимит AI"`):''}${[['account','Мой кабинет'],['inbox','Сообщения'],['match','MATCH'],['coaches','Тренеры']].filter(([id])=>new RegExp('#'+id+'\\b').test(m.body)).map(([id,label])=>button('platform-link',label,false,`data-destination="${id}"`)).join('')}${button('feedback','Полезно',false,`data-message-id="${esc(m.id)}" data-useful="true"`)}${button('feedback','Есть проблема',false,`data-message-id="${esc(m.id)}" data-useful="false"`)}</div>`:''}</article>`;
   }
   function chatView() {
     const quick=[['training','◇','quickTraining'],['nutrition','◌','quickNutrition'],['time','◷','quickTime'],['technique','↗','quickTechnique'],['research','⌕','quickResearch'],['coach','♡','quickCoach']];
@@ -253,6 +260,14 @@ export function mountFitGoInAI(root,opts) {
   async function persistActive(e) {
     unwrap(await db().from('fgi_ai_workouts').update({data:active.data}).eq('id',active.id).eq('user_id',actor));assert(e);
   }
+  async function nextExercise(e) {
+    if(!active)return;
+    const old=structuredClone(active.data);
+    if(old.index>=old.workout.exercises.length)return;
+    active.data.index++;active.data.rest_until=null;
+    try{await persistActive(e);}catch(error){if(e===epoch)active.data=old;throw error;}
+    view='today';notice('Следующее упражнение. Не спеши, если ещё не восстановился.');
+  }
   function updateRest() {
     clearInterval(restTimer);restTimer=null;
     const update=()=>{const target=q('[data-ai-rest]');if(!target)return;const left=Math.max(0,Math.ceil((Date.parse(active?.data.rest_until||'')-Date.now())/1000)||0);target.textContent=left?`Отдых: ${Math.floor(left/60)}:${String(left%60).padStart(2,'0')}`:'Начинай следующий подход, когда восстановишься.';if(!left){clearInterval(restTimer);restTimer=null;}};
@@ -276,15 +291,27 @@ export function mountFitGoInAI(root,opts) {
     notice(pain?'Тренировка остановлена. Не продолжай через боль. При серьёзных симптомах обратись за срочной помощью.':'Тренировка сохранена. Восстановись, а следующий план сможет учитывать результаты.',pain);
   }
   async function saveProgress(form,e) {
-    const f=new FormData(form),day=String(f.get('recorded_on')),prior=progress.find(x=>x.recorded_on===day),file=f.get('photo');
+    const f=new FormData(form),day=String(f.get('recorded_on')),prior=progress.find(x=>x.recorded_on===day),file=f.get('photo'),owner=actor;
     let path=prior?.photo_path||null,uploaded=null;
     if(file?.size){const blob=await opts.prepareImage(file);assert(e);path=`${actor}/${crypto.randomUUID()}.jpg`;unwrap(await db().storage.from('fgi-ai').upload(path,blob,{contentType:'image/jpeg',upsert:false,cacheControl:'60'}));uploaded=path;assert(e);}
     const optional=name=>f.get(name)===''?null:Number(f.get(name));
-    try {unwrap(await db().from('fgi_ai_progress').upsert({user_id:actor,recorded_on:day,weight_kg:optional('weight_kg'),waist_cm:optional('waist_cm'),sleep_hours:optional('sleep_hours'),energy:optional('energy'),notes:String(f.get('notes')).slice(0,1500),photo_path:path},{onConflict:'user_id,recorded_on'}));assert(e);}
-    catch(error){if(uploaded)await db().storage.from('fgi-ai').remove([uploaded]);throw error;}
-    if(uploaded&&prior?.photo_path){unwrap(await db().storage.from('fgi-ai').remove([prior.photo_path]));assert(e);}
-    if(day===dateNow()&&optional('weight_kg')!==null){unwrap(await db().from('fgi_ai_profiles').update({data:{...normalizeProfile(profile.data),weight_kg:optional('weight_kg')}}).eq('user_id',actor));assert(e);}
-    await load(e);notice('Запись сохранена.');
+    const payload={user_id:owner,recorded_on:day,weight_kg:optional('weight_kg'),waist_cm:optional('waist_cm'),sleep_hours:optional('sleep_hours'),energy:optional('energy'),notes:String(f.get('notes')||'').slice(0,1500),photo_path:path};
+    try {unwrap(await db().from('fgi_ai_progress').upsert(payload,{onConflict:'user_id,recorded_on'}));assert(e);}
+    catch(error){
+      assert(e);
+      // A lost response can follow a committed write. Keep its photo until we
+      // know the diary does not reference it; a failed check is not that proof.
+      const check=await db().from('fgi_ai_progress').select('*').eq('user_id',owner).eq('recorded_on',day).maybeSingle();assert(e);
+      if(check.error)throw Error('progress_save_unconfirmed');
+      if(!check.data||!Object.entries(payload).every(([key,value])=>check.data[key]===value)){
+        if(uploaded&&check.data?.photo_path!==uploaded){const removed=await db().storage.from('fgi-ai').remove([uploaded]);assert(e);if(removed.error)throw Error('progress_cleanup_pending');}
+        throw error;
+      }
+    }
+    let warning='';
+    if(uploaded&&prior?.photo_path){const removed=await db().storage.from('fgi-ai').remove([prior.photo_path]);assert(e);if(removed.error)warning='Запись сохранена, но прежнее фото не удалось удалить. Обратись в поддержку FitGoIn.';}
+    if(day===dateNow()&&optional('weight_kg')!==null){const saved=await db().from('fgi_ai_profiles').update({data:{...normalizeProfile(profile.data),weight_kg:optional('weight_kg')}}).eq('user_id',owner);assert(e);if(saved.error)warning='Запись сохранена. Вес в спортивном профиле не обновился; проверь его в разделе «Профиль».';}
+    await load(e);notice(warning||'Запись сохранена.',Boolean(warning));
   }
   function shareText(withMeasurements=false) {
     const p=normalizeProfile(profile.data),complete=sessions.filter(s=>s.completed_at&&s.data?.status==='completed'&&s.data?.sets?.length);
@@ -334,7 +361,7 @@ export function mountFitGoInAI(root,opts) {
   async function useVoice(e) {
     const text=(q('[data-ai-voice-text]')?.value.trim()||voiceText).replace(/[٠-٩۰-۹]/g,c=>String('٠١٢٣٤٥٦٧٨٩'.includes(c)?'٠١٢٣٤٥٦٧٨٩'.indexOf(c):'۰۱۲۳۴۵۶۷۸۹'.indexOf(c)));voiceText='';
     if(active){
-      if(/^(следующее упражнение|наступна вправа|next exercise|exercice suivant|nächste übung|siguiente ejercicio|prossimo esercizio|próximo exercício|następne ćwiczenie|التمرين التالي)[.!]?$/i.test(text)){active.data.index++;active.data.rest_until=null;await persistActive(e);view='today';notice('Перешли к следующему упражнению.');return;}
+      if(/^(следующее упражнение|наступна вправа|next exercise|exercice suivant|nächste übung|siguiente ejercicio|prossimo esercizio|próximo exercício|następne ćwiczenie|التمرين التالي)[.!]?$/i.test(text)){await nextExercise(e);return;}
       const match=text.match(/(?:сделал|сделала|зробив|зробила|did|fait|habe|hice|fatto|fiz|zrobiłem|zrobiłam|عملت|قمت ب)\s*(\d{1,3})\s*(?:повтор|reps|répét|wiederhol|repet|ripet|powtór|تكرار)/i);
       if(match){await recordSet({reps:Number(match[1]),rpe:7,weight_kg:null},e);view='today';return;}
       if(/сколько отдыхать|скільки відпочивати|how long.*rest|combien.*repos|wie lange.*pause|cuánto.*descans|quanto.*(?:ripos|descans)|ile.*odpoczy|كم.*راحة/i.test(text)){notice(`Отдых: ${active.data.workout.exercises[active.data.index]?.rest_seconds||60} секунд. При необходимости восстановись дольше.`);return;}
@@ -388,14 +415,14 @@ export function mountFitGoInAI(root,opts) {
     }
     if(action==='food-photo'){dialog(mediaForm('food_photo'));return;}
     if(action==='document'){q('[data-ai-document]')?.click();return;}
-    if(action==='copy'){const row=[...messages,...savedMessages].find(m=>m.id===b.dataset.messageId);if(row)navigator.clipboard.writeText(row.body).then(()=>notice('Ответ скопирован.')).catch(()=>notice('Браузер не разрешил копирование. Выдели текст сообщения и скопируй вручную.',true));return;}
+    if(action==='copy'){const row=[...messages,...savedMessages].find(m=>m.id===b.dataset.messageId);if(row){if(!navigator.clipboard?.writeText){notice('Выдели текст сообщения и скопируй вручную: копирование недоступно в этом браузере.',true);return;}navigator.clipboard.writeText(row.body).then(()=>notice('Ответ скопирован.')).catch(()=>notice('Браузер не разрешил копирование. Выдели текст сообщения и скопируй вручную.',true));}return;}
     if(action==='start-workout'){startWorkout(Number(b.dataset.workout));return;}
     if(action==='manual-food'){foodDialog();return;}
     if(action==='confirm-food'&&analysis?.type==='food_photo'){foodDialog({name:analysis.document.title,...analysis.document.total},'confirmed_photo');return;}
     if(action==='technique'){dialog(mediaForm('technique'));return;}
     if(action==='share-preview'){previewShare(b.dataset.coach);return;}
     if(action==='delete-data'){dialog('<h2>Удалить данные AI?</h2><p>Будут удалены спортивный профиль, AI-переписка, планы, результаты, фотографии и переданные сводки. Основной аккаунт и сообщения тренерам сохранятся. Удаление AI-данных не отменяет подписку; её нужно отменить отдельно в «Доступ к AI».</p><form data-ai-form="delete"><label>Введи УДАЛИТЬ<input name="confirm" required pattern="УДАЛИТЬ" autocomplete="off"></label><button type="submit" class="btn">Удалить данные AI</button></form>');return;}
-    if(action==='speak'){const text=messages.find(m=>m.id===b.dataset.messageId)?.body;if(text&&window.speechSynthesis){speechSynthesis.cancel();const speech=new SpeechSynthesisUtterance(text);speech.lang=normalizeProfile(profile?.data).language;speechSynthesis.speak(speech);}return;}
+    if(action==='speak'){const text=[...messages,...savedMessages].find(m=>m.id===b.dataset.messageId)?.body;if(text&&window.speechSynthesis){speechSynthesis.cancel();const speech=new SpeechSynthesisUtterance(text);speech.lang=normalizeProfile(profile?.data).language;speechSynthesis.speak(speech);}else notice('Озвучивание недоступно в этом браузере. Ответ можно прочитать или скопировать.',true);return;}
     if(action==='voice-dismiss'){voiceText='';render();return;}
     if(action==='nutrition-question'){module='nutrition';draft='Помоги заменить продукты в моём меню: ';view='ask';render();return;}
     work(async e=>{
@@ -405,11 +432,11 @@ export function mountFitGoInAI(root,opts) {
       if(action==='remove-food'){unwrap(await db().from('fgi_ai_food').delete().eq('id',b.dataset.foodId).eq('user_id',actor));assert(e);await load(e);notice('Запись питания удалена.');}
       if(action==='calendar'){const hour='18:00',ics=trainingCalendar(normalizeProfile(profile.data),hour),url=URL.createObjectURL(new Blob([ics],{type:'text/calendar;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='fitgoin-training.ics';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);notice('График скачан: тренировки в 18:00 местного времени, напоминание за 15 минут. Время можно изменить в календаре.');}
       if(action==='feedback'){unwrap(await db().from('fgi_ai_feedback').upsert({user_id:actor,message_id:b.dataset.messageId,useful:b.dataset.useful==='true'},{onConflict:'user_id,message_id'}));assert(e);notice('Твоя оценка сохранена. Спасибо за обратную связь.');}
-      if(action==='refresh')await load(e);
+      if(action==='refresh'){await checkReadiness();assert(e);await load(e);}
       if(action==='new-chat'){const next=unwrap(await db().from('fgi_ai_conversations').insert({user_id:actor}).select().single());assert(e);conversation=next;messages=[];draft='';searchDraft=false;view='ask';menu(false);await load(e);notice('Новый разговор. Твой профиль и результаты сохраняются.');}
       if(action==='create-training')await ask('training','Создай или обнови недельную программу по моему профилю, последним результатам и восстановлению.',e);
       if(action==='create-nutrition')await ask('nutrition','Составь примерный день питания по моим целям, предпочтениям и ограничениям.',e);
-      if(action==='next-exercise'&&active){const old=structuredClone(active.data);active.data.index++;active.data.rest_until=null;try{await persistActive(e);}catch(error){if(e===epoch)active.data=old;throw error;}notice('Следующее упражнение. Не спеши, если ещё не восстановился.');}
+      if(action==='next-exercise')await nextExercise(e);
       if(action==='finish-workout')await finish(e);
       if(action==='pain-stop')await finish(e,true);
       if(action==='coach-profile')await opts.openCoach(b.dataset.coach);
@@ -425,6 +452,7 @@ export function mountFitGoInAI(root,opts) {
   });
   root.addEventListener('input',event=>{
     if(event.target.matches('[name=message]'))draft=event.target.value;
+    if(event.target.matches('[data-ai-voice-text]'))voiceText=event.target.value;
     if(event.target.matches('[name=search]'))searchDraft=event.target.checked;
     const form=event.target.closest('[data-ai-form=profile]');if(form){const f=new FormData(form);profileConsent=f.has('consent');profileDraft=normalizeProfile({...Object.fromEntries(f),weekdays:f.getAll('weekday').map(Number),allergies:f.getAll('allergy'),needs_professional:f.has('needs_professional')});}
   });
@@ -435,7 +463,7 @@ export function mountFitGoInAI(root,opts) {
   const stopHiddenVoice=()=>{if(document.hidden)stopVoice();};
   document.addEventListener('visibilitychange',stopHiddenVoice);
   render();
-  fetch(opts.endpoint,{method:'GET',signal:AbortSignal.timeout(10000)}).then(r=>r.ok?r.json():null).then(value=>{configured=Boolean(value?.configured);if(!busy)render();}).catch(()=>{});
+  checkReadiness().then(()=>{if(!busy&&!q('[data-ai-dialog]')?.open)render();});
   return {
     setSession(user){if(actor===user?.id)return;reset();actor=user?.id||null;render();if(actor)setTimeout(()=>work(e=>load(e)),0);},
     open(){if(actor&&(!loaded||Date.now()-lastLoad>60000))work(e=>load(e));else render();},

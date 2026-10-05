@@ -1,0 +1,63 @@
+{
+  "at": "2026-10-05",
+  "project": "ypbhcgcwkpiujcakvaji",
+  "project_status": "ACTIVE_HEALTHY",
+  "auth": {
+    "health_status": 200,
+    "version": "v2.197.0",
+    "email_enabled": true,
+    "signup_enabled": true,
+    "email_confirmation_required": true,
+    "phone_enabled": false,
+    "email_delivery_tested": false
+  },
+  "ai": {
+    "readiness_status": 200,
+    "configured": true,
+    "model_answer_tested_in_this_audit": false,
+    "last_logged_provider_failure": {
+      "code": "credit_balance_exhausted",
+      "at": "2026-10-04T15:38:57.338000Z"
+    }
+  },
+  "billing": {
+    "readiness_status": 200,
+    "checkout_enabled": false,
+    "real_payment_tested": false
+  },
+  "database": {
+    "public_tables_with_rls": 26,
+    "profiles": 9,
+    "coaches": 2,
+    "sports": 10,
+    "orphan_profiles": 0,
+    "coach_role_mismatches": 0,
+    "qa_users_remaining": 0
+  },
+  "rollback_checks": [
+    {
+      "name": "private workspace, ownership and trainer onboarding",
+      "passed": true
+    },
+    {
+      "name": "AI profile/messages/plans/photos isolation, consented share expiry, quota/idempotency/deletion",
+      "passed": true
+    },
+    {
+      "name": "billing entitlements, mode separation, reservations, webhooks, food ownership and deletion",
+      "passed": true
+    }
+  ],
+  "server_source_matches": [
+    "supabase/functions/fitgoin-ai/index.mjs",
+    "supabase/functions/fitgoin-ai-billing/index.mjs",
+    "fitgoin-ai-core.mjs",
+    "fitgoin-ai-paid.mjs"
+  ],
+  "advisors": {
+    "security_warning": "auth_leaked_password_protection",
+    "private_rls_without_policy_count": 7,
+    "unused_indexes_info_count": 4,
+    "intentional_private_deny_access_verified": true
+  }
+}

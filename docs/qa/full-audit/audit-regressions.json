@@ -1,0 +1,80 @@
+{
+  "at": "2026-10-05T07:13:59.481Z",
+  "fixture": true,
+  "realSdkOfflineBootstrap": true,
+  "hardwareSimulated": true,
+  "results": [
+    {
+      "label": "Actual pinned SDK boots with no external JavaScript; guest navigation works",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "label": "Disabled Phone Auth is hidden; capability changes enable its dialog; malformed consent recovers",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "label": "Refresh rechecks provider configuration after a transient readiness failure",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "label": "AI platform links navigate; saved answers can speak; unsupported clipboard shows a useful fallback",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "label": "Edited voice transcription is preserved before confirmation; microphone stops",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "label": "A failed voice transition keeps the current exercise instead of skipping it",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "label": "Progress photo committed: retained after uncertain/committed write, removed only after proven rejection",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "label": "Progress photo unconfirmed: retained after uncertain/committed write, removed only after proven rejection",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "label": "Progress photo rejected: retained after uncertain/committed write, removed only after proven rejection",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "label": "Export downloads owned AI data and a valid training calendar",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "label": "Recovery callback opens the reset form, rejects mismatched passwords and submits a matching pair",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "label": "Expired auth callback shows the error and removes callback data from the URL",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "label": "Trainer avatar, consent-gated client gallery, gallery deletion and avatar removal work",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "label": "A chat photo is sent with its text, owned path and private chat bucket",
+      "width": 390,
+      "status": "passed"
+    }
+  ],
+  "pageErrors": [],
+  "status": "passed"
+}

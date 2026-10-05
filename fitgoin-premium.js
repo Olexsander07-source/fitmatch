@@ -149,6 +149,7 @@ export function mountPremium(opts) {
     }
     if(event.target.closest('[data-coach-prev]')){changeCoachStep(coachStep-1);return;}
     if(event.target.closest('[data-coach-edit]')){coachStep=0;opts.setAccountTab('profile');opts.navigate('account');return;}
+    if(event.target.closest('[data-coach-media]')){if(role()==='coach'&&opts.getCoach()){coachStep=4;opts.setAccountTab('media');opts.navigate('account');}return;}
     if(event.target.closest('[data-coach-settings]')){opts.setAccountTab('settings');opts.navigate('account');return;}
     if(event.target.closest('[data-coach-preview]')){if(opts.getCoach())opts.openOwn().catch(e=>opts.notice(opts.explain(e)));return;}
     const pub=event.target.closest('[data-publish-profile],[data-hide-profile]');if(pub)publish(pub,pub.hasAttribute('data-publish-profile')).catch(e=>opts.notice(opts.explain(e)));

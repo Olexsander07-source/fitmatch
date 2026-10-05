@@ -9,7 +9,7 @@ let premium=null;
 const CONFIG = Object.freeze({
   url: 'https://ypbhcgcwkpiujcakvaji.supabase.co',
   key: 'sb_publishable_Lsrk07A5aXJH7YypVR8QGQ_TQPwhfOV',
-  sdk: 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/+esm',
+  sdk: './vendor/supabase-client.mjs',
   bucket: 'fgi-media',
   chatBucket: 'fgi-chat'
 });
@@ -41,11 +41,13 @@ const backgroundMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let backgroundPaused = backgroundMotion.matches, backgroundRotation = null;
 let pendingChatAttachment = null, pendingChatPreviewURL = '', pendingChatDurationMs = null, pendingMessageFile = null, chatMediaURLs = new Map();
 let voiceSession = null;
+let callMediaRequest = null;
 let currentCall = null, incomingCall = null, callPeer = null, callLocalStream = null, callSignalLastId = 0, callPollBusy = false, callMuted = false, callCameraOff = false, callFacingMode = 'user', callClock = 0, callRemoteIce = [], lastIncomingCallPoll = 0, lastCallHeartbeat = 0;
 const CALL_ICE_SERVERS=[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302']}];
 let presence = new Map(), presenceFetchedAt = 0, presenceTimer = 0;
 const PRESENCE_ONLINE_MS = 75000;
 let phoneMode = 'login', pendingPhone = '', pendingPhoneName = '', phoneResendUntil = 0, phoneTimer = 0;
+let phoneAuthEnabled = false;
 let catalogueError = '', setupReady = false, visibleProfile = '', galleryEpoch = 0, accountVersion = 0, matchStep = 0;
 const publicOnly = c => c.published !== false;
 const sportName = id => sports.find(s => String(s.id) === String(id))?.name || String(id || 'Спорт не указан');
@@ -335,7 +337,7 @@ async function openProfile(id, push = true) {
       </div>
     </header>
     <article class="profile-layout profile-details"><div class="portrait">${photoHTML(c)}</div><div class="profile-info panel">
-      <p class="workspace-kicker">ТРЕНИРОВКИ С ТРЕНЕРОМ</p><h2>${esc(priceText(c))}</h2><div class="actions">${c.id===user?.id?'<button class="btn primary" data-coach-edit>Редактировать профиль</button>':!c.legacy?`<button class="btn primary" data-contact="${esc(c.id)}">Написать тренеру ↗</button>`:'<p class="hint">Этот тренер ещё не подключил сообщения в новой версии.</p>'}</div>
+      <p class="workspace-kicker">ТРЕНИРОВКИ С ТРЕНЕРОМ</p><h2>${esc(priceText(c))}</h2><div class="actions">${c.id===user?.id?'<button class="btn primary" data-coach-edit>Редактировать профиль</button><button class="btn" data-coach-media>Мои фотографии</button>':!c.legacy?`<button class="btn primary" data-contact="${esc(c.id)}">Написать тренеру ↗</button>`:'<p class="hint">Этот тренер ещё не подключил сообщения в новой версии.</p>'}</div>
       ${payment?`<p class="section-small"><a class="btn" href="${esc(payment)}" target="_blank" rel="noopener noreferrer">${new URL(payment).pathname.startsWith('/test_')?'Тестовая оплата Stripe':'Оплатить у тренера'} ↗</a></p><p class="hint">Ссылку добавил тренер. Проверь продавца, услугу, сумму и период на странице Stripe. Подтверждение платежа приходит от Stripe; здесь статус оплаты не отслеживается.</p>`:'<p class="hint">Онлайн-оплата пока не подключена. Обсуди стоимость с тренером.</p>'}
       <h3 class="section-small">О тренере</h3><p class="multiline">${esc(c.bio || 'Описание пока не добавлено.')}</p><p>Опыт: ${c.experience_years==null?'не указан':esc(c.experience_years)+' лет'}</p>
       ${[['Цели / специализация',c.goal],['Образование',c.education],['Титулы',c.titles],['Достижения',c.achievements]].map(([t,v])=>v?`<h3>${t}</h3><p class="multiline">${esc(v)}</p>`:'').join('')}
@@ -576,6 +578,7 @@ function startPhoneResendTimer() {
   phoneTimer=setInterval(updatePhoneResendButton,1000);
 }
 function openPhoneAuth(mode) {
+  if(!phoneAuthEnabled){notice('Вход по телефону сейчас недоступен. Используй email.');return;}
   phoneMode=mode==='signup'?'signup':'login';pendingPhone='';pendingPhoneName='';
   const request=$('phoneRequestForm'),otp=$('phoneOtpForm');
   request.reset();otp.reset();request.hidden=false;otp.hidden=true;
@@ -585,6 +588,14 @@ function openPhoneAuth(mode) {
   $('phoneSend').textContent=phoneMode==='signup'?'Получить код и зарегистрироваться':'Получить код для входа';
   message('phoneMessage','');message('phoneOtpMessage','');
   updatePhoneResendButton();closeDialogs();$('phoneDialog').showModal();
+}
+async function loadAuthCapabilities() {
+  try {
+    const response=await timedFetch(CONFIG.url+'/auth/v1/settings',{headers:{apikey:CONFIG.key}});
+    if(!response.ok)return;
+    const settings=await response.json();phoneAuthEnabled=settings.external?.phone===true;
+  } catch { phoneAuthEnabled=false; }
+  $('phoneSignupOpen').hidden=!phoneAuthEnabled;$('phoneLoginOpen').hidden=!phoneAuthEnabled;
 }
 async function requestPhoneOtp(phone,name='') {
   if(Date.now()<phoneResendUntil) throw Error('Подожди до повторной отправки SMS-кода.');
@@ -1124,7 +1135,7 @@ function closeCallUI(){
   $('muteCall').textContent='🎙️ Выключить микрофон';$('toggleCamera').textContent='📷 Выключить камеру';$('callDuration').textContent='0:00';
 }
 function cleanupCallLocal(){
-  stopCallMedia();currentCall=null;incomingCall=null;closeCallUI();
+  callMediaRequest=null;stopCallMedia();currentCall=null;incomingCall=null;closeCallUI();
 }
 async function sendCallSignal(type,payload,call=currentCall){
   if(!user || !call)throw Error('Звонок уже завершён.');
@@ -1150,7 +1161,9 @@ async function processCallSignal(signal){
 }
 async function pollCallSignals(){
   if(!currentCall || !user)return;
-  const rows=unwrap(await db.from('fgi_call_signals').select('*').eq('call_id',currentCall.id).gt('id',callSignalLastId).order('id',{ascending:true}).limit(100));
+  const epoch=authEpoch,actor=user.id,id=currentCall.id;
+  const rows=unwrap(await db.from('fgi_call_signals').select('*').eq('call_id',id).gt('id',callSignalLastId).order('id',{ascending:true}).limit(100));
+  if(epoch!==authEpoch||actor!==user?.id||currentCall?.id!==id)return;
   for(const signal of rows){callSignalLastId=Math.max(callSignalLastId,Number(signal.id)||0);await processCallSignal(signal);}
 }
 async function waitForCallOffer(callId){
@@ -1189,75 +1202,95 @@ function showActiveCall(call,status='Соединение…'){
   if(isVideo && callLocalStream){$('callLocalVideo').srcObject=callLocalStream;$('callLocalVideo').play().catch(()=>{});}
   if(!$('callDialog').open)$('callDialog').showModal();
 }
-async function startAudioCall(){
-  if(!callSupported())throw Error('Аудиозвонки не поддерживаются этим браузером.');
-  if(!user || !activeThread)throw Error('Сначала выбери диалог.');
-  if(currentCall || incomingCall)throw Error('Сначала заверши текущий звонок.');
-  cancelVoiceRecording();
-  const actor=user.id,thread=activeThread,callee=counterpartId(thread);
-  const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false});
-  try{
-    const call=unwrap(await db.from('fgi_calls').insert({thread_id:thread.id,caller_id:actor,callee_id:callee,kind:'audio'}).select().single());
-    if(user?.id!==actor){stream.getTracks().forEach(t=>t.stop());return;}
-    currentCall=call;callLocalStream=stream;callSignalLastId=0;callMuted=false;lastCallHeartbeat=Date.now();showActiveCall(call,'Вызов…');
-    const peer=createCallPeer(call),offer=await peer.createOffer({offerToReceiveAudio:true});await peer.setLocalDescription(offer);
-    await sendCallSignal('offer',{type:peer.localDescription.type,sdp:peer.localDescription.sdp},call);
-  }catch(e){stream.getTracks().forEach(t=>t.stop());cleanupCallLocal();throw e;}
+async function withCallMedia(work){
+  if(callMediaRequest)throw Error('Подожди разрешения на микрофон или камеру.');
+  const request={actor:user?.id,epoch:authEpoch};callMediaRequest=request;
+  try{return await work(request);}finally{if(callMediaRequest===request)callMediaRequest=null;}
 }
-async function startVideoCall(){
-  if(!callSupported())throw Error('Видеозвонки не поддерживаются этим браузером.');
+function callMediaValid(request){return callMediaRequest===request && user?.id===request.actor && authEpoch===request.epoch;}
+async function startOutgoingCall(kind){
+  if(!callSupported())throw Error('Звонки не поддерживаются этим браузером.');
   if(!user || !activeThread)throw Error('Сначала выбери диалог.');
   if(currentCall || incomingCall)throw Error('Сначала заверши текущий звонок.');
-  cancelVoiceRecording();
-  const actor=user.id,thread=activeThread,callee=counterpartId(thread);
-  callFacingMode='user';
-  const stream=await navigator.mediaDevices.getUserMedia({
-    audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},
-    video:{facingMode:{ideal:callFacingMode},width:{ideal:1280},height:{ideal:720}}
+  return withCallMedia(async request=>{
+    cancelVoiceRecording();
+    const actor=user.id,thread=activeThread,callee=counterpartId(thread),isVideo=kind==='video';
+    let stream;
+    try{
+      stream=await navigator.mediaDevices.getUserMedia({
+        audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},
+        video:isVideo?{facingMode:{ideal:'user'},width:{ideal:1280},height:{ideal:720}}:false
+      });
+      if(!callMediaValid(request)||activeThread?.id!==thread.id){stream.getTracks().forEach(t=>t.stop());return;}
+      const call=unwrap(await db.from('fgi_calls').insert({thread_id:thread.id,caller_id:actor,callee_id:callee,kind}).select().single());
+      if(!callMediaValid(request)){
+        stream.getTracks().forEach(t=>t.stop());
+        if(user?.id===actor)await db.from('fgi_calls').update({status:'ended'}).eq('id',call.id);
+        return;
+      }
+      currentCall=call;callLocalStream=stream;callSignalLastId=0;callMuted=false;callCameraOff=false;callFacingMode='user';lastCallHeartbeat=Date.now();showActiveCall(call,'Вызов…');
+      const peer=createCallPeer(call),offer=await peer.createOffer({offerToReceiveAudio:true,...(isVideo?{offerToReceiveVideo:true}:{})});
+      if(!callMediaValid(request))return;
+      await peer.setLocalDescription(offer);if(!callMediaValid(request))return;
+      await sendCallSignal('offer',{type:peer.localDescription.type,sdp:peer.localDescription.sdp},call);
+    }catch(e){
+      stream?.getTracks().forEach(t=>t.stop());
+      if(!callMediaValid(request))return;
+      const failedCall=currentCall;
+      if(failedCall)try{await db.from('fgi_calls').update({status:'ended'}).eq('id',failedCall.id);}catch{}
+      if(callMediaValid(request))cleanupCallLocal();throw e;
+    }
   });
-  try{
-    const call=unwrap(await db.from('fgi_calls').insert({thread_id:thread.id,caller_id:actor,callee_id:callee,kind:'video'}).select().single());
-    if(user?.id!==actor){stream.getTracks().forEach(t=>t.stop());return;}
-    currentCall=call;callLocalStream=stream;callSignalLastId=0;callMuted=false;callCameraOff=false;lastCallHeartbeat=Date.now();showActiveCall(call,'Вызов…');
-    const peer=createCallPeer(call),offer=await peer.createOffer({offerToReceiveAudio:true,offerToReceiveVideo:true});await peer.setLocalDescription(offer);
-    await sendCallSignal('offer',{type:peer.localDescription.type,sdp:peer.localDescription.sdp},call);
-  }catch(e){stream.getTracks().forEach(t=>t.stop());cleanupCallLocal();throw e;}
 }
+async function startAudioCall(){return startOutgoingCall('audio');}
+async function startVideoCall(){return startOutgoingCall('video');}
 async function switchCallCamera(){
   if(currentCall?.kind!=='video' || !callLocalStream || !callPeer)throw Error('Переключение камеры доступно только во время видеозвонка.');
-  const next=callFacingMode==='user'?'environment':'user';
-  const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:next},width:{ideal:1280},height:{ideal:720}},audio:false});
-  const nextTrack=stream.getVideoTracks()[0];if(!nextTrack){stream.getTracks().forEach(t=>t.stop());throw Error('Не удалось открыть другую камеру.');}
-  const sender=callPeer.getSenders().find(x=>x.track?.kind==='video');if(!sender){nextTrack.stop();throw Error('Видео ещё не подключено.');}
-  const oldTrack=callLocalStream.getVideoTracks()[0];
-  await sender.replaceTrack(nextTrack);
-  oldTrack?.stop();
-  callLocalStream=new MediaStream([...callLocalStream.getAudioTracks(),nextTrack]);
-  callFacingMode=next;callCameraOff=false;$('toggleCamera').textContent='📷 Выключить камеру';
-  $('callLocalVideo').srcObject=callLocalStream;$('callLocalVideo').play().catch(()=>{});
+  return withCallMedia(async request=>{
+    const peer=callPeer,local=callLocalStream,callId=currentCall.id,next=callFacingMode==='user'?'environment':'user';
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:next},width:{ideal:1280},height:{ideal:720}},audio:false});
+    const valid=()=>callMediaValid(request)&&callPeer===peer&&currentCall?.id===callId;
+    if(!valid()){stream.getTracks().forEach(t=>t.stop());return;}
+    const nextTrack=stream.getVideoTracks()[0];if(!nextTrack){stream.getTracks().forEach(t=>t.stop());throw Error('Не удалось открыть другую камеру.');}
+    const sender=peer.getSenders().find(x=>x.track?.kind==='video');if(!sender){nextTrack.stop();throw Error('Видео ещё не подключено.');}
+    try{
+      await sender.replaceTrack(nextTrack);
+      if(!valid()){nextTrack.stop();return;}
+      local.getVideoTracks().forEach(t=>t.stop());
+      callLocalStream=new MediaStream([...local.getAudioTracks(),nextTrack]);callFacingMode=next;callCameraOff=false;$('toggleCamera').textContent='📷 Выключить камеру';
+      $('callLocalVideo').srcObject=callLocalStream;$('callLocalVideo').play().catch(()=>{});
+    }catch(e){nextTrack.stop();if(valid())throw e;}
+  });
 }
 async function acceptIncomingCall(){
   const call=incomingCall;if(!call || !user)throw Error('Вызов уже завершён.');
   if(!callSupported())throw Error('Звонки не поддерживаются этим браузером.');
-  const isVideo=call.kind==='video';callFacingMode='user';
-  const actor=user.id,stream=await navigator.mediaDevices.getUserMedia({
-    audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},
-    video:isVideo?{facingMode:{ideal:callFacingMode},width:{ideal:1280},height:{ideal:720}}:false
+  return withCallMedia(async request=>{
+    const isVideo=call.kind==='video';let stream;
+    try{
+      stream=await navigator.mediaDevices.getUserMedia({
+        audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},
+        video:isVideo?{facingMode:{ideal:'user'},width:{ideal:1280},height:{ideal:720}}:false
+      });
+      if(!callMediaValid(request)||incomingCall?.id!==call.id){stream.getTracks().forEach(t=>t.stop());return;}
+      currentCall=call;incomingCall=null;callLocalStream=stream;callSignalLastId=0;callMuted=false;callCameraOff=false;callFacingMode='user';lastCallHeartbeat=Date.now();
+      if($('incomingCallDialog').open)$('incomingCallDialog').close();showActiveCall(call,'Подключаемся…');
+      const peer=createCallPeer(call),offerSignal=await waitForCallOffer(call.id);if(!callMediaValid(request))return;
+      await peer.setRemoteDescription(offerSignal.payload);if(!callMediaValid(request))return;
+      await flushCallIce();if(!callMediaValid(request))return;
+      const accepted=unwrap(await db.from('fgi_calls').update({status:'accepted'}).eq('id',call.id).select().single());if(!callMediaValid(request))return;
+      currentCall=accepted;
+      const answer=await peer.createAnswer();if(!callMediaValid(request))return;
+      await peer.setLocalDescription(answer);if(!callMediaValid(request))return;
+      await sendCallSignal('answer',{type:peer.localDescription.type,sdp:peer.localDescription.sdp},currentCall);if(!callMediaValid(request))return;
+      startCallClock();await pollCallSignals();
+    }catch(e){
+      stream?.getTracks().forEach(t=>t.stop());
+      if(!callMediaValid(request))return;
+      try{await db.from('fgi_calls').update({status:'declined'}).eq('id',call.id);}catch{}
+      if(callMediaValid(request))cleanupCallLocal();throw e;
+    }
   });
-  try{
-    currentCall=call;incomingCall=null;callLocalStream=stream;callSignalLastId=0;callMuted=false;callCameraOff=false;lastCallHeartbeat=Date.now();
-    if($('incomingCallDialog').open)$('incomingCallDialog').close();showActiveCall(call,'Подключаемся…');
-    const peer=createCallPeer(call),offerSignal=await waitForCallOffer(call.id);
-    await peer.setRemoteDescription(offerSignal.payload);await flushCallIce();
-    currentCall=unwrap(await db.from('fgi_calls').update({status:'accepted'}).eq('id',call.id).select().single());
-    const answer=await peer.createAnswer();await peer.setLocalDescription(answer);
-    await sendCallSignal('answer',{type:peer.localDescription.type,sdp:peer.localDescription.sdp},currentCall);
-    startCallClock();await pollCallSignals();
-  }catch(e){
-    stream.getTracks().forEach(t=>t.stop());
-    try{await db.from('fgi_calls').update({status:'declined'}).eq('id',call.id);}catch{}
-    cleanupCallLocal();throw e;
-  }
 }
 async function declineIncomingCall(){
   const call=incomingCall;if(!call)return;
@@ -1266,29 +1299,36 @@ async function declineIncomingCall(){
 }
 async function endCurrentCall(silent=false){
   const call=currentCall;
+  // The device must stop immediately even if the server is unreachable.
+  cleanupCallLocal();
   if(call && user && ['ringing','accepted'].includes(call.status)){
     const result=await db.from('fgi_calls').update({status:'ended'}).eq('id',call.id);
     if(result.error && !silent)throw result.error;
   }
-  cleanupCallLocal();
 }
 async function checkIncomingCall(){
   if(!user || currentCall)return;
+  const epoch=authEpoch,actor=user.id;
   if(incomingCall){
-    const row=unwrap(await db.from('fgi_calls').select('*').eq('id',incomingCall.id).maybeSingle());
+    const id=incomingCall.id;
+    const row=unwrap(await db.from('fgi_calls').select('*').eq('id',id).maybeSingle());
+    if(epoch!==authEpoch||actor!==user?.id||incomingCall?.id!==id||currentCall)return;
     if(!row || row.status!=='ringing'){incomingCall=null;if($('incomingCallDialog').open)$('incomingCallDialog').close();}
     return;
   }
   if(Date.now()-lastIncomingCallPoll<3000)return;lastIncomingCallPoll=Date.now();
   const since=new Date(Date.now()-90000).toISOString();
-  const call=unwrap(await db.from('fgi_calls').select('*').eq('callee_id',user.id).eq('status','ringing').gte('created_at',since).order('created_at',{ascending:false}).limit(1).maybeSingle());
+  const call=unwrap(await db.from('fgi_calls').select('*').eq('callee_id',actor).eq('status','ringing').gte('created_at',since).order('created_at',{ascending:false}).limit(1).maybeSingle());
+  if(epoch!==authEpoch||actor!==user?.id||currentCall)return;
   if(!call)return;
   incomingCall=call;$('incomingCallTitle').textContent=call.kind==='video'?'Входящий видеозвонок':'Входящий аудиозвонок';$('incomingCallName').textContent=callPartnerName(call);
   message('incomingCallMessage','');if(!$('incomingCallDialog').open)$('incomingCallDialog').showModal();
 }
 async function refreshCurrentCall(){
   if(!currentCall || !user)return;
-  const row=unwrap(await db.from('fgi_calls').select('*').eq('id',currentCall.id).maybeSingle());
+  const epoch=authEpoch,actor=user.id,id=currentCall.id;
+  const valid=()=>epoch===authEpoch&&actor===user?.id&&currentCall?.id===id;
+  const row=unwrap(await db.from('fgi_calls').select('*').eq('id',id).maybeSingle());if(!valid())return;
   if(!row || ['declined','ended','missed'].includes(row.status)){
     const text=row?.status==='declined'?'Звонок отклонён.':row?.status==='missed'?'Нет ответа.':'Звонок завершён.';
     cleanupCallLocal();notice(text);return;
@@ -1296,10 +1336,11 @@ async function refreshCurrentCall(){
   const was=currentCall.status;currentCall=row;
   if(row.status==='accepted' && was!=='accepted'){setCallStatus('Соединение…');startCallClock();}
   await pollCallSignals();
+  if(!valid())return;
   if(Date.now()-lastCallHeartbeat>20000){
     lastCallHeartbeat=Date.now();
     const heartbeat=await db.from('fgi_calls').update({status:row.status}).eq('id',row.id).select().single();
-    if(!heartbeat.error)currentCall=heartbeat.data;
+    if(valid()&&!heartbeat.error)currentCall=heartbeat.data;
   }
 }
 async function pollCallState(){
@@ -1423,7 +1464,7 @@ function bindChat() {
   $('videoCall').onclick=()=>startVideoCall().catch(e=>message('chatMessage',explain(e),true));
   $('acceptCall').onclick=async()=>{const b=$('acceptCall');b.disabled=true;try{await acceptIncomingCall();}catch(e){message('incomingCallMessage',explain(e),true);}finally{b.disabled=false;}};
   $('declineCall').onclick=()=>declineIncomingCall().catch(e=>message('incomingCallMessage',explain(e),true));
-  $('endCall').onclick=()=>endCurrentCall().catch(e=>message('callMessage',explain(e),true));
+  $('endCall').onclick=()=>endCurrentCall().catch(e=>notice('Звонок остановлен на устройстве. Сервер не подтвердил завершение: '+explain(e)));
   $('muteCall').onclick=()=>{if(!callLocalStream)return;callMuted=!callMuted;callLocalStream.getAudioTracks().forEach(t=>t.enabled=!callMuted);$('muteCall').textContent=callMuted?'🎙️ Включить микрофон':'🎙️ Выключить микрофон';};
   $('toggleCamera').onclick=()=>{if(currentCall?.kind!=='video' || !callLocalStream)return;callCameraOff=!callCameraOff;callLocalStream.getVideoTracks().forEach(t=>t.enabled=!callCameraOff);$('toggleCamera').textContent=callCameraOff?'📷 Включить камеру':'📷 Выключить камеру';};
   $('switchCamera').onclick=()=>switchCallCamera().catch(e=>message('callMessage',explain(e),true));
@@ -1522,6 +1563,7 @@ async function init() {
   try {
     const {createClient}=await import(CONFIG.sdk);
     db=createClient(CONFIG.url,CONFIG.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'implicit'},global:{fetch:timedFetch}});
+    loadAuthCapabilities();
     aiAssistant=mountFitGoInAI($('fitgoinAI'),{
       getDB:()=>db,getUser:()=>user,endpoint:CONFIG.url+'/functions/v1/fitgoin-ai',
       login:()=>requireUser('ai'),navigate:page,prepareImage,openCoach:openProfile,contact,

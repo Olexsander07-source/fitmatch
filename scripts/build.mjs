@@ -5,6 +5,7 @@ import { execFileSync } from 'node:child_process';
 const out = new URL('../.deploy/', import.meta.url);
 const files = ['index.html', 'fitmatch.js', 'styles.css', 'fitgoin-ai.js', 'fitgoin-ai-core.mjs', 'fitgoin-ai-paid.mjs', 'fitgoin-ai-media.mjs', 'fitgoin-ai.css', 'cookie-consent.js', 'robots.txt', 'sitemap.xml', 'favicon.svg', 'site.webmanifest', 'privacy.html', 'terms.html', 'legal.html', 'cookies.html', 'support.html', '_headers'];
 
+files.push('vendor/supabase-2.57.4.js','vendor/supabase-client.mjs','vendor/LICENSE-supabase.txt');
 files.push('fitgoin-premium.js','fitgoin-premium-core.mjs','fitgoin-i18n.mjs','fitgoin-premium.css');
 for(const name of ['coaching','online','boxing'])for(const width of [800,1600])files.push(`assets/brand/${name}-${width}.webp`);
 await rm(out, { recursive: true, force: true });
