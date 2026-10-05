@@ -1,0 +1,131 @@
+{
+  "fixture": true,
+  "at": "2026-10-05T04:28:23.184Z",
+  "errors": [],
+  "results": [
+    {
+      "width": 360,
+      "status": "passed",
+      "scenarios": [
+        "guest signup confirmation",
+        "client introduction",
+        "seven-step match",
+        "real profile action and messaging",
+        "authoritative trainer role",
+        "draft and preview before publish",
+        "returning AI user",
+        "8 AI tabs",
+        "bookmarks",
+        "provider-quota feedback",
+        "stop request"
+      ]
+    },
+    {
+      "width": 390,
+      "status": "passed",
+      "scenarios": [
+        "guest signup confirmation",
+        "client introduction",
+        "seven-step match",
+        "real profile action and messaging",
+        "authoritative trainer role",
+        "draft and preview before publish",
+        "returning AI user",
+        "8 AI tabs",
+        "bookmarks",
+        "provider-quota feedback",
+        "stop request"
+      ]
+    },
+    {
+      "width": 768,
+      "status": "passed",
+      "scenarios": [
+        "guest signup confirmation",
+        "client introduction",
+        "seven-step match",
+        "real profile action and messaging",
+        "authoritative trainer role",
+        "draft and preview before publish",
+        "returning AI user",
+        "8 AI tabs",
+        "bookmarks",
+        "provider-quota feedback",
+        "stop request"
+      ]
+    },
+    {
+      "width": 1440,
+      "status": "passed",
+      "scenarios": [
+        "guest signup confirmation",
+        "client introduction",
+        "seven-step match",
+        "real profile action and messaging",
+        "authoritative trainer role",
+        "draft and preview before publish",
+        "returning AI user",
+        "8 AI tabs",
+        "bookmarks",
+        "provider-quota feedback",
+        "stop request"
+      ]
+    },
+    {
+      "width": 390,
+      "status": "passed",
+      "scenarios": [
+        "AI four-step onboarding",
+        "draft offline recovery",
+        "empty MATCH",
+        "long trainer name",
+        "short phone viewport"
+      ]
+    },
+    {
+      "width": 390,
+      "status": "passed",
+      "scenarios": [
+        "wrong password",
+        "password-reset request",
+        "visible signup confirmation",
+        "signup role retry",
+        "MATCH draft reload",
+        "trainer draft reload",
+        "trainer settings and edit",
+        "account switch and logout/login",
+        "keyboard AI send",
+        "drawer keyboard navigation",
+        "private AI reset after logout"
+      ]
+    },
+    {
+      "width": 1440,
+      "status": "passed",
+      "scenarios": [
+        "AI four-step onboarding",
+        "draft offline recovery",
+        "empty MATCH",
+        "long trainer name",
+        "short phone viewport"
+      ]
+    },
+    {
+      "width": 1440,
+      "status": "passed",
+      "scenarios": [
+        "wrong password",
+        "password-reset request",
+        "visible signup confirmation",
+        "signup role retry",
+        "MATCH draft reload",
+        "trainer draft reload",
+        "trainer settings and edit",
+        "account switch and logout/login",
+        "keyboard AI send",
+        "drawer keyboard navigation",
+        "private AI reset after logout"
+      ]
+    }
+  ]
+}

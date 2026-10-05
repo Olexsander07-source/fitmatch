@@ -1,0 +1,16 @@
+{
+  "at": "2026-10-05T05:05:41.935Z",
+  "base": "https://fitgoin.com/",
+  "fixture": false,
+  "engine": "Chrome desktop with mobile touch emulation",
+  "width": 390,
+  "scenarios": [
+    "real Supabase login request with non-existent email returns visible error",
+    "touch client/trainer signup and login: no-preference",
+    "reduced motion pauses automatically; touch resumes background",
+    "touch client/trainer signup and login: reduce"
+  ],
+  "pageErrors": [],
+  "failedRequests": [],
+  "status": "passed"
+}
