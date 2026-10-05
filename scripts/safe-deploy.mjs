@@ -43,15 +43,19 @@ run(node, ['--check', 'fitgoin-ai-paid.mjs']);
 run(node, ['--check', 'fitgoin-ai-media.mjs']);
 run(node, ['--check', 'supabase/functions/fitgoin-ai-billing/index.mjs']);
 run(node, ['scripts/verify.mjs']);
-run(node, ['--test', 'scripts/voice.test.mjs', 'scripts/ai.test.mjs', 'scripts/ai-paid.test.mjs', 'scripts/premium.test.mjs', 'scripts/verify-production.test.mjs', 'scripts/production-hosting.test.mjs']);
+run(node, ['--test', 'scripts/frontend-audit.test.mjs', 'scripts/voice.test.mjs', 'scripts/ai.test.mjs', 'scripts/ai-paid.test.mjs', 'scripts/premium.test.mjs', 'scripts/verify-production.test.mjs', 'scripts/production-hosting.test.mjs']);
 process.env.FGI_RELEASE_COMMIT = local;
 run(node, ['scripts/build.mjs']);
 run(node, [wrangler, 'deploy', '--dry-run']);
+// Wrangler refreshes an expired OAuth session before our read-only API checks.
+// A dry run alone does not reliably make an authenticated API request.
+run(node, [wrangler, 'whoami'], true);
 // Read only the existing Wrangler credential. Never write it to artifacts/logs.
 const configRoot = process.platform === 'win32'
   ? resolve(process.env.APPDATA, 'xdg.config')
   : process.env.XDG_CONFIG_HOME || resolve(homedir(), '.config');
-const token = process.env.CLOUDFLARE_API_TOKEN || readFileSync(resolve(configRoot, '.wrangler', 'config', 'default.toml'), 'utf8').match(/^oauth_token\s*=\s*"([^"]+)"/m)?.[1];
+const existingToken = () => process.env.CLOUDFLARE_API_TOKEN || readFileSync(resolve(configRoot, '.wrangler', 'config', 'default.toml'), 'utf8').match(/^oauth_token\s*=\s*"([^"]+)"/m)?.[1];
+const token = existingToken();
 if (!await productionWorkerExists({ token })) {
   // A new Worker needs an initial deployment before versions upload is allowed.
   // All checks have passed; config has no routes and workers.dev is disabled.
@@ -65,7 +69,7 @@ const versionId = parseUploadedVersion(upload);
 run(node, [wrangler, 'versions', 'deploy', `${versionId}@100`, '--yes', '--message', `Verified release ${local}`]);
 
 // Keep production independent of the legacy automatic Git publisher.
-const hosting = await configureProductionHosting({ token });
+const hosting = await configureProductionHosting({ token: existingToken() });
 console.log(`Production domain ${hosting.hostname} is attached to ${hosting.service}; workers.dev and previews disabled.`);
 
 const report = await verifyProduction();

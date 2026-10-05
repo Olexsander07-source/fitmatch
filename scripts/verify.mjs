@@ -19,6 +19,7 @@ const migrations = new Map([
   ['20261003091539_create_fitgoin_ai.sql', '85260269487fce5693b180ffae87093a'],
   ['20261003093815_index_ai_messages_and_merge_share_read_policy.sql', 'ea07021693a06e116657c66f48bf3e4c'],
 ]);
+files.push('vendor/supabase-2.57.4.js','vendor/supabase-client.mjs','vendor/LICENSE-supabase.txt');
 for (const file of files) await access(new URL(`../${file}`, import.meta.url));
 for (const file of migrations.keys()) await access(new URL(`../supabase/migrations/${file}`, import.meta.url));
 
@@ -75,8 +76,8 @@ if (!js.includes("update({status:'accepted'})") || !js.includes("update({status:
 if (!html.includes('id="videoCall"') || !html.includes('id="callRemoteVideo"') || !html.includes('id="callLocalVideo"')) throw new Error('Video call UI is missing');
 if (!html.includes('id="toggleCamera"') || !html.includes('id="switchCamera"')) throw new Error('Video camera controls are missing');
 if (!js.includes('async function startVideoCall()')) throw new Error('Video call start flow is missing');
-if (!js.includes("kind:'video'")) throw new Error('Video call signaling kind is missing');
-if (!js.includes("video:{facingMode:{ideal:callFacingMode}")) throw new Error('Video camera capture is missing');
+if (!js.includes("startOutgoingCall('video')")) throw new Error('Video call signaling kind is missing');
+if (!js.includes("video:isVideo?{facingMode:{ideal:'user'}")) throw new Error('Video camera capture is missing');
 if (!js.includes('async function switchCallCamera()')) throw new Error('Camera switching is missing');
 if (!js.includes("sender.replaceTrack(nextTrack)")) throw new Error('Camera track replacement is missing');
 if (!js.includes("call.kind==='video'")) throw new Error('Incoming video call handling is missing');

@@ -2,7 +2,7 @@
   "name": "fitgoin",
   "private": true,
   "scripts": {
-    "check": "node --check fitmatch.js && node --check fitgoin-ai.js && node --check fitgoin-premium.js && node --check supabase/functions/fitgoin-ai/index.mjs && node --check fitgoin-ai-paid.mjs && node --check fitgoin-ai-media.mjs && node --check supabase/functions/fitgoin-ai-billing/index.mjs && node scripts/verify.mjs && node --test scripts/voice.test.mjs scripts/ai.test.mjs scripts/ai-paid.test.mjs scripts/premium.test.mjs scripts/verify-production.test.mjs scripts/production-hosting.test.mjs",
+    "check": "node --check fitmatch.js && node --check fitgoin-ai.js && node --check fitgoin-premium.js && node --check supabase/functions/fitgoin-ai/index.mjs && node --check fitgoin-ai-paid.mjs && node --check fitgoin-ai-media.mjs && node --check supabase/functions/fitgoin-ai-billing/index.mjs && node scripts/verify.mjs && node --test scripts/frontend-audit.test.mjs scripts/voice.test.mjs scripts/ai.test.mjs scripts/ai-paid.test.mjs scripts/premium.test.mjs scripts/verify-production.test.mjs scripts/production-hosting.test.mjs",
     "build": "node scripts/build.mjs",
     "deploy:dry": "npm run check && npm run build && wrangler deploy --dry-run",
     "deploy": "node scripts/safe-deploy.mjs",

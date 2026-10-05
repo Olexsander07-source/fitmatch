@@ -1,0 +1,379 @@
+{
+  "at": "2026-10-05T07:05:07.734Z",
+  "fixture": false,
+  "assets": [
+    {
+      "path": "index.html",
+      "status": 200,
+      "mime": "text/html",
+      "bytes": 41547,
+      "sha256": "df32e4c8eda36ec2deaed783499704cca94c120afb32b28572eed7dc236674ff"
+    },
+    {
+      "path": "fitmatch.js",
+      "status": 200,
+      "mime": "text/javascript",
+      "bytes": 116010,
+      "sha256": "778642efd676e3dde70179216197bd48147b2551d94f6d041fec5a213da047fa"
+    },
+    {
+      "path": "styles.css",
+      "status": 200,
+      "mime": "text/css",
+      "bytes": 37985,
+      "sha256": "390f2245d0ec8710254e946bdc413adc3af07ddbb6cdaa8e9de4ed2df3e9432c"
+    },
+    {
+      "path": "fitgoin-ai.js",
+      "status": 200,
+      "mime": "text/javascript",
+      "bytes": 86367,
+      "sha256": "3e66ca1824f3fe75dd585966646f1525fd34931875c746a5540b16b6cd4d8e4c"
+    },
+    {
+      "path": "fitgoin-ai-core.mjs",
+      "status": 200,
+      "mime": "text/javascript",
+      "bytes": 14820,
+      "sha256": "3abcd5a551d24668827e90e4b11bfc34878c66d6839b6a4d71b96497805df020"
+    },
+    {
+      "path": "fitgoin-ai-paid.mjs",
+      "status": 200,
+      "mime": "text/javascript",
+      "bytes": 7249,
+      "sha256": "ea5e2b00541867c88dd8e4c45dcfba65d79fbde8dd55b1045d47a6f7606bef40"
+    },
+    {
+      "path": "fitgoin-ai-media.mjs",
+      "status": 200,
+      "mime": "text/javascript",
+      "bytes": 2343,
+      "sha256": "00e544911ebef9c963fe1f95d0ea8420c359c20cdf5d1daaee950d34eed27f01"
+    },
+    {
+      "path": "fitgoin-ai.css",
+      "status": 200,
+      "mime": "text/css",
+      "bytes": 3605,
+      "sha256": "ae09b10b16d145b62f810dcb8bb87808732df761f30e827fdd61a9cfee2072e2"
+    },
+    {
+      "path": "cookie-consent.js",
+      "status": 200,
+      "mime": "text/javascript",
+      "bytes": 2554,
+      "sha256": "f9c75de05ec29a9759b7d9a3946e62821512bd90a3bb07cba4e5036a5c1e46b5"
+    },
+    {
+      "path": "robots.txt",
+      "status": 200,
+      "mime": "text/plain",
+      "bytes": 69,
+      "sha256": "8962ac8edff4cf558b04d5781c225bfb4684e0d123c292d922c2ad554e36b2e7"
+    },
+    {
+      "path": "sitemap.xml",
+      "status": 200,
+      "mime": "application/xml",
+      "bytes": 445,
+      "sha256": "9a6857b3aba3b896380143c66b6cd6efc1dbf69de2306805dc2dc8e64ae34e37"
+    },
+    {
+      "path": "favicon.svg",
+      "status": 200,
+      "mime": "image/svg+xml",
+      "bytes": 271,
+      "sha256": "4838c7f638116052bf5f26b41667d9e49acdbdc74d368ed92cceea4fb48af3ff"
+    },
+    {
+      "path": "site.webmanifest",
+      "status": 200,
+      "mime": "application/manifest+json",
+      "bytes": 285,
+      "sha256": "737dc9909fe42783227271fd8b3df4e2f65fe69fbff5cb34fc64989ea46044f3"
+    },
+    {
+      "path": "privacy.html",
+      "status": 200,
+      "mime": "text/html",
+      "bytes": 10237,
+      "sha256": "7215b0d82f9dac9d312ee9456983c912510baa099188c11dbe1c27f919e56b95"
+    },
+    {
+      "path": "terms.html",
+      "status": 200,
+      "mime": "text/html",
+      "bytes": 6029,
+      "sha256": "c2719d8cc8a17efcc895e30c5ac2ef9c43ab969c77ca578fb8042e79bfaba7f0"
+    },
+    {
+      "path": "legal.html",
+      "status": 200,
+      "mime": "text/html",
+      "bytes": 3006,
+      "sha256": "a403fcef6927ad018de8c3d6fb42c6c86bbc4d96ce304f1d36424e25f7e05eee"
+    },
+    {
+      "path": "cookies.html",
+      "status": 200,
+      "mime": "text/html",
+      "bytes": 4037,
+      "sha256": "ae39752ffb05dbe4e93c751538308f5cc2f3192d293d84ed46c1ce6ca91db470"
+    },
+    {
+      "path": "support.html",
+      "status": 200,
+      "mime": "text/html",
+      "bytes": 2608,
+      "sha256": "49a064247d08ad260e36d5125fff10eba041ae953033521843ad60cab80d361c"
+    },
+    {
+      "path": "fitgoin-premium.js",
+      "status": 200,
+      "mime": "text/javascript",
+      "bytes": 12823,
+      "sha256": "7dade89e9f3db22a31669729d5007f7c425a7e95a53340a0d754594a4e6b19d8"
+    },
+    {
+      "path": "fitgoin-premium-core.mjs",
+      "status": 200,
+      "mime": "text/javascript",
+      "bytes": 2769,
+      "sha256": "429d1f07db5b3d990eddcfebf304439269928075f506b6e1fae6969982710f96"
+    },
+    {
+      "path": "fitgoin-i18n.mjs",
+      "status": 200,
+      "mime": "text/javascript",
+      "bytes": 11303,
+      "sha256": "e428558250d4ebd5845b96443410422d5757fef4af76fa052c0d39a07a8b6900"
+    },
+    {
+      "path": "fitgoin-premium.css",
+      "status": 200,
+      "mime": "text/css",
+      "bytes": 36508,
+      "sha256": "6384f90d5780e5643a2b1dc5241398a4289cd61051daec62832b623d08c3a585"
+    },
+    {
+      "path": "release.json",
+      "status": 200,
+      "mime": "application/json",
+      "bytes": 142,
+      "sha256": "accc9f3e3872368587f903e4fa65391c5d20bd680e701b9a38b2c0c354ff3f10",
+      "release": {
+        "commit": "7668fa9bd59862c04ff3acafe3ead6979c404ee5",
+        "built_at": "2026-10-05T05:50:52.124Z",
+        "build_id": "1ac7801a-45d2-4109-aa1d-52021bfe6b19"
+      }
+    },
+    {
+      "path": "assets/brand/coaching-800.webp",
+      "status": 200,
+      "mime": "image/webp",
+      "bytes": 31732,
+      "sha256": "e01069820d6e5363749dd896e179c6c07987fdbbac3c1bcab65694b87b1590cf"
+    },
+    {
+      "path": "assets/brand/coaching-1600.webp",
+      "status": 200,
+      "mime": "image/webp",
+      "bytes": 79550,
+      "sha256": "4b190f7712375362bbec226a41adca961baac66cd446d6d919d977b71e96dcc6"
+    },
+    {
+      "path": "assets/brand/online-800.webp",
+      "status": 200,
+      "mime": "image/webp",
+      "bytes": 39588,
+      "sha256": "f19742dbb2ec43b4a0882fcae521f97c062590ad6ad58bdeb6075a28150f0d85"
+    },
+    {
+      "path": "assets/brand/online-1600.webp",
+      "status": 200,
+      "mime": "image/webp",
+      "bytes": 104286,
+      "sha256": "78941ee7bb7dbd8b3e2828eecc5c278fa25625e70cf2de162e3a66566f9a457a"
+    },
+    {
+      "path": "assets/brand/boxing-800.webp",
+      "status": 200,
+      "mime": "image/webp",
+      "bytes": 41008,
+      "sha256": "68a8681f94820f3dab2704773b10ea3331165cece15a6aa91b0308bee5007d58"
+    },
+    {
+      "path": "assets/brand/boxing-1600.webp",
+      "status": 200,
+      "mime": "image/webp",
+      "bytes": 104690,
+      "sha256": "8272b3294887245f271dc8edd5363370567abb105aa8e7b5570a6dc43a7c36e4"
+    }
+  ],
+  "pages": [
+    {
+      "path": "support.html",
+      "status": 200,
+      "noOverflow": true,
+      "cookieSettings": true,
+      "title": "Поддержка — FitGoIn"
+    },
+    {
+      "path": "privacy.html",
+      "status": 200,
+      "noOverflow": true,
+      "cookieSettings": true,
+      "title": "Политика конфиденциальности — FitGoIn"
+    },
+    {
+      "path": "terms.html",
+      "status": 200,
+      "noOverflow": true,
+      "cookieSettings": true,
+      "title": "Условия использования — FitGoIn"
+    },
+    {
+      "path": "legal.html",
+      "status": 200,
+      "noOverflow": true,
+      "cookieSettings": true,
+      "title": "Правовая информация — FitGoIn"
+    },
+    {
+      "path": "cookies.html",
+      "status": 200,
+      "noOverflow": true,
+      "cookieSettings": true,
+      "title": "Cookie Policy — FitGoIn"
+    }
+  ],
+  "redirect": {
+    "from": "https://www.fitgoin.com/support.html?audit=read-only",
+    "to": "https://fitgoin.com/support?audit=read-only",
+    "status": 200
+  },
+  "pageErrors": [],
+  "sourceCommit": "7668fa9bd59862c04ff3acafe3ead6979c404ee5",
+  "sourceComparison": {
+    "matched": 28,
+    "eolVariants": [
+      "Git LF",
+      "Windows CRLF"
+    ],
+    "checks": [
+      {
+        "path": "index.html",
+        "matchesSource": true
+      },
+      {
+        "path": "fitmatch.js",
+        "matchesSource": true
+      },
+      {
+        "path": "styles.css",
+        "matchesSource": true
+      },
+      {
+        "path": "fitgoin-ai.js",
+        "matchesSource": true
+      },
+      {
+        "path": "fitgoin-ai-core.mjs",
+        "matchesSource": true
+      },
+      {
+        "path": "fitgoin-ai-paid.mjs",
+        "matchesSource": true
+      },
+      {
+        "path": "fitgoin-ai-media.mjs",
+        "matchesSource": true
+      },
+      {
+        "path": "fitgoin-ai.css",
+        "matchesSource": true
+      },
+      {
+        "path": "cookie-consent.js",
+        "matchesSource": true
+      },
+      {
+        "path": "robots.txt",
+        "matchesSource": true
+      },
+      {
+        "path": "sitemap.xml",
+        "matchesSource": true
+      },
+      {
+        "path": "favicon.svg",
+        "matchesSource": true
+      },
+      {
+        "path": "site.webmanifest",
+        "matchesSource": true
+      },
+      {
+        "path": "privacy.html",
+        "matchesSource": true
+      },
+      {
+        "path": "terms.html",
+        "matchesSource": true
+      },
+      {
+        "path": "legal.html",
+        "matchesSource": true
+      },
+      {
+        "path": "cookies.html",
+        "matchesSource": true
+      },
+      {
+        "path": "support.html",
+        "matchesSource": true
+      },
+      {
+        "path": "fitgoin-premium.js",
+        "matchesSource": true
+      },
+      {
+        "path": "fitgoin-premium-core.mjs",
+        "matchesSource": true
+      },
+      {
+        "path": "fitgoin-i18n.mjs",
+        "matchesSource": true
+      },
+      {
+        "path": "fitgoin-premium.css",
+        "matchesSource": true
+      },
+      {
+        "path": "assets/brand/coaching-800.webp",
+        "matchesSource": true
+      },
+      {
+        "path": "assets/brand/coaching-1600.webp",
+        "matchesSource": true
+      },
+      {
+        "path": "assets/brand/online-800.webp",
+        "matchesSource": true
+      },
+      {
+        "path": "assets/brand/online-1600.webp",
+        "matchesSource": true
+      },
+      {
+        "path": "assets/brand/boxing-800.webp",
+        "matchesSource": true
+      },
+      {
+        "path": "assets/brand/boxing-1600.webp",
+        "matchesSource": true
+      }
+    ]
+  }
+}

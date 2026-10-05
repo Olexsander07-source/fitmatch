@@ -48,7 +48,16 @@ SELECT set_config('request.jwt.claim.sub','90000000-0000-4000-8000-000000000001'
 SET LOCAL ROLE authenticated;
 INSERT INTO public.fgi_ai_food(user_id,name,calories_low,calories_high,protein_g,fat_g,carbs_g,source) VALUES('90000000-0000-4000-8000-000000000001','Confirmed fixture',100,200,5,5,20,'manual');
 DO $$ BEGIN
- IF has_schema_privilege(current_user,'fgi_private','usage') OR has_function_privilege(current_user,'public.fgi_ai_access(uuid,boolean)','execute') THEN RAISE EXCEPTION 'Browser controls entitlements'; END IF;
+ -- Trainer onboarding legitimately uses this schema. USAGE alone grants no
+ -- table or billing RPC permissions; verify the protected objects themselves.
+ IF has_schema_privilege(current_user,'fgi_private','create')
+ OR EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+   WHERE n.nspname='fgi_private' AND c.relkind IN ('r','p','v','m')
+     AND has_table_privilege(current_user,c.oid,'select,insert,update,delete'))
+ OR EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+   WHERE n.nspname='public' AND p.proname LIKE 'fgi_ai_%'
+     AND has_function_privilege(current_user,p.oid,'execute'))
+ THEN RAISE EXCEPTION 'Browser controls entitlements'; END IF;
  BEGIN INSERT INTO fgi_private.ai_friend_grants(user_id,modules,reason) VALUES('90000000-0000-4000-8000-000000000001',ARRAY['training'],'forged');RAISE EXCEPTION 'Friend grant forged';EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END $$;
 RESET ROLE;

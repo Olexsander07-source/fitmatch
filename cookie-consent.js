@@ -3,7 +3,10 @@ const MAX_AGE=60*60*24*180;
 
 function readChoice(){
   const row=document.cookie.split('; ').find(v=>v.startsWith(COOKIE_NAME+'='));
-  return row?decodeURIComponent(row.split('=').slice(1).join('=')):'';
+  try {
+    const value=row?decodeURIComponent(row.split('=').slice(1).join('=')):'';
+    return ['necessary','optional'].includes(value)?value:'';
+  } catch { return ''; }
 }
 function applyChoice(choice){
   const value=choice==='optional'?'optional':'necessary';
@@ -49,5 +52,6 @@ document.addEventListener('click',event=>{
   if(choice)saveChoice(choice);
   if(event.target.closest('[data-cookie-settings]'))showBanner(true);
 });
-document.addEventListener('DOMContentLoaded',()=>showBanner(false));
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>showBanner(false),{once:true});
+else showBanner(false);
 applyChoice(readChoice()||'necessary');
