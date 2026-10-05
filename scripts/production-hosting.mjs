@@ -53,7 +53,22 @@ export async function configureProductionHosting({ token, request = fetch } = {}
     throw new Error('Production workers.dev or preview URLs are still enabled.');
   }
   if (previous.service !== service) {
-    await call('workers/domains', 'PUT', { hostname, service, zone_id: zone });
+    // Use the atomic transfer endpoint used by Wrangler. The generic domains
+    // PUT creates a domain and returns 409 when it already belongs to a Worker.
+    const endpoint = `workers/scripts/${service}/domains`;
+    const origins = [{ hostname, zone_id: zone, enabled: true, previews_enabled: false }];
+    const changes = await call(`${endpoint}/changeset?replace_state=true`, 'POST', origins);
+    const touched = [...(changes.added || []), ...(changes.updated || [])];
+    if (!Array.isArray(changes.removed) || changes.removed.length ||
+        !Array.isArray(changes.conflicting) || changes.conflicting.length ||
+        touched.length !== 1 || touched[0].hostname !== hostname || touched[0].zone_id !== zone ||
+        touched[0].service !== service || changes.affected_zones?.some(id => id !== zone)) {
+      throw new Error('Production domain transfer would affect unexpected domains or DNS records.');
+    }
+    await call(`${endpoint}/records`, 'PUT', {
+      override_scope: true, override_existing_origin: true,
+      override_existing_dns_record: false, origins,
+    });
   }
   const updated = (await call('workers/domains')).filter(domain => domain.hostname === hostname);
   if (updated.length !== 1 || updated[0].zone_id !== zone || updated[0].service !== service || updated[0].enabled === false) {

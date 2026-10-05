@@ -27,7 +27,7 @@ test('production configuration keeps domain assignment out of the legacy Git bui
   assert.equal(config.workers_dev, false);
 });
 
-function fixture({ service = site.legacyService, zone = site.zone, failDisable = false, keepPreview = false, keepOldMapping = false } = {}) {
+function fixture({ service = site.legacyService, zone = site.zone, failDisable = false, keepPreview = false, keepOldMapping = false, removed = [], conflicting = [], transferZone = site.zone } = {}) {
   let current = service;
   const calls = [];
   const request = async (url, options) => {
@@ -39,11 +39,19 @@ function fixture({ service = site.legacyService, zone = site.zone, failDisable =
       if (failDisable && last.method === 'POST') return new Response(null, { status: 403 });
       return Response.json({ success: true, result: { enabled: false, previews_enabled: keepPreview } });
     }
-    assert(last.path.endsWith('/workers/domains'));
-    if (last.method === 'PUT') {
-      if (!keepOldMapping) current = last.body.service;
+    if (last.path.endsWith('/domains/changeset')) {
+      assert.equal(url.search, '?replace_state=true');
+      return Response.json({ success: true, result: {
+        added: [], updated: [{ hostname: site.hostname, service: site.service, zone_id: transferZone }],
+        removed, conflicting, affected_zones: [transferZone],
+      } });
+    }
+    if (last.path.endsWith('/domains/records')) {
+      assert.equal(last.method, 'PUT');
+      if (!keepOldMapping) current = site.service;
       return Response.json({ success: true, result: {} });
     }
+    assert(last.path.endsWith('/workers/domains'));
     return Response.json({ success: true, result: [{ hostname: site.hostname, service: current, zone_id: zone, enabled: true }] });
   };
   return { calls, request };
@@ -55,9 +63,14 @@ test('production domain moves to the complete Worker after additional public URL
   assert.equal(result.service, site.service);
   assert.equal(result.changed, true);
   const writes = f.calls.filter(call => call.method !== 'GET');
-  assert.deepEqual(writes.map(call => call.method), ['POST', 'PUT']);
+  assert.deepEqual(writes.map(call => call.method), ['POST', 'POST', 'PUT']);
   assert.deepEqual(writes[0].body, { enabled: false, previews_enabled: false });
-  assert.deepEqual(writes[1].body, { hostname: site.hostname, service: site.service, zone_id: site.zone });
+  const origins = [{ hostname: site.hostname, zone_id: site.zone, enabled: true, previews_enabled: false }];
+  assert.deepEqual(writes[1].body, origins);
+  assert.deepEqual(writes[2].body, {
+    override_scope: true, override_existing_origin: true,
+    override_existing_dns_record: false, origins,
+  });
 });
 
 test('subsequent releases preserve the existing production mapping', async () => {
@@ -90,3 +103,11 @@ test('a successful API response cannot hide unchanged domain routing', async () 
   const f = fixture({ keepOldMapping: true });
   await assert.rejects(configureProductionHosting({ token: 'fixture-only', request: f.request }), /mapping did not match/);
 });
+
+for (const options of [{ removed: [{ hostname: 'another.example' }] }, { conflicting: [{ hostname: site.hostname }] }, { transferZone: 'another-zone' }]) {
+  test(`atomic transfer rejects ${Object.keys(options)[0]} outside the intended change`, async () => {
+    const f = fixture(options);
+    await assert.rejects(configureProductionHosting({ token: 'fixture-only', request: f.request }), /unexpected domains or DNS/);
+    assert.equal(f.calls.filter(call => call.method === 'PUT').length, 0);
+  });
+}
