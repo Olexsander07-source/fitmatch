@@ -1,0 +1,18 @@
+{
+  "at": "2026-10-05T04:27:50.415Z",
+  "scenario": "legacy three-file bundle before Wrangler",
+  "beforeFileCount": 3,
+  "requiredFiles": [
+    "release.json",
+    "fitgoin-premium.js",
+    "fitgoin-premium.css",
+    "fitgoin-ai.js",
+    "fitgoin-i18n.mjs",
+    "assets/brand/coaching-800.webp",
+    "assets/brand/online-800.webp",
+    "assets/brand/boxing-800.webp"
+  ],
+  "customBuildRan": true,
+  "dryRun": true,
+  "status": "passed"
+}
