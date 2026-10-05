@@ -1,7 +1,23 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { configureProductionHosting, PRODUCTION_HOSTING as site } from './production-hosting.mjs';
+import { configureProductionHosting, productionWorkerExists, PRODUCTION_HOSTING as site } from './production-hosting.mjs';
+
+test('a genuinely absent production Worker may be initialized', async () => {
+  const request = async url => {
+    assert.equal(url, `https://api.cloudflare.com/client/v4/accounts/${site.account}/workers/services/${site.service}`);
+    return Response.json({ success: false, errors: [{ code: 10090 }] }, { status: 404 });
+  };
+  assert.equal(await productionWorkerExists({ token: 'fixture-only', request }), false);
+});
+
+test('an existing production Worker is not initialized again', async () => {
+  assert.equal(await productionWorkerExists({ token: 'fixture-only', request: async () => Response.json({ success: true, result: {} }) }), true);
+});
+
+test('an authentication failure is never mistaken for an absent Worker', async () => {
+  await assert.rejects(productionWorkerExists({ token: 'fixture-only', request: async () => Response.json({ success: false, errors: [{ code: 10000 }] }, { status: 403 }) }), /HTTP 403/);
+});
 
 test('production configuration keeps domain assignment out of the legacy Git build', async () => {
   const config = JSON.parse(await readFile(new URL('../wrangler.jsonc', import.meta.url), 'utf8'));

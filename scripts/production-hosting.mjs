@@ -6,6 +6,18 @@ export const PRODUCTION_HOSTING = Object.freeze({
   legacyService: 'fitgoin',
 });
 
+export async function productionWorkerExists({ token, request = fetch } = {}) {
+  if (!token) throw new Error('Existing Cloudflare deployment credential is unavailable.');
+  const { account, service } = PRODUCTION_HOSTING;
+  const response = await request(`https://api.cloudflare.com/client/v4/accounts/${account}/workers/services/${service}`, {
+    headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(20000),
+  });
+  const data = await response.json();
+  if (response.status === 404 && data.errors?.some(error => [10007, 10090].includes(error.code))) return false;
+  if (!response.ok || !data.success) throw new Error(`Cannot confirm production Worker existence: HTTP ${response.status}`);
+  return true;
+}
+
 // Domain reassignment is scoped to this existing site and account. A foreign
 // service or zone must be reviewed instead of being overwritten automatically.
 export async function configureProductionHosting({ token, request = fetch } = {}) {
