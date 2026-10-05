@@ -8,6 +8,7 @@ test('Server profile and coach record determine navigation; editable metadata an
   for(const route of ['ai','account','inbox','match','coaches','dashboard','welcome'])assert.equal(guardedPage(route,false,'client'),'login');
   assert.equal(guardedPage('profile',false,'client'),'profile');
   assert.equal(guardedPage('match',true,'coach'),'account');
+  for(const route of ['home','ranking','ai','coaches','inbox'])assert.equal(guardedPage(route,true,'coach'),route);
   assert.equal(entryPage({role:'client'},null,{}),'welcome');
   assert.equal(entryPage({role:'client'},null,{introduction_seen:true,preferred_path:'ai'}),'ai');
   assert.equal(entryPage({role:'client'},null,{introduction_seen:true,preferred_path:'human'}),'dashboard');
