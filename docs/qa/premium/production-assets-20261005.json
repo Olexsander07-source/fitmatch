@@ -1,0 +1,215 @@
+{
+  "at": "2026-10-05T05:04:25.004Z",
+  "base": "https://fitgoin.com/",
+  "assets": [
+    {
+      "file": "assets/brand/boxing-1600.webp",
+      "status": 200,
+      "sha256": "8272b3294887245f271dc8edd5363370567abb105aa8e7b5570a6dc43a7c36e4",
+      "bytes": 104690
+    },
+    {
+      "file": "assets/brand/boxing-800.webp",
+      "status": 200,
+      "sha256": "68a8681f94820f3dab2704773b10ea3331165cece15a6aa91b0308bee5007d58",
+      "bytes": 41008
+    },
+    {
+      "file": "assets/brand/coaching-1600.webp",
+      "status": 200,
+      "sha256": "4b190f7712375362bbec226a41adca961baac66cd446d6d919d977b71e96dcc6",
+      "bytes": 79550
+    },
+    {
+      "file": "assets/brand/coaching-800.webp",
+      "status": 200,
+      "sha256": "e01069820d6e5363749dd896e179c6c07987fdbbac3c1bcab65694b87b1590cf",
+      "bytes": 31732
+    },
+    {
+      "file": "assets/brand/online-1600.webp",
+      "status": 200,
+      "sha256": "78941ee7bb7dbd8b3e2828eecc5c278fa25625e70cf2de162e3a66566f9a457a",
+      "bytes": 104286
+    },
+    {
+      "file": "assets/brand/online-800.webp",
+      "status": 200,
+      "sha256": "f19742dbb2ec43b4a0882fcae521f97c062590ad6ad58bdeb6075a28150f0d85",
+      "bytes": 39588
+    },
+    {
+      "file": "cookie-consent.js",
+      "status": 200,
+      "sha256": "f9c75de05ec29a9759b7d9a3946e62821512bd90a3bb07cba4e5036a5c1e46b5",
+      "bytes": 2554
+    },
+    {
+      "file": "cookies.html",
+      "status": 200,
+      "sha256": "ae39752ffb05dbe4e93c751538308f5cc2f3192d293d84ed46c1ce6ca91db470",
+      "bytes": 4037
+    },
+    {
+      "file": "favicon.svg",
+      "status": 200,
+      "sha256": "4838c7f638116052bf5f26b41667d9e49acdbdc74d368ed92cceea4fb48af3ff",
+      "bytes": 271
+    },
+    {
+      "file": "fitgoin-ai-core.mjs",
+      "status": 200,
+      "sha256": "3abcd5a551d24668827e90e4b11bfc34878c66d6839b6a4d71b96497805df020",
+      "bytes": 14820
+    },
+    {
+      "file": "fitgoin-ai-media.mjs",
+      "status": 200,
+      "sha256": "00e544911ebef9c963fe1f95d0ea8420c359c20cdf5d1daaee950d34eed27f01",
+      "bytes": 2343
+    },
+    {
+      "file": "fitgoin-ai-paid.mjs",
+      "status": 200,
+      "sha256": "ea5e2b00541867c88dd8e4c45dcfba65d79fbde8dd55b1045d47a6f7606bef40",
+      "bytes": 7249
+    },
+    {
+      "file": "fitgoin-ai.css",
+      "status": 200,
+      "sha256": "ae09b10b16d145b62f810dcb8bb87808732df761f30e827fdd61a9cfee2072e2",
+      "bytes": 3605
+    },
+    {
+      "file": "fitgoin-ai.js",
+      "status": 200,
+      "sha256": "3e66ca1824f3fe75dd585966646f1525fd34931875c746a5540b16b6cd4d8e4c",
+      "bytes": 86367
+    },
+    {
+      "file": "fitgoin-i18n.mjs",
+      "status": 200,
+      "sha256": "632ad6c084fd27550092a5da4c0f1ec72f1bc675dd446785ef7663c347c1b9f2",
+      "bytes": 11232
+    },
+    {
+      "file": "fitgoin-premium-core.mjs",
+      "status": 200,
+      "sha256": "429d1f07db5b3d990eddcfebf304439269928075f506b6e1fae6969982710f96",
+      "bytes": 2769
+    },
+    {
+      "file": "fitgoin-premium.css",
+      "status": 200,
+      "sha256": "6384f90d5780e5643a2b1dc5241398a4289cd61051daec62832b623d08c3a585",
+      "bytes": 36508
+    },
+    {
+      "file": "fitgoin-premium.js",
+      "status": 200,
+      "sha256": "4e032672cbae45c92c7531f75a8e00f191bbbcff54a264217cf33d09057aed25",
+      "bytes": 12509
+    },
+    {
+      "file": "fitmatch.js",
+      "status": 200,
+      "sha256": "4eacee6e010cb000e1093d86ce07972266c107c88d20c3631a3a8982a5e36b93",
+      "bytes": 115785
+    },
+    {
+      "file": "index.html",
+      "status": 200,
+      "sha256": "bf8f9d76331f8411437d9fbd3b4678e01482d07bb8f01ff1f6070cf501365cf9",
+      "bytes": 41330
+    },
+    {
+      "file": "legal.html",
+      "status": 200,
+      "sha256": "a403fcef6927ad018de8c3d6fb42c6c86bbc4d96ce304f1d36424e25f7e05eee",
+      "bytes": 3006
+    },
+    {
+      "file": "privacy.html",
+      "status": 200,
+      "sha256": "7215b0d82f9dac9d312ee9456983c912510baa099188c11dbe1c27f919e56b95",
+      "bytes": 10237
+    },
+    {
+      "file": "release.json",
+      "status": 200,
+      "sha256": "8e7cb21bff9af8434edb101f8eec3d8e9b3af3d4ea6e1262aa3612e3c5ead08d",
+      "bytes": 142
+    },
+    {
+      "file": "robots.txt",
+      "status": 200,
+      "sha256": "8962ac8edff4cf558b04d5781c225bfb4684e0d123c292d922c2ad554e36b2e7",
+      "bytes": 69
+    },
+    {
+      "file": "site.webmanifest",
+      "status": 200,
+      "sha256": "737dc9909fe42783227271fd8b3df4e2f65fe69fbff5cb34fc64989ea46044f3",
+      "bytes": 285
+    },
+    {
+      "file": "sitemap.xml",
+      "status": 200,
+      "sha256": "9a6857b3aba3b896380143c66b6cd6efc1dbf69de2306805dc2dc8e64ae34e37",
+      "bytes": 445
+    },
+    {
+      "file": "styles.css",
+      "status": 200,
+      "sha256": "390f2245d0ec8710254e946bdc413adc3af07ddbb6cdaa8e9de4ed2df3e9432c",
+      "bytes": 37985
+    },
+    {
+      "file": "support.html",
+      "status": 200,
+      "sha256": "49a064247d08ad260e36d5125fff10eba041ae953033521843ad60cab80d361c",
+      "bytes": 2608
+    },
+    {
+      "file": "terms.html",
+      "status": 200,
+      "sha256": "c2719d8cc8a17efcc895e30c5ac2ef9c43ab969c77ca578fb8042e79bfaba7f0",
+      "bytes": 6029
+    }
+  ],
+  "status": "passed",
+  "release": {
+    "commit": "e1e01fb0ce5065ba983fbf17f0a9fa2093fd7381",
+    "built_at": "2026-10-05T05:02:57.933Z",
+    "build_id": "5165ff53-a037-4bcf-bd51-89ecd104d4e5"
+  },
+  "mapping": [
+    {
+      "hostname": "fitgoin.com",
+      "service": "fitgoin-production",
+      "zone_id": "734e4c2f15250cb00897b03e6be1fea8",
+      "enabled": true,
+      "previews_enabled": false
+    }
+  ],
+  "previews": {
+    "enabled": false,
+    "previews_enabled": false
+  },
+  "activeDeployment": {
+    "id": "79448750-9a96-4db2-908a-944668938208",
+    "source": "wrangler",
+    "strategy": "percentage",
+    "annotations": {
+      "workers/message": "Verified release e1e01fb0ce5065ba983fbf17f0a9fa2093fd7381",
+      "workers/triggered_by": "deployment"
+    },
+    "versions": [
+      {
+        "version_id": "27251615-2dc5-45e2-9d7e-4aaa0a4a716a",
+        "percentage": 100
+      }
+    ],
+    "created_on": "2026-10-05T05:03:10.878643Z"
+  }
+}

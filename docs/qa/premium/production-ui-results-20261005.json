@@ -1,0 +1,57 @@
+{
+  "at": "2026-10-05T05:04:24.721Z",
+  "base": "https://fitgoin.com/",
+  "fixture": false,
+  "viewports": [
+    {
+      "width": 360,
+      "status": "passed",
+      "scenarios": [
+        "client registration button",
+        "trainer registration button",
+        "header and homepage login buttons",
+        "cookie settings",
+        "no horizontal overflow",
+        "automatic background changes",
+        "pause freezes background",
+        "resume changes background again"
+      ]
+    },
+    {
+      "width": 390,
+      "status": "passed",
+      "scenarios": [
+        "client registration button",
+        "trainer registration button",
+        "header and homepage login buttons",
+        "cookie settings",
+        "no horizontal overflow"
+      ]
+    },
+    {
+      "width": 768,
+      "status": "passed",
+      "scenarios": [
+        "client registration button",
+        "trainer registration button",
+        "header and homepage login buttons",
+        "cookie settings",
+        "no horizontal overflow"
+      ]
+    },
+    {
+      "width": 1440,
+      "status": "passed",
+      "scenarios": [
+        "client registration button",
+        "trainer registration button",
+        "header and homepage login buttons",
+        "cookie settings",
+        "no horizontal overflow"
+      ]
+    }
+  ],
+  "pageErrors": [],
+  "failedRequests": [],
+  "status": "passed"
+}
