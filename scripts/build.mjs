@@ -1,5 +1,6 @@
 import { copyFile, mkdir, rm, writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 
 const out = new URL('../.deploy/', import.meta.url);
 const files = ['index.html', 'fitmatch.js', 'styles.css', 'fitgoin-ai.js', 'fitgoin-ai-core.mjs', 'fitgoin-ai-paid.mjs', 'fitgoin-ai-media.mjs', 'fitgoin-ai.css', 'cookie-consent.js', 'robots.txt', 'sitemap.xml', 'favicon.svg', 'site.webmanifest', 'privacy.html', 'terms.html', 'legal.html', 'cookies.html', 'support.html', '_headers'];
@@ -16,6 +17,10 @@ for (const file of files) {
 
 // Always give the assets upload session a new hash. Empty-upload deployments
 // can otherwise retain a stale manifest (cloudflare/developer-platform#20).
-const release = { commit: process.env.FGI_RELEASE_COMMIT || null, built_at: new Date().toISOString(), build_id: randomUUID() };
+let commit = process.env.FGI_RELEASE_COMMIT || null;
+if (!commit) {
+  try { commit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: new URL('../', import.meta.url), encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(); } catch { /* Local exports may not contain Git metadata. */ }
+}
+const release = { commit, built_at: new Date().toISOString(), build_id: randomUUID() };
 await writeFile(new URL('release.json', out), JSON.stringify(release) + '\n');
 console.log(`Prepared ${files.length + 1} production files in .deploy/`);

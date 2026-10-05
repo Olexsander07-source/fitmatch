@@ -24,7 +24,7 @@ if (status) throw new Error('Refusing deploy: Git working tree is not clean.');
 
 const branch = run(git, ['branch', '--show-current'], true);
 if (branch !== 'main') throw new Error(`Refusing deploy from branch: ${branch}`);
-run(git, ['fetch', 'origin', 'main']);
+run(git, ['fetch', 'origin', 'refs/heads/main:refs/remotes/origin/main']);
 const local = run(git, ['rev-parse', 'HEAD'], true);
 const remote = run(git, ['rev-parse', 'origin/main'], true);
 if (local !== remote) throw new Error('Refusing deploy: local main differs from origin/main.');
