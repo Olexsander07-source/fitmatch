@@ -27,11 +27,19 @@ const server=http.createServer((req,res)=>{if(req.url==='/fixture'){res.setHeade
    if(selectedMode==='html')return route.fulfill({status:502,contentType:'text/html',body:'<h1>Temporary gateway failure</h1>'});
    await page.evaluate(body=>{if(!rows.fgi_ai_messages.some(m=>m.request_id===body.request_id)){const created_at=new Date().toISOString();for(const role of ['user','assistant'])rows.fgi_ai_messages.push({id:crypto.randomUUID(),user_id:rows.fgi_ai_profiles[0].user_id,conversation_id:body.conversation_id,request_id:body.request_id,role,body:role==='user'?body.message:'Ответ: '+body.message,created_at,module:body.module});keep()}},body);
    if(selectedMode==='lost')return route.abort('failed');
+   if(selectedMode==='commit503')return route.fulfill({status:503,json:{error:'backend_unavailable'}});
    return route.fulfill({json:{answer:'Ответ: '+body.message,module:body.module,remaining:20}});
   });
   await page.goto('http://127.0.0.1:'+server.address().port+'/fixture');await page.locator('[data-ai-form=chat] button[type=submit]:enabled').waitFor();
   const field=page.locator('[data-ai-form=chat] [name=message]'),send=page.locator('[data-ai-form=chat] button[type=submit]');
   assert.deepEqual(await page.locator('[data-ai-quick]').allTextContents(),['◇Моя тренировка','＋Создать программу','◌Питание','♡Найти тренера','?Задать вопрос']);
+  const backToChat=async()=>{if(width<900)await page.locator('[data-ai-action=menu]').click();await page.locator('[data-ai-view=ask]').click()};
+  await page.locator('[data-ai-quick=nutrition]').click();assert.equal(await field.inputValue(),'Помоги с питанием: ');assert.equal(await page.locator('[data-ai-module]').inputValue(),'nutrition');await field.fill('');
+  await page.locator('[data-ai-quick=training]').click();assert.equal(await field.inputValue(),'Создай недельную программу тренировок по моему профилю.');assert.equal(await page.locator('[data-ai-module]').inputValue(),'training');
+  await field.fill('Свой черновик');await page.locator('[data-ai-quick=nutrition]').click();assert.equal(await field.inputValue(),'Свой черновик','quick actions preserve an existing draft');
+  await page.locator('[data-ai-quick=question]').click();assert(await field.evaluate(el=>document.activeElement===el),'question action focuses input');await field.fill('');
+  await page.locator('[data-ai-quick=today]').click();assert.equal(await page.locator('[data-ai-view=today]').getAttribute('aria-current'),'page');await backToChat();
+  await page.locator('[data-ai-quick=coach]').click();assert.equal(await page.locator('[data-ai-view=coaches]').getAttribute('aria-current'),'page');await backToChat();
   mode='held';await field.fill('Первый вопрос');await send.click();await page.locator('.ai-typing').waitFor();assert.equal(await page.locator('.ai-outgoing p').textContent(),'Первый вопрос');
   await field.fill('Следующий вопрос');await field.press('Control+Enter');assert.equal(requests.length,1,'double-submit while pending');release();
   await page.locator('[data-ai-status]').filter({hasText:'Ответ сохранён в истории.'}).waitFor();assert.equal(await field.inputValue(),'Следующий вопрос','preserve next draft');
@@ -41,6 +49,8 @@ const server=http.createServer((req,res)=>{if(req.url==='/fixture'){res.setHeade
   mode='normal';await page.locator('[data-ai-action=retry-message]').click();await page.locator('.fgi-ai-message').filter({hasText:'Ответ: Вопрос при ошибке'}).waitFor();assert.notEqual(requests.at(-1).request_id,requests.at(-2).request_id,'definite failure gets a new request');
   mode='lost';await field.fill('Ответ потерялся в сети');await send.click();await page.locator('[data-ai-action=retry-message]').waitFor();const count=requests.length;
   await page.reload();await page.locator('.fgi-ai-message').filter({hasText:'Ответ: Ответ потерялся в сети'}).waitFor();assert.equal(await page.locator('.ai-outgoing').count(),0);assert.equal(await field.inputValue(),'');assert.equal(requests.length,count,'recover saved response without a duplicate generation');
+  mode='commit503';await field.fill('Ошибка после сохранения');await send.click();await page.locator('[data-ai-action=retry-message]').waitFor();assert(await send.isDisabled(),'a database save timeout keeps delivery uncertain');const beforeRecovery=requests.length;
+  await page.reload();await page.locator('.fgi-ai-message').filter({hasText:'Ответ: Ошибка после сохранения'}).waitFor();assert.equal(requests.length,beforeRecovery,'recover committed HTTP 503 without a duplicate generation');
   mode='html';await field.fill('Не JSON');await send.click();await page.locator('[data-ai-status]').filter({hasText:'подтвердить доставку'}).waitFor();const nonce=requests.at(-1).request_id;
   await page.reload();await page.locator('[data-ai-action=retry-message]').waitFor();mode='normal';await page.locator('[data-ai-action=retry-message]').click();await page.locator('.fgi-ai-message').filter({hasText:'Ответ: Не JSON'}).waitFor();assert.equal(requests.at(-1).request_id,nonce,'uncertain delivery keeps request ID');
   await page.evaluate(()=>{window.titleFails=true;rows.fgi_ai_conversations[0].title='FitGoIn AI';keep()});await field.fill('Ошибка заголовка');await send.click();await page.locator('.fgi-ai-message').filter({hasText:'Ответ: Ошибка заголовка'}).waitFor();assert.equal(await page.locator('.ai-outgoing').count(),0,'title failure does not cause resend');
@@ -54,7 +64,7 @@ const server=http.createServer((req,res)=>{if(req.url==='/fixture'){res.setHeade
   await page.locator('.fgi-ai-messages').evaluate(el=>el.scrollTop=el.scrollHeight);await field.fill('Черновик после обновления');await page.reload();await field.waitFor();assert.equal(await field.inputValue(),'Черновик после обновления');
   if(output){fs.mkdirSync(output,{recursive:true});await page.screenshot({path:path.join(output,'ai-chat-'+width+'.png'),fullPage:true})}
   await page.evaluate(()=>signOut());assert.equal(await page.evaluate(()=>Object.keys(sessionStorage).some(k=>k.startsWith('fgi-ai-chat:'))),false,'private draft cleared on sign-out');
-  assert.deepEqual(errors,[]);results.push({width,passed:true,scenarios:['first-message','typing','double-submit','next-draft','reload','API-quota','lost-response','non-JSON','same-nonce-retry','title-failure','refresh-failure','110-message-history','auto-scroll','draft-reload','sign-out-privacy','mobile-overflow']});await page.close();
+  assert.deepEqual(errors,[]);results.push({width,passed:true,scenarios:['quick-actions','first-message','typing','double-submit','next-draft','reload','API-quota','lost-response','committed-save-timeout','non-JSON','same-nonce-retry','title-failure','refresh-failure','110-message-history','auto-scroll','draft-reload','sign-out-privacy','mobile-overflow']});await page.close();
  }
  if(output)fs.writeFileSync(path.join(output,'results.json'),JSON.stringify({mock:true,results},null,2));console.log(JSON.stringify({mock:true,results}));
  }finally{await browser.close();server.close()}

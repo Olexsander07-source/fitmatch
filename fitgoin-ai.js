@@ -233,7 +233,9 @@ export function mountFitGoInAI(root,opts) {
     let result;
     try{result=await api(body,e);}
     catch(error){
-      assert(e);pending={body,state:error.confirmed&&error.message!=='request_pending'?'failed':'uncertain'};
+      // A database timeout can arrive after the save committed. Keep its nonce
+      // until history confirms delivery, even if the server returned HTTP 503.
+      assert(e);pending={body,state:error.confirmed&&!['request_pending','backend_unavailable','service_unavailable'].includes(error.message)?'failed':'uncertain'};
       if(!draft)draft=body.message;persistChat();throw error;
     }
     assert(e);
