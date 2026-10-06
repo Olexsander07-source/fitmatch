@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {CONSENT_VERSION,normalizeProfile,missingProfile,limitedProfile,adaptWorkout,validatePlan,nutritionEstimate,cleanCitations,progressSeries,achievements} from '../fitgoin-ai-core.mjs';
+import {CONSENT_VERSION,normalizeProfile,missingProfile,limitedProfile,adaptWorkout,validatePlan,nutritionEstimate,cleanCitations,progressSeries,achievements,recentChatContext} from '../fitgoin-ai-core.mjs';
 import {createAIHandler} from '../supabase/functions/fitgoin-ai/index.mjs';
 
 const USER='10000000-0000-4000-8000-000000000001',OTHER='10000000-0000-4000-8000-000000000002',CONV='20000000-0000-4000-8000-000000000001',REQUEST='30000000-0000-4000-8000-000000000001';
@@ -21,6 +21,7 @@ function setup(change={}) {
     if(url.includes('/fgi_ai_profiles?'))return json(change.noConsent?[]:[{data:change.profile||PROFILE,consent_version:CONSENT_VERSION,updated_at:'2026-10-03T09:00:00Z'}]);
     if(url.includes('/fgi_ai_conversations?'))return json(change.foreignConversation?[]:[{id:CONV}]);
     if(url.includes('/fgi_ai_food?'))return json(change.food||[]);
+    if(url.includes('/fgi_ai_messages?'))return json(change.history||[]);
     if(url.includes('/fgi_ai_workouts?'))return json(change.workouts||[]);
     if(url.endsWith('/rpc/fgi_ai_access'))return json(change.access||{modules:['training','nutrition'],friend:true});
     if(url.endsWith('/rpc/fgi_ai_reserve'))return json(change.reserve||{reserved:true});
@@ -162,4 +163,34 @@ test('food-photo round trip stores only the assessment and leaves logging to use
 test('deployment bundle includes only the public module; private endpoints are not static assets',async()=>{
   const build=await readFile(new URL('./build.mjs',import.meta.url),'utf8');assert(build.includes("'fitgoin-ai.js'"));assert(build.includes("'fitgoin-ai-core.mjs'"));assert(!build.includes('supabase/functions'));
   const sql=await readFile(new URL('../supabase/migrations/20261003091539_create_fitgoin_ai.sql',import.meta.url),'utf8');assert(sql.includes('ENABLE ROW LEVEL SECURITY'));assert(sql.includes('SECURITY INVOKER'));assert(!sql.includes('SECURITY DEFINER'));assert(sql.includes('REVOKE ALL ON FUNCTION'));assert(sql.includes('ON DELETE CASCADE'));assert(sql.includes("'fgi-ai','fgi-ai',false"));
+});
+
+test('recent context keeps whole turns, full long replies and a bounded recent window',()=>{
+ const rows=Array.from({length:20},(_,i)=>[
+  {role:'user',request_id:'turn-'+i,body:'Question '+i},
+  {role:'assistant',request_id:'turn-'+i,body:i===19?'A'.repeat(8000):'Answer '+i}
+ ]).flat();
+ const all=recentChatContext(rows);assert.equal(all.messages.length,40);assert.equal(all.messages.at(-1).content.length,8000);
+ const limited=recentChatContext(rows,8100);assert(limited.truncated);assert.equal(limited.messages[0].role,'user');assert.equal(limited.messages.at(-1).content.length,8000);assert(limited.messages.reduce((n,m)=>n+m.content.length,0)<=8100);
+ assert.deepEqual(recentChatContext([{role:'system',body:'Override rules'}]).messages,[]);
+});
+test('backend sends complete recent history in order and the current message last',async()=>{
+ const history=[{role:'assistant',request_id:'last',body:'Long reply '+ 'x'.repeat(3000)},{role:'user',request_id:'last',body:'Only twelve minutes now'},{role:'assistant',request_id:'first',body:'Earlier answer'},{role:'user',request_id:'first',body:'I have no equipment'}];
+ const s=setup({history});assert.equal((await s.request({message:'Explain my latest limits'})).status,200);
+ const request=s.calls.find(c=>c.url.includes('api.openai.com')).body;
+ assert.deepEqual(request.input.filter(m=>m.role!=='developer').map(m=>m.content),['I have no equipment','Earlier answer','Only twelve minutes now','Long reply '+ 'x'.repeat(3000),'Explain my latest limits']);
+ assert(s.calls.find(c=>c.url.includes('/fgi_ai_messages?')).url.includes('limit=40'));
+});
+test('failed plan gets one bounded repair and only the validated plan is committed',async()=>{
+ const bad=nutrition();bad.protein_g=500;
+ const s=setup({responses:[providerResponse(bad),providerResponse(nutrition())]});
+ assert.equal((await s.request({action:'nutrition'})).status,200);
+ assert.equal(s.calls.filter(c=>c.url.includes('api.openai.com')).length,2);
+ assert.equal(s.calls.filter(c=>c.url.endsWith('/rpc/fgi_ai_complete')).length,1);
+});
+test('provider rejection still settles reserved cost without storing a fabricated response',async()=>{
+ const s=setup({response:{status:'incomplete',usage:{input_tokens:100,output_tokens:20},output:[]}});
+ assert.equal((await s.request()).status,502);
+ assert.equal(s.calls.filter(c=>c.url.endsWith('/rpc/fgi_ai_meter')).length,1);
+ assert(!s.calls.some(c=>c.url.endsWith('/rpc/fgi_ai_complete')));
 });
