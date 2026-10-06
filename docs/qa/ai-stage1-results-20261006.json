@@ -1,0 +1,180 @@
+{
+  "date": "2026-10-06",
+  "scope": "Existing FitGoIn AI Trainer & Assistant only",
+  "source_tests": {
+    "command": "npm run check",
+    "passed": 80,
+    "failed": 0,
+    "existing_main_regressions_preserved": 3
+  },
+  "dry_run": {
+    "command": "npm run deploy:dry",
+    "completed": true,
+    "production_published": false,
+    "production_files": 30
+  },
+  "browser": {
+    "provider_and_database": "explicit fixtures",
+    "total_scenarios": 72,
+    "mock": true,
+    "results": [
+      {
+        "width": 360,
+        "passed": true,
+        "scenarios": [
+          "quick-actions",
+          "first-message",
+          "typing",
+          "double-submit",
+          "next-draft",
+          "reload",
+          "API-quota",
+          "lost-response",
+          "committed-save-timeout",
+          "non-JSON",
+          "same-nonce-retry",
+          "title-failure",
+          "refresh-failure",
+          "110-message-history",
+          "auto-scroll",
+          "draft-reload",
+          "sign-out-privacy",
+          "mobile-overflow"
+        ]
+      },
+      {
+        "width": 390,
+        "passed": true,
+        "scenarios": [
+          "quick-actions",
+          "first-message",
+          "typing",
+          "double-submit",
+          "next-draft",
+          "reload",
+          "API-quota",
+          "lost-response",
+          "committed-save-timeout",
+          "non-JSON",
+          "same-nonce-retry",
+          "title-failure",
+          "refresh-failure",
+          "110-message-history",
+          "auto-scroll",
+          "draft-reload",
+          "sign-out-privacy",
+          "mobile-overflow"
+        ]
+      },
+      {
+        "width": 768,
+        "passed": true,
+        "scenarios": [
+          "quick-actions",
+          "first-message",
+          "typing",
+          "double-submit",
+          "next-draft",
+          "reload",
+          "API-quota",
+          "lost-response",
+          "committed-save-timeout",
+          "non-JSON",
+          "same-nonce-retry",
+          "title-failure",
+          "refresh-failure",
+          "110-message-history",
+          "auto-scroll",
+          "draft-reload",
+          "sign-out-privacy",
+          "mobile-overflow"
+        ]
+      },
+      {
+        "width": 1440,
+        "passed": true,
+        "scenarios": [
+          "quick-actions",
+          "first-message",
+          "typing",
+          "double-submit",
+          "next-draft",
+          "reload",
+          "API-quota",
+          "lost-response",
+          "committed-save-timeout",
+          "non-JSON",
+          "same-nonce-retry",
+          "title-failure",
+          "refresh-failure",
+          "110-message-history",
+          "auto-scroll",
+          "draft-reload",
+          "sign-out-privacy",
+          "mobile-overflow"
+        ]
+      }
+    ]
+  },
+  "legacy_ai_smoke": {
+    "widths": [
+      390,
+      768,
+      1440
+    ],
+    "tabs": 7,
+    "passed": true
+  },
+  "live_backend": {
+    "version": 9,
+    "readback_files_identical": true,
+    "final_requests": [
+      {
+        "scenario": "v9-long-history",
+        "http_status": 200,
+        "milliseconds": 9258
+      },
+      {
+        "scenario": "v9-training-program",
+        "http_status": 200,
+        "milliseconds": 18668
+      },
+      {
+        "scenario": "v9-nutrition-question",
+        "http_status": 200,
+        "milliseconds": 4195
+      },
+      {
+        "scenario": "v9-platform-truth",
+        "http_status": 200,
+        "milliseconds": 4998
+      },
+      {
+        "scenario": "v9-short-session-final",
+        "http_status": 200,
+        "milliseconds": 3487
+      }
+    ],
+    "long_context_seeded_test_pairs": 12,
+    "live_replay_same_request_id_and_answer": true,
+    "counts_before_cleanup": {
+      "actual_generations_including_audit_and_intermediate_versions": 9,
+      "actual_messages": 18,
+      "seeded_history_messages": 24,
+      "complete_pairs": 21,
+      "saved_plans": 1,
+      "unsettled_cost_rows": 0
+    },
+    "temporary_qa_user_and_all_owned_rows_removed": true
+  },
+  "frontend_rollout": {
+    "status": "pending-authorized-cloudflare-access",
+    "required_command": "npm run deploy",
+    "windows_device": "offline"
+  },
+  "known_quality_limits": [
+    "Short answer includes 3 exercise names and intervals despite stricter style prompt.",
+    "Structured plan validation does not grade semantic difficulty of exercise alternatives.",
+    "Real iPhone/Safari not exercised."
+  ]
+}

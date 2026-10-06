@@ -32,3 +32,21 @@ footer{background:#0c1825;border-color:var(--line);padding:32px 0}footer>.contai
 .profile-cover h1,.coach-card h3,.coach-identity h2,.thread strong{overflow-wrap:anywhere}
 
 @media(max-width:900px){.header:has(.guest-nav){flex-wrap:nowrap}.header:has(.guest-nav) nav{display:none}.header-actions.guest-nav{width:auto;order:initial;margin-left:auto;justify-content:flex-end}}
+
+/* Stage 1: confined to the existing AI chat. */
+.fgi-ai-chat .ai-chat-shortcuts{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 8px}
+.fgi-ai-chat .ai-chat-shortcuts .ai-quick{display:flex;align-items:center;gap:8px;padding:10px 14px;min-height:44px;font-size:12px;border-radius:14px;background:#223746;color:var(--text)}
+.fgi-ai-chat .ai-chat-shortcuts .ai-quick span{font-size:15px}
+.fgi-ai-chat .fgi-ai-messages{max-height:min(52dvh,680px);overflow-y:auto;overscroll-behavior-y:contain;scrollbar-gutter:stable;padding:8px 6px 12px;min-height:0}
+.fgi-ai-chat .fgi-ai-messages:not(:empty){min-height:130px}
+.fgi-ai-chat .fgi-ai-message{overflow-wrap:anywhere}
+.fgi-ai-chat .ai-outgoing{border-style:dashed;opacity:.92}
+.fgi-ai-chat .ai-outgoing .actions{margin-top:12px;flex-wrap:wrap}
+.fgi-ai-chat .ai-outgoing .btn{font-size:12px;min-height:44px}
+.fgi-ai-chat .ai-compose{margin-top:12px}
+.fgi-ai-chat .ai-compose textarea{font-size:16px;min-height:64px;max-height:180px}
+.fgi-ai-chat [disabled]{opacity:.5;cursor:wait}
+@media(max-width:650px){.fgi-ai-chat .ai-chat-shortcuts{gap:6px}.fgi-ai-chat .ai-chat-shortcuts .ai-quick{font-size:11px;padding:9px 11px}.fgi-ai-chat .fgi-ai-messages{max-height:45dvh}.fgi-ai-chat .ai-compose-tools{flex-wrap:wrap}.fgi-ai-chat .ai-compose-media{flex:1 1 190px}.fgi-ai-chat .ai-compose{padding-bottom:max(16px,env(safe-area-inset-bottom))}.fgi-ai-chat .fgi-ai-message.from-user{max-width:94%}}
+.fgi-ai-chat .ai-chat-shortcuts .ai-quick{flex-direction:row;white-space:nowrap}
+.fgi-ai-chat .ai-chat-shortcuts .ai-quick span{display:inline;margin:0}
+@media(max-width:650px){.fgi-ai-chat .ai-chat-shortcuts{flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px}.fgi-ai-chat .ai-chat-shortcuts .ai-quick{flex:0 0 auto}.fgi-ai-chat .ai-message-actions{flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px}.fgi-ai-chat .ai-message-actions .btn{flex:0 0 auto;white-space:nowrap}}

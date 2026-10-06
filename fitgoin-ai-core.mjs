@@ -5,6 +5,26 @@ export const GOALS = ['Похудение','Набор мышечной масс
 export const ALLERGENS = ['gluten','milk','egg','fish','shellfish','peanut','soy','nuts','celery','mustard','sesame','sulphites','lupin','molluscs'];
 export const ALLERGEN_LABELS = ['Глютен','Молоко','Яйца','Рыба','Ракообразные','Арахис','Соя','Орехи','Сельдерей','Горчица','Кунжут','Сульфиты','Люпин','Моллюски'];
 export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+export const CHAT_HISTORY_LIMIT = 40;
+// Keep complete recent turns and full message bodies. No invented summary or
+// permanent memory: the database remains the source of conversation history.
+export function recentChatContext(rows, characterBudget=22000) {
+  const turns=[];
+  for(const row of rows) {
+    if(!['user','assistant'].includes(row.role)||typeof row.body!=='string'||!row.body.trim())continue;
+    const previous=turns.at(-1);
+    if(row.request_id&&previous?.id===row.request_id)previous.messages.push({role:row.role,content:row.body});
+    else turns.push({id:row.request_id,messages:[{role:row.role,content:row.body}]});
+  }
+  let used=0;const selected=[];
+  for(const turn of turns.toReversed()) {
+    const size=turn.messages.reduce((sum,m)=>sum+m.content.length,0);
+    if(used+size>characterBudget)break;
+    selected.unshift(...turn.messages);used+=size;
+  }
+  while(selected[0]?.role==='assistant')selected.shift();
+  return {messages:selected,truncated:selected.length<rows.length};
+}
 export class AIError extends Error {
   constructor(code, status=400) { super(code); this.code=code; this.status=status; }
 }
