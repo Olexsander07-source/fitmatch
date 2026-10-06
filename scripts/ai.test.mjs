@@ -304,6 +304,7 @@ test('2B calendar uses saved explicit weekdays, timezone and date rollover; sequ
  assert.equal(calendarWorkout(scheduled,0,'Europe/Paris',new Date('2026-10-04T22:30:00Z')).workout.day,1);
  assert.equal(programOutdated({...plan,profile_snapshot:Object.fromEntries(Object.entries(plan.profile_snapshot).reverse())},data),false);
  assert.equal(programOutdated(plan,{...data,equipment:'Штанга'}),true);
+ assert.equal(programOutdated(plan,{...data,needs_professional:true}),true);
 });
 test('2B continuous cardio can have no inter-set rest, but repeated sets retain at least 30 seconds',()=>{
  const doc=program(),e=doc.workouts[0].exercises[0];Object.assign(e,{name:'Ходьба в удобном темпе',sets:1,reps:'10 минут',minutes:10,rest_seconds:0,alternative:'Спокойная ходьба с короткими паузами'});validateProgram(doc,PROFILE);
@@ -335,6 +336,12 @@ test('2B saved-program queries never regenerate or spend provider tokens, includ
  for(const message of ['Покажи мою программу','Какая у меня программа?','Что я тренирую сегодня?','Что я тренирую завтра?']){
   const s=setup({profile:data,plans:[plan],env:{OPENAI_API_KEY:''}}),response=await s.request({message});assert.equal(response.status,200);const result=await response.json();assert.equal(result.program_id,OTHER);assert.equal(result.kind,null);assert(!s.calls.some(c=>c.url.includes('api.openai.com')||c.url.includes('fgi_ai_reserve')));if(message.includes('тренирую'))assert.match(result.answer,/не могу однозначно/);
  }
+});
+test('2B pending training intake never intercepts a conversation in the other AI module',async()=>{
+ const partial={...PROFILE,program_pending:true};delete partial.equipment;
+ const s=setup({profile:partial,response:providerResponse({answer:'Общие сведения о восстановлении.',memory_updates:[]})});
+ const result=await (await s.request({module:'nutrition',message:'Расскажи об общих принципах восстановления.'})).json();assert.equal(result.kind,null);assert.equal(result.program_saved,undefined);assert.equal(s.calls.filter(x=>x.url.includes('api.openai.com')).length,1);
+ const write=s.calls.find(x=>x.url.endsWith('/rpc/fgi_ai_complete')).body;assert.equal(write.p_kind,null);assert.equal(write.p_result.module,'nutrition');assert.equal(write.p_result.program_pending,undefined);
 });
 test('2B failed program transaction returns no save claim or generated program',async()=>{
  const s=setup({completeFails:true,response:providerResponse(program())}),response=await s.request({action:'training'});assert.equal(response.status,503);const result=await response.json();assert.equal(result.error,'backend_unavailable');assert.equal(result.answer,undefined);assert.equal(result.document,undefined);assert.equal(result.program_saved,undefined);

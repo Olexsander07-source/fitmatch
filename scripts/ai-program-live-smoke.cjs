@@ -1,6 +1,6 @@
 // Live acceptance: actual Supabase Auth/REST/RLS, Edge Function and OpenAI.
 // Two temporary QA accounts must be provisioned and removed by the operator.
-// Supply {accounts:[{id,email,password},...],database_error_only?:true,schedule_only?:true} on stdin.
+// Supply {accounts:[{id,email,password},...],database_error_only?:true,schedule_only?:true,boundary_only?:true} on stdin.
 // At READY_DATABASE_CONFLICT, send CONTINUE, then poll the printed pending
 // request with separate short SQL calls; update QA weight to 83 after claim.
 // A separate SQL connection is required: shared HTTP proxy requests may queue.
@@ -30,7 +30,7 @@ window.qaLogin=async credentials=>{const {data,error}=await db.auth.signInWithPa
 window.qaLogout=async()=>{await db.auth.signOut();user=null;ai.setSession(null)};
 </script></body></html>`;
 (async()=>{
- const config=await credentials();assert.equal(config.accounts.length,2);const [a,b]=config.accounts;mode=config.database_error_only?'error':config.schedule_only?'schedule':'core';
+ const config=await credentials();assert.equal(config.accounts.length,2);const [a,b]=config.accounts;mode=config.database_error_only?'error':config.schedule_only?'schedule':config.boundary_only?'boundary':'core';
  const server=http.createServer(async(req,res)=>{
   if(req.url==='/fixture'){res.setHeader('Content-Type','text/html');return res.end(html)}
   if(req.url==='/qa-sdk.js'){res.setHeader('Content-Type','text/javascript');return res.end(fs.readFileSync(process.env.FGI_AI_QA_SDK))}
@@ -77,7 +77,7 @@ window.qaLogout=async()=>{await db.auth.signOut();user=null;ai.setSession(null)}
   const programs=async()=>{const r=await rest(session.access_token,'fgi_ai_plans',{filter:'?kind=eq.training&order=created_at.desc'});assert.equal(r.status,200);return r.data};
   const current=async()=>{const rows=await programs();assert.equal(rows.filter(x=>x.status==='active').length,1);return rows.find(x=>x.status==='active')};
   await login(a);await ready();
-  if(!config.database_error_only&&!config.schedule_only){
+  if(!config.database_error_only&&!config.schedule_only&&!config.boundary_only){
    p=await profile(a);assert.equal(p.data.goal,'Набор мышечной массы');assert.equal(p.data.weight_kg,81);assert.equal(p.data.age,undefined);check('2A memory loaded in authenticated mobile browser');
    const created=await send('Составь мне программу');assert.equal(created.result.program_saved,true);assert.equal(created.result.kind,'training');first=await current();
    assert.equal(first.id,created.result.plan_id);assert.equal(first.revision,1);assert.equal(first.profile_snapshot.goal,p.data.goal);assert.equal(first.profile_snapshot.equipment,p.data.equipment);assert.equal(first.document.workouts.length,3);assert.equal(first.document.schedule.mode,'sequence');
@@ -114,6 +114,13 @@ window.qaLogout=async()=>{await db.auth.signOut();user=null;ai.setSession(null)}
     assert.equal(answer.result.program_id,next.id);assert(answer.result.answer.includes(date.iso));assert(workout?answer.result.answer.includes(workout.title):answer.result.answer.includes('тренировки нет'));assert.equal((await programs()).length,versions.length);check('saved schedule answers '+(offset?'tomorrow':'today')+' without regenerating',{date:date.iso,scheduled:Boolean(workout)});
    }
    await page.reload();await ready();assert.equal((await current()).id,next.id);assert.equal(await page.locator('[data-active-program]').getAttribute('data-active-program'),next.id);check('replacement remains active after reload');
+  }
+  if(config.boundary_only){
+   const created=await send('Что мне лучше тренировать?');assert.equal(created.result.program_saved,true);const saved=await current();assert.equal(saved.id,created.result.plan_id);check('what should I train creates an actual saved personal program');
+   p=await profile(a);const partial={...p.data,program_pending:true};delete partial.equipment;r=await rest(session.access_token,'fgi_ai_profiles',{method:'PATCH',filter:'?user_id=eq.'+a.id,body:{data:partial}});assert.equal(r.status,200);await page.reload();await ready();await page.locator('[data-ai-module]').selectOption('nutrition');
+   const otherModule=await send('Расскажи об общих принципах восстановления.');assert.equal(otherModule.result.kind,null);assert.equal(otherModule.result.program_saved,undefined);assert.equal(otherModule.result.program_pending,undefined);assert.equal((await programs()).length,1);assert.equal((await profile(a)).data.program_pending,true);check('pending training intake cannot intercept the other AI module');
+   p=await profile(a);r=await rest(session.access_token,'fgi_ai_profiles',{method:'PATCH',filter:'?user_id=eq.'+a.id,body:{data:{...p.data,equipment:saved.profile_snapshot.equipment,needs_professional:true}}});assert.equal(r.status,200);await page.reload();await ready();await page.locator('[data-ai-module]').selectOption('training');
+   const review=await send('Покажи мою программу');assert.equal(review.result.program_id,saved.id);assert.match(review.result.answer,/пересмотреть/);assert.match(await page.locator('[data-active-program]').innerText(),/Спортивные данные изменились/);assert.equal((await programs()).length,1);check('new professional-review flag warns in saved answer and mobile UI without replacing the program');
   }
   assert.deepEqual(errors,[]);check('no browser JavaScript errors');
   saveEvidence(true);

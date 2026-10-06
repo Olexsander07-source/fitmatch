@@ -15,7 +15,7 @@ export function programIntent(message=''){
  if(/^(?:составь|создай|обнови|перестрой|переделай|зроби|створи|create|build|update).*(?:программ|трениров|workout|training|програм|тренув)/i.test(s)||/^что мне лучше тренировать[?!.]*$/i.test(s))return 'create';
  return null;
 }
-export const programFacts=data=>({...Object.fromEntries(Object.entries(sportsMemory(data)).filter(([k])=>k!=='name')),weekdays:Array.isArray(data.weekdays)?data.weekdays:[]});
+export const programFacts=(data={})=>({...Object.fromEntries(Object.entries(sportsMemory(data)).filter(([k])=>k!=='name')),weekdays:Array.isArray(data.weekdays)?data.weekdays:[]});
 export function programBlocked(data={}){
  const p=sportsMemory(data);
  return (p.age!==undefined&&p.age<18)||Boolean(data.needs_professional)||Boolean(p.restrictions?.trim())||(p.goal==='Похудение'&&p.height_cm&&p.weight_kg&&p.weight_kg/(p.height_cm/100)**2<18.5);
@@ -100,7 +100,7 @@ export function finalizeProgram(doc,data,timezone,id=()=>crypto.randomUUID()){
  return {...doc,schema_version:2,schedule:{mode:scheduled?'weekdays':'sequence',weekdays:scheduled?weekdays:[],timezone:validTimezone(timezone)},workouts:[...doc.workouts].sort((a,b)=>a.day-b.day).map((w,i)=>({...w,id:id(),number:i+1,day:scheduled?weekdays[i]:-1,exercises:w.exercises.map(e=>({...e,id:id()}))}))};
 }
 export function activeProgram(rows){return rows.find(x=>x.kind==='training'&&x.status==='active')||rows.find(x=>x.kind==='training'&&x.status===undefined)||null}
-export function programOutdated(plan,data){const saved=plan?.profile_snapshot||{},current=programFacts(data);return Boolean(plan?.document?.schema_version===2)&&(Object.keys(saved).length!==Object.keys(current).length||Object.keys(current).some(k=>JSON.stringify(saved[k])!==JSON.stringify(current[k])))}
+export function programOutdated(plan,data={}){const saved=plan?.profile_snapshot||{},current=programFacts(data);return Boolean(plan?.document?.schema_version===2)&&(programBlocked(data)||Object.keys(saved).length!==Object.keys(current).length||Object.keys(current).some(k=>JSON.stringify(saved[k])!==JSON.stringify(current[k])))}
 export function calendarWorkout(plan,offset=0,timezone,now=new Date()){
  if(!plan)return {state:'missing'};
  const d=plan.document;

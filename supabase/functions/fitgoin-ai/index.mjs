@@ -120,7 +120,7 @@ export function createAIHandler({env,fetcher=fetch}={}) {
       if(input.action==='technique'&&limitedProfile(p))throw new AIError('professional_required',422);
       let message=typeof input.message==='string'?input.message.trim():'';
       const intent=module==='training'?(input.action==='training'?'create':input.action==='chat'?programIntent(message):null):null;
-      const requestedProgram=intent==='create'||(saved.data.program_pending===true&&input.action==='chat'&&!intent);
+      const requestedProgram=module==='training'&&(intent==='create'||(saved.data.program_pending===true&&input.action==='chat'&&!intent));
       const timezone=validTimezone(input.timezone);
       if(!apiKey&&!['show','today','tomorrow','cancel'].includes(intent)&&!(input.action==='training'&&missingSportsMemory(saved.data).length))throw new AIError('ai_not_configured',503);
       if(input.action==='training'&&!missingSportsMemory(saved.data).length&&programBlocked(saved.data))throw new AIError('professional_required',422);
