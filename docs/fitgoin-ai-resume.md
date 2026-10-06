@@ -1,4 +1,14 @@
-# FitGoIn AI: release checkpoint — 2026-10-04
+# FitGoIn AI: latest checkpoint — 2026-10-06
+
+Stage 1 chat stability and Stage 2A sports memory continue the existing project. Read `ai-chat-stage1-20261006.md` and `ai-memory-stage2a-20261006.md` for current acceptance and limitations; the October 4 notes below are historical. The API balance has been replenished and real AI calls have succeeded. Do not repeat the obsolete quota-blocked setup or rebuild the assistant.
+
+The current Supabase `fitgoin-ai` backend is v12. Sports memory uses the existing `fgi_ai_profiles.data`, owner RLS and an atomic completion transaction; no new table or second assistant was introduced. The recorded migration is `20261006105845_ai_chat_user_memory`. Stage 2A live acceptance status is recorded in its report.
+
+Frontend improvements from both stages still need publication. `DESKTOP-EJAAHVB` is offline. When access returns, preserve other people's working trees and use a separate clean checkout of current `main` from `Olexsander07-source/fitmatch`. Read `AGENTS.md`, run `npm.cmd run check` and `npm.cmd run deploy:dry`, then publish only with `npm.cmd run deploy` / `scripts/safe-deploy.mjs` to `fitgoin-production`. Verify the release marker, imported AI modules and mobile authorized chat at `https://fitgoin.com`. Do not use the legacy `fitgoin` Worker or start Stage 2B.
+
+Stage 1 remaining limits include real iPhone/Safari acceptance and semantic checks of exercise difficulty; a successful emulated browser test does not close these. Checkout activation and commercial readiness are separate future work and were not changed by Stage 2A.
+
+## Historical checkpoint — 2026-10-04
 
 ## Current frontend publication status
 

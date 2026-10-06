@@ -16,10 +16,10 @@ const server=http.createServer((req,res)=>{if(req.url==='/fixture'){res.setHeade
  const browser=await chromium.launch({headless:true,...(process.env.FGI_AI_CHROME?{executablePath:process.env.FGI_AI_CHROME}:{}),args:['--no-sandbox']});
  const results=[];
  try{for(const width of [360,390,768,1440]){
-  const page=await browser.newPage({viewport:{width,height:844}}),errors=[],requests=[];let mode='normal',release=null;
+  const page=await browser.newPage({viewport:{width,height:844}}),errors=[],requests=[];let mode='normal',release=null,readinessChecks=0;
   page.on('pageerror',e=>errors.push(e.message));
   await page.route('**/api/fitgoin-ai*',async route=>{
-   const req=route.request();if(req.method()==='GET')return route.fulfill({json:{configured:true}});
+   const req=route.request();if(req.method()==='GET'){readinessChecks++;return readinessChecks===1?route.abort('failed'):route.fulfill({json:{configured:true}});}
    const body=req.postDataJSON();if(body.action==='access')return route.fulfill({json:{modules:['training','nutrition'],friend:true,checkout_enabled:false}});
    requests.push(body);const selectedMode=mode;
    if(selectedMode==='held')await new Promise(r=>release=r);
@@ -30,7 +30,7 @@ const server=http.createServer((req,res)=>{if(req.url==='/fixture'){res.setHeade
    if(selectedMode==='commit503')return route.fulfill({status:503,json:{error:'backend_unavailable'}});
    return route.fulfill({json:{answer:'Ответ: '+body.message,module:body.module,remaining:20}});
   });
-  await page.goto('http://127.0.0.1:'+server.address().port+'/fixture');await page.locator('[data-ai-form=chat] button[type=submit]:enabled').waitFor();
+  await page.goto('http://127.0.0.1:'+server.address().port+'/fixture');await page.locator('[data-ai-form=chat] button[type=submit]:enabled').waitFor();assert.equal(readinessChecks,2,'temporary startup failure must recover without refreshing the page');assert.equal(requests.length,0,'readiness recovery spends no provider requests');
   const field=page.locator('[data-ai-form=chat] [name=message]'),send=page.locator('[data-ai-form=chat] button[type=submit]');
   assert.deepEqual(await page.locator('[data-ai-quick]').allTextContents(),['◇Моя тренировка','＋Создать программу','◌Питание','♡Найти тренера','?Задать вопрос']);
   const backToChat=async()=>{if(width<900)await page.locator('[data-ai-action=menu]').click();await page.locator('[data-ai-view=ask]').click()};
@@ -64,7 +64,7 @@ const server=http.createServer((req,res)=>{if(req.url==='/fixture'){res.setHeade
   await page.locator('.fgi-ai-messages').evaluate(el=>el.scrollTop=el.scrollHeight);await field.fill('Черновик после обновления');await page.reload();await field.waitFor();assert.equal(await field.inputValue(),'Черновик после обновления');
   if(output){fs.mkdirSync(output,{recursive:true});await page.screenshot({path:path.join(output,'ai-chat-'+width+'.png'),fullPage:true})}
   await page.evaluate(()=>signOut());assert.equal(await page.evaluate(()=>Object.keys(sessionStorage).some(k=>k.startsWith('fgi-ai-chat:'))),false,'private draft cleared on sign-out');
-  assert.deepEqual(errors,[]);results.push({width,passed:true,scenarios:['quick-actions','first-message','typing','double-submit','next-draft','reload','API-quota','lost-response','committed-save-timeout','non-JSON','same-nonce-retry','title-failure','refresh-failure','110-message-history','auto-scroll','draft-reload','sign-out-privacy','mobile-overflow']});await page.close();
+  assert.deepEqual(errors,[]);results.push({width,passed:true,scenarios:['readiness-retry','quick-actions','first-message','typing','double-submit','next-draft','reload','API-quota','lost-response','committed-save-timeout','non-JSON','same-nonce-retry','title-failure','refresh-failure','110-message-history','auto-scroll','draft-reload','sign-out-privacy','mobile-overflow']});await page.close();
  }
  if(output)fs.writeFileSync(path.join(output,'results.json'),JSON.stringify({mock:true,results},null,2));console.log(JSON.stringify({mock:true,results}));
  }finally{await browser.close();server.close()}

@@ -1,0 +1,105 @@
+{
+  "mock": true,
+  "results": [
+    {
+      "width": 360,
+      "passed": true,
+      "scenarios": [
+        "readiness-retry",
+        "quick-actions",
+        "first-message",
+        "typing",
+        "double-submit",
+        "next-draft",
+        "reload",
+        "API-quota",
+        "lost-response",
+        "committed-save-timeout",
+        "non-JSON",
+        "same-nonce-retry",
+        "title-failure",
+        "refresh-failure",
+        "110-message-history",
+        "auto-scroll",
+        "draft-reload",
+        "sign-out-privacy",
+        "mobile-overflow"
+      ]
+    },
+    {
+      "width": 390,
+      "passed": true,
+      "scenarios": [
+        "readiness-retry",
+        "quick-actions",
+        "first-message",
+        "typing",
+        "double-submit",
+        "next-draft",
+        "reload",
+        "API-quota",
+        "lost-response",
+        "committed-save-timeout",
+        "non-JSON",
+        "same-nonce-retry",
+        "title-failure",
+        "refresh-failure",
+        "110-message-history",
+        "auto-scroll",
+        "draft-reload",
+        "sign-out-privacy",
+        "mobile-overflow"
+      ]
+    },
+    {
+      "width": 768,
+      "passed": true,
+      "scenarios": [
+        "readiness-retry",
+        "quick-actions",
+        "first-message",
+        "typing",
+        "double-submit",
+        "next-draft",
+        "reload",
+        "API-quota",
+        "lost-response",
+        "committed-save-timeout",
+        "non-JSON",
+        "same-nonce-retry",
+        "title-failure",
+        "refresh-failure",
+        "110-message-history",
+        "auto-scroll",
+        "draft-reload",
+        "sign-out-privacy",
+        "mobile-overflow"
+      ]
+    },
+    {
+      "width": 1440,
+      "passed": true,
+      "scenarios": [
+        "readiness-retry",
+        "quick-actions",
+        "first-message",
+        "typing",
+        "double-submit",
+        "next-draft",
+        "reload",
+        "API-quota",
+        "lost-response",
+        "committed-save-timeout",
+        "non-JSON",
+        "same-nonce-retry",
+        "title-failure",
+        "refresh-failure",
+        "110-message-history",
+        "auto-scroll",
+        "draft-reload",
+        "sign-out-privacy",
+        "mobile-overflow"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "live": true,
+  "scope": "database-error-mobile",
+  "checks": [
+    {
+      "name": "real database version conflict rolls back reply and memory without false confirmation",
+      "passed": true
+    },
+    {
+      "name": "reload after database error shows actual persisted value",
+      "passed": true
+    },
+    {
+      "name": "Stage 2A creates no programs workouts food or progress",
+      "passed": true
+    },
+    {
+      "name": "live mobile chat has no horizontal overflow",
+      "passed": true,
+      "width": 390
+    },
+    {
+      "name": "no browser JavaScript errors",
+      "passed": true
+    }
+  ],
+  "requests": [
+    {
+      "action": "chat",
+      "status": 503,
+      "elapsed_ms": 5817,
+      "error": "backend_unavailable"
+    }
+  ]
+}
