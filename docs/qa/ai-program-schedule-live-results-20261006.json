@@ -1,0 +1,59 @@
+{
+  "live": true,
+  "completed": true,
+  "checks": [
+    {
+      "name": "successful real replacement archives prior program and activates the next revision",
+      "passed": true,
+      "revision": 3,
+      "previous_id": "5c380d45-6776-4e5f-b8b8-b77e47275eed",
+      "active_id": "613ba6f3-a0ff-46e4-a9c1-482ad6ce6ae4"
+    },
+    {
+      "name": "saved schedule answers today without regenerating",
+      "passed": true,
+      "date": "2026-10-06",
+      "scheduled": false
+    },
+    {
+      "name": "saved schedule answers tomorrow without regenerating",
+      "passed": true,
+      "date": "2026-10-07",
+      "scheduled": true
+    },
+    {
+      "name": "replacement remains active after reload",
+      "passed": true
+    },
+    {
+      "name": "no browser JavaScript errors",
+      "passed": true
+    }
+  ],
+  "requests": [
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 17052,
+      "program_saved": true,
+      "plan_id": "613ba6f3-a0ff-46e4-a9c1-482ad6ce6ae4",
+      "request_id": "f19b3d97-911b-411d-826b-19d86ece5fa5"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 2005,
+      "program_id": "613ba6f3-a0ff-46e4-a9c1-482ad6ce6ae4",
+      "plan_id": null,
+      "request_id": "cdbec488-4128-4510-a30d-d28239e09c4e"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 1504,
+      "program_id": "613ba6f3-a0ff-46e4-a9c1-482ad6ce6ae4",
+      "plan_id": null,
+      "request_id": "b94666e5-a2b3-42ea-b269-46ff11dcc7d2"
+    }
+  ]
+}

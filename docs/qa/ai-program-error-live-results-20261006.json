@@ -1,0 +1,29 @@
+{
+  "live": true,
+  "completed": true,
+  "checks": [
+    {
+      "name": "actual database conflict returns no save confirmation and retains previous program",
+      "passed": true,
+      "active_id": "5c380d45-6776-4e5f-b8b8-b77e47275eed",
+      "versions": 2
+    },
+    {
+      "name": "reload after failed replacement retains old program and delivery controls",
+      "passed": true
+    },
+    {
+      "name": "no browser JavaScript errors",
+      "passed": true
+    }
+  ],
+  "requests": [
+    {
+      "action": "chat",
+      "status": 503,
+      "elapsed_ms": 57556,
+      "error": "backend_unavailable",
+      "request_id": "14cdbd59-17f4-4f7b-ae6a-dbfa7498b1fd"
+    }
+  ]
+}

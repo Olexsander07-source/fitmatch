@@ -1,0 +1,47 @@
+{
+  "live": true,
+  "completed": true,
+  "checks": [
+    {
+      "name": "what should I train creates an actual saved personal program",
+      "passed": true
+    },
+    {
+      "name": "pending training intake cannot intercept the other AI module",
+      "passed": true
+    },
+    {
+      "name": "new professional-review flag warns in saved answer and mobile UI without replacing the program",
+      "passed": true
+    },
+    {
+      "name": "no browser JavaScript errors",
+      "passed": true
+    }
+  ],
+  "requests": [
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 16746,
+      "program_saved": true,
+      "plan_id": "524f92ec-dc32-4c0a-baac-df06107edaaf",
+      "request_id": "0736bc4a-130f-49ee-b3ba-8c19cd4be15b"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 6233,
+      "plan_id": null,
+      "request_id": "214c7fce-04c3-4994-b8dd-8e125671096e"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 1326,
+      "program_id": "524f92ec-dc32-4c0a-baac-df06107edaaf",
+      "plan_id": null,
+      "request_id": "eeabf9b5-1ea2-4411-93fc-ab317610f700"
+    }
+  ]
+}

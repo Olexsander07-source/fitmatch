@@ -4,9 +4,10 @@ import {readFile} from 'node:fs/promises';
 import {CONSENT_VERSION,normalizeProfile,missingProfile,limitedProfile,adaptWorkout,validatePlan,nutritionEstimate,cleanCitations,progressSeries,achievements,recentChatContext} from '../fitgoin-ai-core.mjs';
 import {createAIHandler} from '../supabase/functions/fitgoin-ai/index.mjs';
 import {sportsMemory,missingSportsMemory,prepareMemoryPatch} from '../fitgoin-ai-memory.mjs';
+import {programIntent,PROGRAM_SCHEMA,programFacts,reconcileProgramTime,validateProgram,finalizeProgram,calendarWorkout,programOutdated} from '../fitgoin-ai-program.mjs';
 
 const USER='10000000-0000-4000-8000-000000000001',OTHER='10000000-0000-4000-8000-000000000002',CONV='20000000-0000-4000-8000-000000000001',REQUEST='30000000-0000-4000-8000-000000000001';
-const PROFILE=normalizeProfile({goal:'Похудение',sport:'fitness',age:28,height_cm:180,weight_kg:80,days_per_week:3,minutes:30,weekdays:[1,3,5],equipment:'Коврик',language:'ru'});
+const PROFILE={...normalizeProfile({goal:'Похудение',sport:'fitness',age:28,height_cm:180,weight_kg:80,days_per_week:3,minutes:30,weekdays:[1,3,5],equipment:'Коврик',language:'ru'}),memory_confirmed_fields:['restrictions']};
 const training=()=>({title:'Первые недели',summary:'Спокойная программа',progression:'При стабильной технике и восстановлении обсуди небольшое увеличение нагрузки.',workouts:[1,3,5].map(day=>({day,title:'Всё тело',minutes:30,warmup:'5 минут лёгкой разминки',cooldown:'3 минуты спокойного завершения',exercises:[{name:'Присед к стулу',sets:3,reps:'8–12',rest_seconds:60,minutes:5,technique:'Сохраняй устойчивое положение.',alternative:'Вставание со стула'},{name:'Отжимание от стены',sets:3,reps:'8–12',rest_seconds:60,minutes:5,technique:'Держи корпус ровно.',alternative:'Отжимание от высокой опоры'}]}))});
 const nutrition=()=>({title:'Примерный день',summary:'Количество продуктов приблизительное.',calories_low:1950,calories_high:2200,protein_g:120,fat_g:60,carbs_g:233,meals:[1,2,3].map(n=>({name:'Блюдо '+n,ingredients:['Курица 150 г','Рис 150 г','Овощи'],allergens:[],calories:650,protein_g:40,fat_g:20,carbs_g:77.5,recipe:'Приготовь продукты.',substitutions:['Индейка вместо курицы']})),shopping_list:['Курица','Рис','Овощи']});
 const providerResponse=(document={answer:'Начни с профиля.'},extras={})=>({status:'completed',output:[{type:'message',role:'assistant',content:[{type:'output_text',text:JSON.stringify(document),annotations:extras.citations||[]}]},...(extras.output||[])]});
@@ -24,6 +25,7 @@ function setup(change={}) {
     if(url.includes('/fgi_ai_food?'))return json(change.food||[]);
     if(url.includes('/fgi_ai_messages?'))return json(change.history||[]);
     if(url.includes('/fgi_ai_workouts?'))return json(change.workouts||[]);
+    if(url.includes('/fgi_ai_plans?'))return json(change.plans||[]);
     if(url.endsWith('/rpc/fgi_ai_access'))return json(change.access||{modules:['training','nutrition'],friend:true});
     if(url.endsWith('/rpc/fgi_ai_reserve'))return json(change.reserve||{reserved:true});
     if(url.endsWith('/rpc/fgi_ai_claim'))return json(change.claim||{remaining:29,search_remaining:3});
@@ -277,4 +279,70 @@ test('direct memory questions use saved facts even if the model gives a differen
 });
 test('rejected memory extraction cannot reach the database completion transaction',async()=>{
  const s=setup({response:providerResponse({answer:'Сохранил.',memory_updates:[{field:'weight_kg',value:'82',evidence:'Мой вес 82 кг'}]})});const response=await s.request({message:'Расскажи про разминку'});assert.equal(response.status,422);assert.equal((await response.json()).error,'memory_update_invalid');assert(!s.calls.some(c=>c.url.endsWith('/rpc/fgi_ai_complete')));
+});
+const program=()=>({...training(),workouts:training().workouts.map((w,i)=>({...w,day:i+1,objective:'Общее развитие силы',exercises:w.exercises.map(e=>({...e,required_equipment:'Без оборудования',alternative_equipment:'Без оборудования'}))}))});
+test('2B recognizes creation and all saved-program queries, without treating examples as actions',()=>{
+ for(const s of ['Составь мне программу','Создай программу тренировок','Что мне лучше тренировать?'])assert.equal(programIntent(s),'create');
+ for(const s of ['Покажи мою программу','Какая у меня программа?'])assert.equal(programIntent(s),'show');
+ assert.equal(programIntent('Что я тренирую сегодня?'),'today');assert.equal(programIntent('Что я тренирую завтра?'),'tomorrow');assert.equal(programIntent('Например, создай программу тренировок'),null);
+});
+test('2B validates actual seven facts without inventing age or weekdays, rejecting missing constraints and unavailable equipment',()=>{
+ const p={...PROFILE};delete p.age;delete p.sport;delete p.weekdays;
+ validateProgram(program(),p);
+ const unknown={...p};delete unknown.memory_confirmed_fields;assert.throws(()=>validateProgram(program(),unknown),/profile_incomplete/);
+ const wrong=program();wrong.workouts[0].exercises[0].required_equipment='Штанга';assert.throws(()=>validateProgram(wrong,p),/invalid_plan/);
+ const timed=program();timed.workouts[0].exercises[0].reps='10 минут';assert.throws(()=>validateProgram(timed,p),/invalid_plan/);
+ const noFallback=program();noFallback.workouts[0].exercises[0].required_equipment='Коврик';noFallback.workouts[0].exercises[0].alternative_equipment='коврик';assert.throws(()=>validateProgram(noFallback,p),/invalid_plan/);
+ const harder=program();harder.workouts[0].exercises[0].alternative='Отжимания от пола';assert.throws(()=>validateProgram(harder,p),/invalid_plan/);
+});
+test('2B calendar uses saved explicit weekdays, timezone and date rollover; sequence never implies today',()=>{
+ const data={...PROFILE,weekdays:[]},doc=finalizeProgram(program(),data,'Europe/Paris',()=>crypto.randomUUID());
+ const plan={id:REQUEST,kind:'training',status:'active',document:doc,profile_snapshot:programFacts(data)};
+ assert.equal(calendarWorkout(plan).state,'unscheduled');assert(doc.workouts.every(w=>w.day===-1&&w.id&&w.exercises[0].id));
+ const scheduled={...plan,document:finalizeProgram(program(),{...data,weekdays:[1,3,5]},'Europe/Paris')};
+ assert.equal(calendarWorkout(scheduled,1,'Europe/Paris',new Date('2026-10-04T22:30:00Z')).state,'rest');
+ assert.equal(calendarWorkout(scheduled,0,'Europe/Paris',new Date('2026-10-04T22:30:00Z')).workout.day,1);
+ assert.equal(programOutdated({...plan,profile_snapshot:Object.fromEntries(Object.entries(plan.profile_snapshot).reverse())},data),false);
+ assert.equal(programOutdated(plan,{...data,equipment:'Штанга'}),true);
+ assert.equal(programOutdated(plan,{...data,needs_professional:true}),true);
+});
+test('2B continuous cardio can have no inter-set rest, but repeated sets retain at least 30 seconds',()=>{
+ const doc=program(),e=doc.workouts[0].exercises[0];Object.assign(e,{name:'Ходьба в удобном темпе',sets:1,reps:'10 минут',minutes:10,rest_seconds:0,alternative:'Спокойная ходьба с короткими паузами'});validateProgram(doc,PROFILE);
+ e.sets=2;assert.throws(()=>validateProgram(doc,PROFILE),error=>error.program_rule==='rest_seconds');
+});
+test('2B duration arithmetic preserves prescribed volume and rejects an over-budget corrected program',()=>{
+ const doc=program(),e=doc.workouts[0].exercises[0];e.minutes=1;e.rest_seconds=90;
+ const fixed=reconcileProgramTime(doc);assert.equal(fixed.workouts[0].exercises[0].minutes,4);assert.equal(fixed.workouts[0].exercises[0].sets,e.sets);assert.equal(fixed.workouts[0].exercises[0].rest_seconds,90);validateProgram(fixed,PROFILE);assert.equal(e.minutes,1);
+ e.reps='10 минут';assert.throws(()=>validateProgram(reconcileProgramTime(doc),PROFILE),error=>error.program_rule==='workout_duration');
+});
+test('2B chat uses the saved profile to generate and commit a structured program with previous-version guard',async()=>{
+ const old={id:OTHER,title:'Предыдущая',kind:'training',status:'active',document:{},revision:1};
+ const s=setup({plans:[old],responses:[providerResponse({answer:'Проверяю данные.',memory_updates:[]}),providerResponse(program())]});
+ const response=await s.request({message:'Составь мне программу',timezone:'Europe/Paris'}),result=await response.json();assert.equal(response.status,200);assert.equal(result.program_saved,true);
+ const generation=s.calls.filter(c=>c.url.includes('api.openai.com')).at(-1).body;
+ assert.deepEqual(generation.text.format.schema,PROGRAM_SCHEMA);assert(generation.input[0].content.includes('Коврик'));assert.equal(result.document.schema_version,2);
+ const write=s.calls.find(c=>c.url.endsWith('/rpc/fgi_ai_complete')).body;assert.equal(write.p_kind,'training');assert.equal(write.p_user,USER);assert.equal(write.p_result.program_previous_id,OTHER);assert.deepEqual(write.p_result.profile_snapshot,programFacts(PROFILE));
+});
+test('2B intake asks only missing fields and durable pending intent creates after the final memory reply',async()=>{
+ const partial={...PROFILE};delete partial.equipment;delete partial.minutes;
+ const missing=setup({profile:partial,response:providerResponse({answer:'Какая у тебя цель?',memory_updates:[]})});
+ const question=await (await missing.request({message:'Создай программу тренировок'})).json();assert.equal(question.kind,null);assert.equal(question.program_pending,true);assert.deepEqual(question.missing_fields,['minutes','equipment']);assert(!question.answer.includes('цель'));assert(missing.calls.find(c=>c.url.endsWith('/rpc/fgi_ai_complete')).body.p_result.program_pending);
+ const message='Из оборудования у меня коврик. Обычно тренируюсь по 30 минут.';
+ const finish=setup({profile:{...partial,program_pending:true},responses:[providerResponse({answer:'Спасибо.',memory_updates:[{field:'equipment',value:'коврик',evidence:'Из оборудования у меня коврик.'},{field:'minutes',value:'30',evidence:'Обычно тренируюсь по 30 минут.'}]}),providerResponse(program())]});
+ const result=await (await finish.request({message})).json();assert.equal(result.program_saved,true);assert.equal(result.memory_saved,true);assert.equal(result.profile_snapshot.equipment,'коврик');
+});
+test('2B saved-program queries never regenerate or spend provider tokens, including unknown dates',async()=>{
+ const data={...PROFILE,weekdays:[]},plan={id:OTHER,kind:'training',status:'active',revision:3,title:'Сохранённая',document:finalizeProgram(program(),data,'Europe/Paris'),profile_snapshot:programFacts(data)};
+ for(const message of ['Покажи мою программу','Какая у меня программа?','Что я тренирую сегодня?','Что я тренирую завтра?']){
+  const s=setup({profile:data,plans:[plan],env:{OPENAI_API_KEY:''}}),response=await s.request({message});assert.equal(response.status,200);const result=await response.json();assert.equal(result.program_id,OTHER);assert.equal(result.kind,null);assert(!s.calls.some(c=>c.url.includes('api.openai.com')||c.url.includes('fgi_ai_reserve')));if(message.includes('тренирую'))assert.match(result.answer,/не могу однозначно/);
+ }
+});
+test('2B pending training intake never intercepts a conversation in the other AI module',async()=>{
+ const partial={...PROFILE,program_pending:true};delete partial.equipment;
+ const s=setup({profile:partial,response:providerResponse({answer:'Общие сведения о восстановлении.',memory_updates:[]})});
+ const result=await (await s.request({module:'nutrition',message:'Расскажи об общих принципах восстановления.'})).json();assert.equal(result.kind,null);assert.equal(result.program_saved,undefined);assert.equal(s.calls.filter(x=>x.url.includes('api.openai.com')).length,1);
+ const write=s.calls.find(x=>x.url.endsWith('/rpc/fgi_ai_complete')).body;assert.equal(write.p_kind,null);assert.equal(write.p_result.module,'nutrition');assert.equal(write.p_result.program_pending,undefined);
+});
+test('2B failed program transaction returns no save claim or generated program',async()=>{
+ const s=setup({completeFails:true,response:providerResponse(program())}),response=await s.request({action:'training'});assert.equal(response.status,503);const result=await response.json();assert.equal(result.error,'backend_unavailable');assert.equal(result.answer,undefined);assert.equal(result.document,undefined);assert.equal(result.program_saved,undefined);
 });

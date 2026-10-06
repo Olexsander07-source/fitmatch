@@ -55,3 +55,13 @@ footer{background:#0c1825;border-color:var(--line);padding:32px 0}footer>.contai
 .fgi-ai-chat .ai-memory-summary dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:12px 0}
 .fgi-ai-chat .ai-memory-summary dt{font-size:12px;color:var(--muted)}
 .fgi-ai-chat .ai-memory-summary dd{margin:3px 0 0;color:var(--text);overflow-wrap:anywhere}
+.ai-program-details{margin-block:12px;border:1px solid var(--line,#d7deea);border-radius:16px;padding:14px;min-width:0}
+.ai-program-details>summary{cursor:pointer;font-weight:700;line-height:1.5;overflow-wrap:anywhere}
+.ai-program-summary{min-width:0;padding-block:12px}
+.ai-program-summary h3,.ai-program-exercises h4{overflow-wrap:anywhere}
+.ai-program-exercises{padding-left:24px}
+.ai-program-exercises li{padding:12px 0;border-bottom:1px solid var(--line,#d7deea)}
+.ai-program-exercises h4{margin:0 0 8px;font-size:1rem}
+.fgi-ai-plan>summary{cursor:pointer;list-style-position:inside}
+.ai-program-exercises p{margin:6px 0;line-height:1.55;overflow-wrap:anywhere}
+@media(max-width:600px){.ai-program-summary .fgi-ai-week{grid-template-columns:minmax(0,1fr)}.ai-program-summary .fgi-ai-plan{min-width:0;padding:16px}.ai-program-summary .actions{flex-wrap:wrap}}

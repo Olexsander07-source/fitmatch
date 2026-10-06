@@ -1,0 +1,22 @@
+{
+  "live_sql": true,
+  "date": "2026-10-06",
+  "verification": {
+    "users": 0,
+    "messages": 0,
+    "profiles": 0,
+    "programs": 0,
+    "requests": 0,
+    "sessions": 0,
+    "identities": 0,
+    "rls_enabled": true,
+    "base_profiles": 0,
+    "conversations": 0,
+    "friend_grants": 0,
+    "active_index_unique": true,
+    "previous_owner_index": true,
+    "client_insert_allowed": false,
+    "client_update_allowed": false,
+    "client_complete_allowed": false
+  }
+}
