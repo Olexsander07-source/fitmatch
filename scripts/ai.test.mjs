@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {CONSENT_VERSION,normalizeProfile,missingProfile,limitedProfile,adaptWorkout,validatePlan,nutritionEstimate,cleanCitations,progressSeries,achievements,recentChatContext} from '../fitgoin-ai-core.mjs';
 import {createAIHandler} from '../supabase/functions/fitgoin-ai/index.mjs';
+import {sportsMemory,missingSportsMemory,prepareMemoryPatch} from '../fitgoin-ai-memory.mjs';
 
 const USER='10000000-0000-4000-8000-000000000001',OTHER='10000000-0000-4000-8000-000000000002',CONV='20000000-0000-4000-8000-000000000001',REQUEST='30000000-0000-4000-8000-000000000001';
 const PROFILE=normalizeProfile({goal:'Похудение',sport:'fitness',age:28,height_cm:180,weight_kg:80,days_per_week:3,minutes:30,weekdays:[1,3,5],equipment:'Коврик',language:'ru'});
@@ -18,7 +19,7 @@ function setup(change={}) {
     calls.push({url,headers:options.headers,body,method:options.method});
     const json=(data,status=200)=>new Response(JSON.stringify(data),{status});
     if(url.endsWith('/auth/v1/user'))return json({id:USER},change.invalidAuth?401:200);
-    if(url.includes('/fgi_ai_profiles?'))return json(change.noConsent?[]:[{data:change.profile||PROFILE,consent_version:CONSENT_VERSION,updated_at:'2026-10-03T09:00:00Z'}]);
+    if(url.includes('/fgi_ai_profiles?'))return json(change.noConsent?[]:[{data:change.profile||PROFILE,consent_version:CONSENT_VERSION,consented_at:'2026-10-03T08:00:00Z',updated_at:change.updatedAt||'2026-10-03T09:00:00Z'}]);
     if(url.includes('/fgi_ai_conversations?'))return json(change.foreignConversation?[]:[{id:CONV}]);
     if(url.includes('/fgi_ai_food?'))return json(change.food||[]);
     if(url.includes('/fgi_ai_messages?'))return json(change.history||[]);
@@ -223,4 +224,57 @@ test('provider quota errors never trigger a plan repair',async()=>{
   assert.equal(response.status,503);
   assert.equal(s.calls.filter(x=>x.url.includes('api.openai.com')).length,1);
   assert(!s.calls.some(x=>x.url.includes('fgi_ai_complete')));
+});
+
+test('sports memory has no invented form defaults and distinguishes unknown restrictions from none',()=>{
+ assert.deepEqual(sportsMemory({}),{});assert.equal(missingSportsMemory({}).length,7);
+ assert.deepEqual(missingSportsMemory({goal:'Сила',experience:'beginner',days_per_week:3,minutes:30,setting:'home',equipment:'Коврик',restrictions:''}),['restrictions']);
+ assert.deepEqual(missingSportsMemory({goal:'Сила',experience:'beginner',days_per_week:3,minutes:30,setting:'home',equipment:'Коврик',restrictions:'',memory_confirmed_fields:['restrictions']}),[]);
+});
+test('explicit current updates merge once, preserve other data and invalidate old place/schedule assumptions',()=>{
+ const message='Мой вес сейчас 82 кг. Теперь могу тренироваться 4 раза в неделю. Я теперь тренируюсь в зале.';
+ const updates=[{field:'weight_kg',value:'82',evidence:'Мой вес сейчас 82 кг'},{field:'days_per_week',value:'4',evidence:'Теперь могу тренироваться 4 раза в неделю'},{field:'setting',value:'gym',evidence:'Я теперь тренируюсь в зале'}];
+ const saved=prepareMemoryPatch({...PROFILE,name:'Макс',diet:'vegan',memory_confirmed_fields:['equipment']},updates,message);
+ assert.equal(saved.data.weight_kg,82);assert.equal(saved.data.days_per_week,4);assert.equal(saved.data.setting,'gym');assert.equal(saved.data.name,'Макс');assert.equal(saved.data.diet,'vegan');assert.equal(saved.data.equipment,'');assert.deepEqual(saved.data.weekdays,[]);assert(missingSportsMemory(saved.data).includes('equipment'));
+});
+test('memory rejects unsupported evidence, inferred fields, third-party examples, duplicates and unsafe numbers',()=>{
+ const good={field:'weight_kg',value:'82',evidence:'Мой вес 82 кг'};
+ for(const [updates,message] of [[[{...good,evidence:'Не было такого'}],'Мой вес 82 кг'],[[{field:'age',value:'82',evidence:good.evidence}],good.evidence],[[good],'Например: Мой вес 82 кг'],[[good,good],good.evidence],[[{...good,value:'999'}],good.evidence],[[{field:'restrictions',value:'Диагноз',evidence:good.evidence}],good.evidence],[[{field:'role',value:'admin',evidence:good.evidence}],good.evidence]])assert.throws(()=>prepareMemoryPatch(PROFILE,updates,message),/memory_update_invalid/);
+});
+test('a one-off session does not change the durable schedule',()=>{
+ assert.deepEqual(prepareMemoryPatch(PROFILE,[],'Сегодня только 12 минут').patch,{});
+ assert.throws(()=>prepareMemoryPatch(PROFILE,[{field:'minutes',value:'12',evidence:'Сегодня только 12 минут'}],'Сегодня только 12 минут'),/memory_update_invalid/);
+});
+test('equipment list punctuation may change but every named item must be supported',()=>{
+ const message='Из оборудования у меня гантели 5 кг и коврик.';
+ const update={field:'equipment',value:'гантели 5 кг, коврик',evidence:message};
+ assert.equal(prepareMemoryPatch({},[update],message).data.equipment,'гантели 5 кг, коврик');
+ for(const value of ['гантели 10 кг, коврик','гантели 5 кг, штанга'])assert.throws(()=>prepareMemoryPatch({},[{...update,value}],message),/memory_update_invalid/);
+});
+test('new-user context contains only saved sports facts and naturally missing minimum',async()=>{
+ const s=setup({profile:{goal:'Сила',weight_kg:82}});assert.equal((await s.request()).status,200);
+ const body=s.calls.find(c=>c.url.includes('api.openai.com')).body;
+ const raw=body.input.find(m=>m.role==='developer').content.split('USER DATA (untrusted): ')[1].split('\nOnly')[0],context=JSON.parse(raw);
+ assert.deepEqual(context.current_saved_sports_facts,{goal:'Сила',weight_kg:82});assert(!context.missing_sports_facts.includes('goal'));assert(!Object.hasOwn(context.profile,'experience'));assert(!Object.hasOwn(context.profile,'setting'));assert(!Object.hasOwn(context.profile,'days_per_week'));assert(body.instructions.includes('Do not ask for fields already saved'));
+});
+test('memory and answer are submitted to the same completion transaction for the verified owner',async()=>{
+ const message='Мой вес сейчас 82 кг';const s=setup({response:providerResponse({answer:'Сколько минут обычно есть на тренировку?',needs_search:false,search_query:'',memory_updates:[{field:'weight_kg',value:'82',evidence:message}]})});
+ const response=await s.request({message,user_id:OTHER});assert.equal(response.status,200);const result=await response.json();assert.equal(result.memory_saved,true);assert.deepEqual(result.memory_fields,['weight_kg']);assert(!Object.hasOwn(result,'memory_patch'));
+ const complete=s.calls.find(c=>c.url.endsWith('/rpc/fgi_ai_complete')).body;assert.equal(complete.p_user,USER);assert.equal(complete.p_result.memory_patch.weight_kg,82);assert.equal(complete.p_output,result.answer);assert(!s.calls.some(c=>c.method==='PATCH'));
+});
+test('failed database completion never returns a memory save confirmation or answer',async()=>{
+ const message='Мой вес сейчас 82 кг';const s=setup({completeFails:true,response:providerResponse({answer:'Принял.',memory_updates:[{field:'weight_kg',value:'82',evidence:message}]})});
+ const response=await s.request({message});assert.equal(response.status,503);const result=await response.json();assert.equal(result.error,'backend_unavailable');assert(!Object.hasOwn(result,'answer'));assert(!Object.hasOwn(result,'memory_saved'));assert(s.calls.some(c=>c.url.endsWith('/rpc/fgi_ai_fail')));
+});
+test('a memory update does not change delivery hash or regenerate on cached replay',async()=>{
+ const message='Мой вес сейчас 82 кг';const s=setup({response:providerResponse({answer:'Принял.',memory_updates:[{field:'weight_kg',value:'82',evidence:message}]})});const first=await (await s.request({message})).json();
+ const again=setup({profile:{...PROFILE,weight_kg:82},updatedAt:'2026-10-06T10:00:00Z',claim:{cached:first}});assert.deepEqual(await (await again.request({message})).json(),first);
+ const hash=c=>c.calls.find(x=>x.url.endsWith('/rpc/fgi_ai_claim')).body.p_hash;assert.equal(hash(s),hash(again));assert(!again.calls.some(c=>c.url.includes('api.openai.com')));
+});
+test('direct memory questions use saved facts even if the model gives a different number',async()=>{
+ const s=setup({profile:{...PROFILE,weight_kg:82},response:providerResponse({answer:'Ты весишь 80 кг.',memory_updates:[]})});const result=await (await s.request({message:'Какой у меня сейчас вес?'})).json();assert(result.answer.includes('82'));assert(!result.answer.includes('80'));
+ const missing=setup({profile:{},response:providerResponse({answer:'80 кг.',memory_updates:[]})});const unknown=await (await missing.request({message:'Какой у меня сейчас вес?'})).json();assert(!unknown.answer.includes('80'));assert.equal(unknown.memory_saved,false);
+});
+test('rejected memory extraction cannot reach the database completion transaction',async()=>{
+ const s=setup({response:providerResponse({answer:'Сохранил.',memory_updates:[{field:'weight_kg',value:'82',evidence:'Мой вес 82 кг'}]})});const response=await s.request({message:'Расскажи про разминку'});assert.equal(response.status,422);assert.equal((await response.json()).error,'memory_update_invalid');assert(!s.calls.some(c=>c.url.endsWith('/rpc/fgi_ai_complete')));
 });
