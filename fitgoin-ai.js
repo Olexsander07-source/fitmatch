@@ -3,6 +3,7 @@ import {PLANS,MEDIA_CONSENT,hasAccess,actionModule,analysisText,normalizeFood,tr
 import {imageForAI,videoForAI} from './fitgoin-ai-media.mjs';
 import {t} from './fitgoin-i18n.mjs';
 import {sportsMemory,MEMORY_LABELS,memoryDisplayValue} from './fitgoin-ai-memory.mjs';
+import {activeProgram,programOutdated,calendarWorkout} from './fitgoin-ai-program.mjs';
 
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const DAYS=['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
@@ -24,7 +25,7 @@ function chart(rows,key,label) {
   return `<figure class="fgi-ai-chart"><figcaption>${esc(label)} · ${points.length} записей</figcaption><svg viewBox="0 0 600 180" role="img" aria-label="${esc(label)} от ${points[0].value} до ${points.at(-1).value}"><path d="M45 30 V140 H570" fill="none" stroke="#637c82"/><polyline points="${xy.map(p=>p.join(',')).join(' ')}" fill="none" stroke="#b5cbbb" stroke-width="3"/>${xy.map((p,i)=>`<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="#b5cbbb"><title>${esc(points[i].date)}: ${points[i].value}</title></circle>`).join('')}<text x="4" y="38">${max}</text><text x="4" y="138">${min}</text><text x="45" y="168">${esc(points[0].date)}</text><text x="490" y="168">${esc(points.at(-1).date)}</text></svg></figure>`;
 }
 export function mountFitGoInAI(root,opts) {
-  let actor=null,epoch=0,loaded=false,view='ask',profile=null,profileDraft=null,conversation=null,conversations=[],messages=[],plans=[],sessions=[],progress=[],shares=[],received=[],photoURLs=new Map();
+  let actor=null,epoch=0,loaded=false,view='ask',profile=null,profileDraft=null,conversation=null,conversations=[],messages=[],plans=[],sessions=[],progress=[],shares=[],received=[],photoURLs=new Map(),programExpanded=false;
   let intakeStep=0,profileConsent=false,savedIds=[],savedMessages=[],drawerOpen=false,requestActive=false,userStopped=false,searchDraft=false;
   let busy=false,status='',statusError=false,configured=false,controller=null,active=null,restTimer=null,recorder=null,micStream=null,voicePending=false,voiceTicket=0,voiceText='',draft='',lastLoad=0,readinessRequest=null,destroyed=false;
   let access={modules:[],checkout_enabled:false},food=[],analysis=null,module='training';
@@ -45,7 +46,7 @@ export function mountFitGoInAI(root,opts) {
   function reset() {
     if(actor)try{sessionStorage.removeItem(chatKey());}catch{}
     epoch++;controller?.abort();controller=null;stopVoice();clearInterval(restTimer);restTimer=null;
-    actor=null;loaded=false;profile=null;profileDraft=null;conversation=null;conversations=[];messages=[];plans=[];sessions=[];progress=[];shares=[];received=[];photoURLs.clear();active=null;voiceText='';draft='';busy=false;status='';statusError=false;
+    programExpanded=false;actor=null;loaded=false;profile=null;profileDraft=null;conversation=null;conversations=[];messages=[];plans=[];sessions=[];progress=[];shares=[];received=[];photoURLs.clear();active=null;voiceText='';draft='';busy=false;status='';statusError=false;
     access={modules:[],checkout_enabled:false};food=[];analysis=null;module='training';pending=null;historyLimit=80;moreHistory=false;preferredConversation=null;
     intakeStep=0;profileConsent=false;savedIds=[];savedMessages=[];drawerOpen=false;requestActive=false;userStopped=false;searchDraft=false;view='ask';document.body.style.overflow='';
     if(window.speechSynthesis)window.speechSynthesis.cancel();
@@ -73,7 +74,7 @@ export function mountFitGoInAI(root,opts) {
     const results=await Promise.all([
       db().from('fgi_ai_profiles').select('*').eq('user_id',id).maybeSingle(),
       db().from('fgi_ai_conversations').select('*').eq('user_id',id).order('created_at',{ascending:false}).limit(50),
-      db().from('fgi_ai_plans').select('*').eq('user_id',id).order('created_at',{ascending:false}).limit(20),
+      Promise.all([db().from('fgi_ai_plans').select('*').eq('user_id',id).eq('kind','training').eq('status','active').limit(1),db().from('fgi_ai_plans').select('*').eq('user_id',id).eq('kind','nutrition').order('created_at',{ascending:false}).limit(20)]).then(rows=>({data:rows.flatMap(unwrap),error:null})),
       db().from('fgi_ai_workouts').select('*').eq('user_id',id).order('started_at',{ascending:false}).limit(200),
       db().from('fgi_ai_progress').select('*').eq('user_id',id).order('recorded_on',{ascending:false}).limit(365),
       db().from('fgi_ai_shares').select('*').eq('user_id',id).order('created_at',{ascending:false}),
@@ -139,6 +140,7 @@ export function mountFitGoInAI(root,opts) {
     return `<div class="fgi-ai-chat panel"><div class="ai-chat-heading"><h2>${esc(conversation?.title==='FitGoIn AI'?t('newChat'):conversation?.title||t('ai'))}</h2><label><span class="sr-only">Модуль</span><select data-ai-module>${options([['training','Тренировки'],['nutrition','Питание']],module)}</select></label></div>
       ${`<div class="ai-chat-shortcuts" aria-label="Быстрые действия">${quick.map(([id,icon,label])=>`<button type="button" class="ai-quick" data-ai-quick="${id}"${busy?' disabled':''}><span aria-hidden="true">${icon}</span>${t(label)}</button>`).join('')}</div>`}
       <details class="ai-memory-summary"><summary>Что AI помнит о тебе</summary><p class="hint">Только сообщённые спортивные данные. Измени их обычным сообщением; сохранение подтвердим после записи.</p>${Object.keys(facts).length?`<dl>${Object.entries(facts).map(([field,value])=>`<div><dt>${esc(MEMORY_LABELS[field])}</dt><dd>${esc(memoryDisplayValue(field,value))}</dd></div>`).join('')}</dl>`:'<p>Спортивные данные пока не сохранены. Начнём с цели и уровня подготовки.</p>'}</details>
+      ${module==='training'?programPanel(latest('training'),true):''}
       ${!messages.length&&!outgoing?`<div class="ai-empty"><div class="ai-empty-mark" aria-hidden="true">✧</div><p class="eyebrow">${t('chatEyebrow')}</p><h2>${t('chatTitle')}</h2><p>${Object.keys(facts).length?t('chatCopy'):'Чего хочешь добиться и какой у тебя опыт тренировок? Остальное уточним по ходу разговора.'}</p></div>`:''}
       <div class="fgi-ai-messages" role="log" aria-live="off" aria-label="История разговора">${moreHistory?button('more-history','Показать предыдущие сообщения'): ""}${messages.map(messageHTML).join('')}${outgoing?`<article class="fgi-ai-message from-user ai-outgoing" data-request-id="${esc(outgoing.body.request_id)}"><strong>Ты · ${requestActive?'Отправляется':outgoing.state==='failed'?'Не отправлено':'Проверяем доставку'}</strong><p dir="auto">${esc(outgoing.body.message)}</p>${!busy?`<div class="actions">${button('retry-message',outgoing.state==='failed'?'Повторить отправку':'Проверить ответ',true)}${button('refresh','Обновить историю')}</div>`:''}</article>`:''}${requestActive?`<div class="ai-typing" role="status"><i></i><i></i><i></i><span>${t('typing')}</span></div>`:''}</div>
       <form data-ai-form="chat" class="ai-compose"><label><span class="sr-only">${t('question')}</span><textarea name="message" rows="2" maxlength="5000" required placeholder="${t('placeholder')}" dir="auto">${esc(draft)}</textarea></label><div class="ai-compose-tools"><div class="ai-compose-media">${button('food-photo',t('photo'))}${button('technique',t('technique'))}${button('voice','Голос',false,!configured?'disabled':'')}${button('document',t('document'))}<input type="file" data-ai-document accept=".txt,.md,text/plain,text/markdown" hidden><label class="fgi-ai-check"><input type="checkbox" name="search"${searchDraft?' checked':''}>${t('sourceSearch')}</label></div>${requestActive?button('stop',t('stop')):`<button class="btn primary" type="submit"${!configured||busy||pending?.state==='uncertain'?' disabled':''}>${t('send')} ↗</button>`}</div><p class="hint">${t('privateSearch')} <span>${t('sendShortcut')}</span></p></form>
@@ -159,8 +161,13 @@ export function mountFitGoInAI(root,opts) {
   function foodDialog(value={},source='manual'){
     dialog(`<h2>Подтверди порцию и оценку</h2><form data-ai-form="food" data-source="${source}"><div class="form-grid">${field('Название',input('name',value.name||'','text','maxlength="160" required'))}${field('Дата',input('recorded_on',dateNow(),'date','required'))}${['calories_low','calories_high','protein_g','fat_g','carbs_g'].map(k=>field(({calories_low:'Калории · нижняя оценка',calories_high:'Калории · верхняя оценка',protein_g:'Белки, г',fat_g:'Жиры, г',carbs_g:'Углеводы, г'})[k],input(k,value[k]??'','number',`min="0" max="${k.startsWith('calories')?5000:600}" step="0.1" required`))).join('')}</div><p class="hint">Исправь данные по фактической порции, упаковке или известному рецепту. Сохранение не изменяет твоё меню автоматически.</p><button class="btn primary" type="submit">Подтверждаю, сохранить</button></form>`);
   }
-  const latest=kind=>plans.find(x=>x.kind===kind);
-  function workoutCard(w,i) {return `<article class="panel fgi-ai-plan"><p class="eyebrow">${DAYS[w.day]} · ${w.minutes} мин</p><h3>${esc(w.title)}</h3><p>${esc(w.warmup)}</p><ol>${w.exercises.map(e=>`<li><strong>${esc(e.name)}</strong> · ${e.sets} × ${esc(e.reps)} · отдых ${e.rest_seconds} с</li>`).join('')}</ol>${button('start-workout','Начать тренировку',true,`data-workout="${i}"`)}</article>`;}
+  const latest=kind=>kind==='training'?activeProgram(plans):plans.find(x=>x.kind===kind);
+  function workoutCard(w,i) {return `<details class="panel fgi-ai-plan" data-program-workout="${esc(w.id||i)}"${i===0?' open':''}><summary><p class="eyebrow">Тренировка ${w.number||i+1}${w.day>=0&&w.day<=6?' · '+DAYS[w.day]:''} · ${w.minutes} мин</p><h3>${esc(w.title)}</h3></summary><p>${esc(w.objective||'')}</p><p><strong>Разминка:</strong> ${esc(w.warmup)}</p><ol class="ai-program-exercises">${w.exercises.map(e=>`<li data-program-exercise="${esc(e.id||'')}"><h4>${esc(e.name)}</h4><p class="fgi-ai-dose">${e.sets} × ${esc(e.reps)}</p><p>Отдых: ${e.rest_seconds} секунд</p><p>${esc(e.technique)}</p>${e.required_equipment?`<p class="hint">Оборудование: ${esc(e.required_equipment)}</p>`:''}<p class="hint">Замена: ${esc(e.alternative)}</p></li>`).join('')}</ol><p><strong>Завершение:</strong> ${esc(w.cooldown)}</p>${button('start-workout','Начать тренировку',true,`data-workout="${i}"`)}</details>`;}
+  function programPanel(plan,collapsed=false){
+    if(!plan)return `<div class="ai-program-summary"><p>Твоя программа пока не создана.</p>${button('create-training','Создать программу',true,!configured?'disabled':'')}</div>`;
+    const content=`<div class="ai-program-summary" data-active-program="${esc(plan.id)}"><p class="eyebrow">ТВОЯ ПРОГРАММА · ВЕРСИЯ ${plan.revision||1}</p><h3>${esc(plan.title)}</h3><p>${esc(plan.document.summary)}</p><p class="hint">${plan.document.schedule?.mode==='weekdays'?'Дни недели указаны в тренировках.':'Тренировки по порядку. Дни недели не заданы; «сегодня» и «завтра» не назначаются автоматически.'}</p>${programOutdated(plan,profile?.data)?'<p role="status">Спортивные данные изменились. Перед использованием пересмотри программу под новые условия.</p>':''}<p class="hint">${esc(plan.document.progression)}</p><div class="fgi-ai-week">${(plan.document.workouts||[]).map(workoutCard).join('')}</div><div class="actions">${button('create-training','Создать новую версию')}${button('view-today','Моя программа')}</div></div>`;
+    return collapsed?`<details class="ai-program-details"${programExpanded?' open':''}><summary>Моя программа · ${esc(plan.title)}</summary>${content}</details>`:content;
+  }
   function activeView() {
     const d=active.data,w=d.workout,index=d.index||0,e=w.exercises[index];
     if(!e)return `<div class="panel"><h2>Упражнения закончены</h2><p>Записано подходов: ${d.sets.length}.</p>${button('finish-workout','Завершить и сохранить',true)}</div>`;
@@ -171,13 +178,15 @@ export function mountFitGoInAI(root,opts) {
   }
   function todayView() {
     const p=normalizeProfile(profile?.data),training=latest('training'),nutrition=latest('nutrition'),today=new Date().getDay(),review=weeklyReview(sessions,p);
-    const todayWorkout=training?.document.workouts.findIndex(x=>x.day===today)??-1;
+    const calendar=calendarWorkout(training,0,Intl.DateTimeFormat().resolvedOptions().timeZone);
+    const todayWorkout=calendar.state==='workout'?training.document.workouts.findIndex(x=>x.id===calendar.workout.id):-1;
+    const scheduleUnknown=calendar.state==='unscheduled'||calendar.state==='timezone_missing';
     const complete=sessions.filter(s=>s.completed_at&&s.data?.status==='completed'&&s.data?.sets?.length);
     const weekAgo=Date.now()-7*86400000,count=complete.filter(s=>Date.parse(s.completed_at)>weekAgo).length;
     return `<div class="fgi-ai-stats"><div><small>Твоя цель</small><strong>${esc(p.goal||'Начнём с профиля')}</strong><span>${esc(p.target)}</span></div><div><small>За последние 7 дней</small><strong>${count} тренировок</strong><span>План: ${p.days_per_week} в неделю</span></div><div><small>Достижения</small><strong>${esc(achievements(sessions).at(-1)||'Первый шаг впереди')}</strong><span>Всего записано: ${complete.length}</span></div></div>
-      ${active?activeView():`<div class="panel fgi-ai-day"><p class="eyebrow">СЕГОДНЯ · ${new Date().toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long'})}</p><h2>${todayWorkout>=0?esc(training.document.workouts[todayWorkout].title):training?'Восстановление и обычная активность':'Твой план начинается здесь'}</h2><p class="muted">${todayWorkout>=0?'Перед началом учтём время, сон и самочувствие.':training?'Сегодня нет тренировки по графику. Отдых помогает восстановиться. Если пропустил занятие, выбери его ниже и сохрани время на восстановление.':'Заполни спортивный профиль, затем создай программу под свою цель.'}</p><div class="actions">${todayWorkout>=0?button('start-workout','Начать сегодняшнюю',true,`data-workout="${todayWorkout}"`):button('view-profile','Мой профиль',true)}${button('create-training',training?'Обновить программу по результатам':'Создать программу',false,!configured?'disabled':'')}${button('view-ask','Спросить AI')}</div></div>`}
+      ${active?activeView():`<div class="panel fgi-ai-day"><p class="eyebrow">СЕГОДНЯ · ${new Date().toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long'})}</p><h2>${todayWorkout>=0?esc(training.document.workouts[todayWorkout].title):scheduleUnknown?'Программа без календарной привязки':training?'Восстановление и обычная активность':'Твой план начинается здесь'}</h2><p class="muted">${todayWorkout>=0?'Перед началом учтём время, сон и самочувствие.':scheduleUnknown?'Дни недели не заданы. Выбери тренировку по порядку из программы ниже.':training?'Сегодня нет тренировки по графику. Отдых помогает восстановиться. Если пропустил занятие, выбери его ниже и сохрани время на восстановление.':'Заполни спортивный профиль, затем создай программу под свою цель.'}</p><div class="actions">${todayWorkout>=0?button('start-workout','Начать сегодняшнюю',true,`data-workout="${todayWorkout}"`):button('view-profile','Мой профиль',true)}${button('create-training',training?'Создать новую версию':'Создать программу',false,!configured?'disabled':'')}${button('view-ask','Спросить AI')}</div></div>`}
       <div class="panel section-small"><h3>Итоги последних 7 дней</h3><p>${review.completed} завершённых тренировок из ${review.planned} запланированных в неделю · ${review.sets} записанных подходов${review.average_rpe!==null?` · средняя сложность ${review.average_rpe}/10`:''}.</p><p>${esc(review.message)}</p><div class="actions">${button('calendar','Добавить график в календарь')}${button('technique','Оценить технику')}${button('view-access','Доступ к AI')}</div></div>
-      ${training?`<div class="section-head"><div><h2>${esc(training.title)}</h2><p>${esc(training.document.summary)}</p></div></div><p class="hint">${esc(training.document.progression)}</p><div class="fgi-ai-week">${training.document.workouts.map(workoutCard).join('')}</div>`:''}
+      ${training?programPanel(training):''}
       <div class="panel section-small"><h3>Питание и восстановление</h3><p>${nutrition?`Примерный день: ${nutrition.document.calories_low}–${nutrition.document.calories_high} ккал.`:'Можно составить примерное меню, список покупок и варианты замены продуктов.'} Не тренируйся через боль. Вода — по жажде и условиям нагрузки; индивидуальные ограничения обсуждаются с врачом.</p><div class="actions">${button('view-nutrition','Моё питание')}${button('view-progress','Записать вес и самочувствие')}${button('view-coaches','Хочу заниматься с человеком')}</div></div>`;
   }
   function nutritionView() {
@@ -221,13 +230,13 @@ export function mountFitGoInAI(root,opts) {
     const selected=actionModule(action,module);
     if(!hasAccess(access,selected)){view='access';throw Error('subscription_required');}
     if(!profile)throw Error('consent_required');
-    if(['training','nutrition'].includes(action)){
-      const missing=missingProfile(profile.data,action==='nutrition');
+    if(action==='nutrition'){
+      const missing=missingProfile(profile.data,true);
       if(missing.length){view='profile';throw Error('profile_incomplete');}
       if(limitedProfile(normalizeProfile(profile.data)))throw Error('professional_required');
     }
     await ensureConversation(e);
-    const body={action,module:selected,message,conversation_id:conversation.id,request_id:crypto.randomUUID()};
+    const body={action,module:selected,message,conversation_id:conversation.id,request_id:crypto.randomUUID(),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone};
     await deliver(body,e);
   }
   async function deliver(body,e) {
@@ -252,7 +261,8 @@ export function mountFitGoInAI(root,opts) {
     }
     try{await load(e);}catch(error){assert(e);notice('Ответ сохранён на сервере. Не удалось обновить историю; нажми «Обновить».',true);throw Error('history_refresh_failed');}
     if(result.kind)view=result.kind==='nutrition'?'nutrition':'today';else view='ask';
-    notice(result.memory_saved?'Спортивные данные обновлены, ответ сохранён в истории.':'Ответ сохранён в истории.');
+    programExpanded=Boolean(result.program_view);
+    notice(result.program_saved?(result.program_previous_id?'Новая версия программы сохранена. Предыдущая версия сохранена в архиве.':'Программа сохранена. Она будет доступна после повторного входа.'):result.program_pending?'Уточним недостающие данные в чате.':result.memory_saved?'Спортивные данные обновлены, ответ сохранён в истории.':'Ответ сохранён в истории.');
   }
   async function retryMessage(e){
     if(!pending)return;const original=pending;
@@ -396,9 +406,8 @@ export function mountFitGoInAI(root,opts) {
       if(!text)return;
       if(pending?.state==='uncertain'){notice('Сначала проверь ответ на предыдущий запрос.',true);return;}
       const search=f.has('search')||/найди (?:исследован|источник)|поищи в интернете|search (?:the web|for studies)|trouve.*études|знайди.*дослідж/i.test(text);
-      const plan=/^(?:составь|создай|обнови|перестрой|переделай|зроби|створи|create|build|update).*(?:программ|трениров|workout|training|програм|тренув)/i.test(text);
       const menu=/^(?:составь|создай|обнови|create|build|update).*(?:меню|питани|meal|nutrition)/i.test(text);
-      work(e=>ask(search?'search':menu?'nutrition':plan?'training':'chat',text,e));return;
+      work(e=>ask(search?'search':menu?'nutrition':'chat',text,e));return;
     }
     work(async e=>{
       if(name==='memory-consent'){
@@ -463,7 +472,7 @@ export function mountFitGoInAI(root,opts) {
       if(action==='more-history'){historyLimit+=80;await load(e);notice('Предыдущие сообщения загружены.');}
       if(action==='retry-message')await retryMessage(e);
       if(action==='new-chat'){if(pending?.state==='uncertain'){notice('Сначала проверь доставку предыдущего вопроса.',true);return;}const next=unwrap(await db().from('fgi_ai_conversations').insert({user_id:actor}).select().single());assert(e);conversation=next;messages=[];draft='';searchDraft=false;historyLimit=80;pending=null;persistChat();view='ask';menu(false);await load(e);notice('Новый разговор. Твой профиль и результаты сохраняются.');}
-      if(action==='create-training')await ask('training','Создай или обнови недельную программу по моему профилю, последним результатам и восстановлению.',e);
+      if(action==='create-training')await ask('training','Создай программу тренировок по моим сохранённым спортивным данным.',e);
       if(action==='create-nutrition')await ask('nutrition','Составь примерный день питания по моим целям, предпочтениям и ограничениям.',e);
       if(action==='next-exercise'&&active){const old=structuredClone(active.data);active.data.index++;active.data.rest_until=null;try{await persistActive(e);}catch(error){if(e===epoch)active.data=old;throw error;}notice('Следующее упражнение. Не спеши, если ещё не восстановился.');}
       if(action==='finish-workout')await finish(e);

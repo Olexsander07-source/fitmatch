@@ -1,0 +1,118 @@
+{
+  "live": true,
+  "completed": true,
+  "checks": [
+    {
+      "name": "2A memory loaded in authenticated mobile browser",
+      "passed": true
+    },
+    {
+      "name": "full sports memory produces a real structured persisted personalized program",
+      "passed": true,
+      "plan_id": "72b30838-1f4e-42ad-9359-62c7f4f6481b",
+      "workouts": 3,
+      "revision": 1
+    },
+    {
+      "name": "mobile program displays structured exercise cards and instructions",
+      "passed": true
+    },
+    {
+      "name": "program has no horizontal overflow at four viewport widths",
+      "passed": true
+    },
+    {
+      "name": "reload restores the same saved active program",
+      "passed": true
+    },
+    {
+      "name": "fresh sign-in and show query read the database without regenerating",
+      "passed": true
+    },
+    {
+      "name": "unknown schedule never invents tomorrow",
+      "passed": true
+    },
+    {
+      "name": "creation retry returns original program and creates no duplicate",
+      "passed": true
+    },
+    {
+      "name": "second JWT cannot read update or delete first program",
+      "passed": true
+    },
+    {
+      "name": "ordinary browser JWT cannot forge a server program",
+      "passed": true
+    },
+    {
+      "name": "intake asks only missing equipment and restrictions; no premature program saved",
+      "passed": true
+    },
+    {
+      "name": "answer completes durable intake and creates a different personalized program",
+      "passed": true
+    },
+    {
+      "name": "program isolation still holds after second account creates its own",
+      "passed": true
+    },
+    {
+      "name": "denied foreign writes preserve first active program",
+      "passed": true
+    },
+    {
+      "name": "no browser JavaScript errors",
+      "passed": true
+    }
+  ],
+  "requests": [
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 12870,
+      "program_saved": true,
+      "plan_id": "72b30838-1f4e-42ad-9359-62c7f4f6481b",
+      "request_id": "8588992b-f435-4f6a-826b-dda4ee9402a1"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 1943,
+      "program_id": "72b30838-1f4e-42ad-9359-62c7f4f6481b",
+      "plan_id": null,
+      "request_id": "5e8c49b4-9805-43c3-a7d1-2b2d1875b47c"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 1638,
+      "program_id": "72b30838-1f4e-42ad-9359-62c7f4f6481b",
+      "plan_id": null,
+      "request_id": "03068af4-bc41-43ec-9d2d-7c30a99b11fc"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 1281,
+      "program_saved": true,
+      "plan_id": "72b30838-1f4e-42ad-9359-62c7f4f6481b",
+      "request_id": "8588992b-f435-4f6a-826b-dda4ee9402a1"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 3815,
+      "plan_id": null,
+      "request_id": "1093d59a-cc1e-404e-912e-33f140953140"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 14267,
+      "program_saved": true,
+      "plan_id": "f39ecb3f-55bf-49f1-adfe-cda108156080",
+      "request_id": "d53678c7-5996-4601-b4d7-dfd618b04621"
+    }
+  ]
+}
