@@ -3,8 +3,9 @@
   "scope": "Existing FitGoIn AI Trainer & Assistant only",
   "source_tests": {
     "command": "npm run check",
-    "passed": 77,
-    "failed": 0
+    "passed": 80,
+    "failed": 0,
+    "existing_main_regressions_preserved": 3
   },
   "dry_run": {
     "command": "npm run deploy:dry",

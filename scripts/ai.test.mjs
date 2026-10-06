@@ -194,3 +194,33 @@ test('provider rejection still settles reserved cost without storing a fabricate
  assert.equal(s.calls.filter(c=>c.url.endsWith('/rpc/fgi_ai_meter')).length,1);
  assert(!s.calls.some(c=>c.url.endsWith('/rpc/fgi_ai_complete')));
 });
+
+test('a numerically invalid plan gets one repair and only the valid result is stored',async()=>{
+  const bad=nutrition();bad.meals[0].calories=1500;
+  const s=setup({responses:[providerResponse(bad),providerResponse(nutrition())]});
+  const response=await s.request({action:'nutrition',module:'nutrition'});
+  assert.equal(response.status,200);
+  const calls=s.calls.filter(x=>x.url.includes('api.openai.com'));
+  assert.equal(calls.length,2);
+  const saved=s.calls.find(x=>x.url.includes('fgi_ai_complete'));
+  assert.deepEqual(saved.body.p_document,nutrition());
+  const reserve=s.calls.find(x=>x.url.includes('fgi_ai_reserve')).body.p_amount;
+  assert(reserve>.45,'Reserve must cover both possible provider calls');
+});
+test('invalid repair remains rejected and both billed attempts are metered',async()=>{
+  const bad={...training(),workouts:[]};
+  const billed={...providerResponse(bad),usage:{input_tokens:100,output_tokens:50}};
+  const s=setup({response:billed});
+  assert.equal((await s.request({action:'training'})).status,502);
+  assert.equal(s.calls.filter(x=>x.url.includes('api.openai.com')).length,2);
+  assert(!s.calls.some(x=>x.url.includes('fgi_ai_complete')));
+  const cost=s.calls.find(x=>x.url.includes('fgi_ai_meter')).body;
+  assert.equal(cost.p_input,200);assert.equal(cost.p_output,100);assert(cost.p_actual>0);
+});
+test('provider quota errors never trigger a plan repair',async()=>{
+  const s=setup({providerStatus:429,response:{error:{code:'credit_balance_exhausted'}}});
+  const response=await s.request({action:'training'});
+  assert.equal(response.status,503);
+  assert.equal(s.calls.filter(x=>x.url.includes('api.openai.com')).length,1);
+  assert(!s.calls.some(x=>x.url.includes('fgi_ai_complete')));
+});
