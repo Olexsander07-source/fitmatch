@@ -4,7 +4,8 @@ import {readFile} from 'node:fs/promises';
 import {CONSENT_VERSION,normalizeProfile,missingProfile,limitedProfile,adaptWorkout,validatePlan,nutritionEstimate,cleanCitations,progressSeries,achievements,recentChatContext} from '../fitgoin-ai-core.mjs';
 import {createAIHandler} from '../supabase/functions/fitgoin-ai/index.mjs';
 import {sportsMemory,missingSportsMemory,prepareMemoryPatch} from '../fitgoin-ai-memory.mjs';
-import {programIntent,PROGRAM_SCHEMA,programFacts,reconcileProgramTime,validateProgram,finalizeProgram,calendarWorkout,programOutdated} from '../fitgoin-ai-program.mjs';
+import {programIntent,PROGRAM_SCHEMA,programFacts,reconcileProgramTime,validateProgram,finalizeProgram,calendarWorkout,programOutdated,availableEquipment} from '../fitgoin-ai-program.mjs';
+import {conversationMemory,workoutIntent,currentWorkout,workoutCommand,targetsForEdit,applyExerciseEdits,providerDocument,equipmentTargets} from '../fitgoin-ai-workout.mjs';
 
 const USER='10000000-0000-4000-8000-000000000001',OTHER='10000000-0000-4000-8000-000000000002',CONV='20000000-0000-4000-8000-000000000001',REQUEST='30000000-0000-4000-8000-000000000001';
 const PROFILE={...normalizeProfile({goal:'Похудение',sport:'fitness',age:28,height_cm:180,weight_kg:80,days_per_week:3,minutes:30,weekdays:[1,3,5],equipment:'Коврик',language:'ru'}),memory_confirmed_fields:['restrictions']};
@@ -345,4 +346,61 @@ test('2B pending training intake never intercepts a conversation in the other AI
 });
 test('2B failed program transaction returns no save claim or generated program',async()=>{
  const s=setup({completeFails:true,response:providerResponse(program())}),response=await s.request({action:'training'});assert.equal(response.status,503);const result=await response.json();assert.equal(result.error,'backend_unavailable');assert.equal(result.answer,undefined);assert.equal(result.document,undefined);assert.equal(result.program_saved,undefined);
+});
+
+const activeFixture=(data=PROFILE)=>({id:OTHER,title:'Сохранённая',kind:'training',status:'active',revision:2,document:finalizeProgram(program(),data,'Europe/Paris'),profile_snapshot:programFacts(data)});
+test('2C explicit weekday-only schedule is grounded in the latest message and does not infer quoted schedules',()=>{
+ const result=conversationMemory(PROFILE,[],'Теперь только понедельник, среда и пятница');assert.deepEqual(result.patch.weekdays,[1,3,5]);assert.equal(result.data.days_per_week,3);
+ assert.deepEqual(conversationMemory(PROFILE,[],'Например, только понедельник, среда и пятница').patch,{});
+ assert.deepEqual(conversationMemory(PROFILE,[],'Только на эту неделю могу по понедельникам, средам и пятницам').patch,{});
+ assert.equal(programIntent('Что сегодня тренируем?'),'today');assert.equal(workoutIntent('Начинаем тренировку'),'start');
+});
+test('2C unavailable gear removes only the denied inventory and denies it to program validation',()=>{
+ const data={...PROFILE,equipment:'Штанга и гантели и коврик'},m=conversationMemory(data,[{field:'equipment',value:'нет штанги',evidence:'У меня нет штанги'}],'У меня нет штанги');
+ assert.equal(m.data.equipment,'гантели, коврик');assert.deepEqual(m.data.unavailable_equipment,['Штанга']);
+ assert.equal(availableEquipment('со штангой','Штанга, гантели',['Штанга']),false);
+ assert.equal(availableEquipment('barbell','Штанга, гантели',['Штанга']),false);
+ const plan=activeFixture(data);plan.document.workouts[0].exercises[0].required_equipment='Штанга';assert.equal(equipmentTargets(plan,m.data).length,1);
+ assert.deepEqual(conversationMemory(data,[],'Только сегодня у меня нет штанги').patch,{});
+});
+test('2C replacements keep all unrelated exercise/workout IDs and values unchanged, rejecting injected targets',()=>{
+ const plan=activeFixture(),target={workout:plan.document.workouts[0],exercise:plan.document.workouts[0].exercises[0]},e={...providerDocument(plan.document).workouts[0].exercises[0],name:'Приседание до комфортной глубины'};
+ const change={workout_id:target.workout.id,exercise_id:target.exercise.id,exercise:e},old=structuredClone(plan.document);
+ const doc=applyExerciseEdits(plan,PROFILE,[target],[change],'Europe/Paris');assert.equal(doc.workouts[0].exercises[0].id,target.exercise.id);assert.deepEqual(doc.workouts.slice(1),old.workouts.slice(1));assert.deepEqual(doc.workouts[0].exercises.slice(1),old.workouts[0].exercises.slice(1));assert.deepEqual(plan.document,old);
+ assert.throws(()=>applyExerciseEdits(plan,PROFILE,[target],[{...change,exercise_id:REQUEST}]),/invalid_plan/);
+});
+test('2C current cursor uses the active version, asks to choose an unscheduled workout, and never invents completed sets',()=>{
+ const data={...PROFILE,weekdays:[]},plan=activeFixture(data);
+ const unknown=workoutCommand(plan,data,'start','Начинаем тренировку','Europe/Paris');assert.equal(unknown.current_workout,undefined);assert.equal(unknown.workout_choices.length,3);
+ const start=workoutCommand(plan,data,'start','Начинаем тренировку 1','Europe/Paris');const stored={...data,current_workout:start.current_workout};assert.equal(currentWorkout(plan,stored).workout.id,plan.document.workouts[0].id);
+ const next=workoutCommand(plan,stored,'next','Что дальше?','Europe/Paris');assert.equal(next.current_workout.index,1);assert.equal(next.current_workout.sets,undefined);
+ assert.equal(currentWorkout({...plan,id:REQUEST},stored),null);assert.throws(()=>workoutCommand(plan,data,'start','Начинаем тренировку','Europe/Paris',{program_id:REQUEST}),/program_changed/);
+});
+test('2C real saved commands have no AI calls and cannot start foreign workout IDs',async()=>{
+ const data={...PROFILE,weekdays:[]},plan=activeFixture(data),s=setup({plans:[plan],profile:data,env:{OPENAI_API_KEY:''}});
+ const response=await s.request({message:'Начинаем тренировку 1'}),result=await response.json();assert.equal(response.status,200);assert.equal(result.current_workout.plan_id,plan.id);assert(!s.calls.some(c=>c.url.includes('api.openai.com')));
+ const foreign=setup({plans:[plan],profile:data});assert.equal((await foreign.request({message:'Начинаем тренировку',program_target:{workout_id:REQUEST}})).status,422);
+});
+test('2C explicit schedule resave preserves every exercise without model extraction or provider access',async()=>{
+ const data={...PROFILE,weekdays:[]},plan=activeFixture(data),s=setup({plans:[plan],profile:data,response:providerResponse({answer:'Уточним график.',memory_updates:[]})});
+ const result=await (await s.request({message:'Теперь только понедельник, среда и пятница',timezone:'Europe/Paris'})).json();assert.equal(result.program_saved,true);assert.deepEqual(result.document.schedule.weekdays,[1,3,5]);assert.equal(result.document.workouts[0].id,plan.document.workouts[0].id);assert.equal(s.calls.filter(c=>c.url.includes('api.openai.com')).length,0);
+ const write=s.calls.find(c=>c.url.endsWith('/rpc/fgi_ai_complete')).body;assert.deepEqual(write.p_result.memory_patch.weekdays,[1,3,5]);assert.equal(write.p_result.program_previous_id,plan.id);
+});
+test('2C ambiguous squat replacement asks for workout and generates no exercise before selection',async()=>{
+ const plan=activeFixture(),s=setup({plans:[plan],response:providerResponse({answer:'Совет.',memory_updates:[]})});
+ const result=await (await s.request({message:'Замени приседания'})).json();assert.equal(result.kind,null);assert.equal(result.program_edit_pending.mode,'select');assert.equal(s.calls.filter(c=>c.url.includes('api.openai.com')).length,1);assert.match(result.answer,/номер тренировки/);
+ assert.equal(targetsForEdit(plan,PROFILE,'В тренировке 2',null,result.program_edit_pending).length,1);
+});
+test('2C suggested replacement does not become active until the separate confirmation commits',async()=>{
+ const plan=activeFixture(),t={workout:plan.document.workouts[0],exercise:plan.document.workouts[0].exercises[0]},e={...providerDocument(plan.document).workouts[0].exercises[0],name:'Приседание до комфортной глубины'},change={explanation:'Та же цель при меньшей амплитуде.',replacements:[{workout_id:t.workout.id,exercise_id:t.exercise.id,exercise:e}]};
+ const proposal=setup({plans:[plan],responses:[providerResponse({answer:'Совет.',memory_updates:[]}),providerResponse(change)]});
+ const pending=await (await proposal.request({message:'Чем заменить приседания в тренировке 1?'})).json();assert.equal(pending.kind,null);assert.equal(pending.program_saved,undefined);assert.equal(pending.program_edit_pending.mode,'proposal');
+ const confirm=setup({plans:[plan],profile:{...PROFILE,program_edit_pending:pending.program_edit_pending}}),response=await confirm.request({message:'Сохрани замену'}),saved=await response.json();assert.equal(response.status,200);assert.equal(saved.program_saved,true);assert.equal(saved.document.workouts[0].exercises[0].name,e.name);assert(!confirm.calls.some(c=>c.url.includes('api.openai.com')));
+ const failed=setup({plans:[plan],profile:{...PROFILE,program_edit_pending:pending.program_edit_pending},completeFails:true}),error=await failed.request({message:'Сохрани замену'});assert.equal(error.status,503);assert.equal((await error.json()).program_saved,undefined);
+ const changed=setup({plans:[plan],profile:{...PROFILE,goal:'Выносливость',program_edit_pending:pending.program_edit_pending}}),stale=await changed.request({message:'Сохрани замену'});assert.equal(stale.status,409);assert.equal((await stale.json()).program_saved,undefined);assert(!changed.calls.some(c=>c.url.endsWith('/rpc/fgi_ai_complete')));
+});
+test('2C new gym place preserves old version until equipment is explicitly supplied; nutrition cannot edit training',async()=>{
+ const plan=activeFixture(),message='Я теперь хожу в зал',updates=[{field:'setting',value:'gym',evidence:message}],s=setup({plans:[plan],response:providerResponse({answer:'Сменим упражнения.',memory_updates:updates})});
+ const result=await (await s.request({message})).json();assert.equal(result.program_pending,true);assert.equal(result.kind,null);assert.deepEqual(result.missing_fields,['equipment']);
+ const other=setup({plans:[plan],response:providerResponse({answer:'Обсуди программу в модуле тренировок.',memory_updates:[]})});assert.equal((await (await other.request({module:'nutrition',message:'Замени приседания'})).json()).program_saved,undefined);
 });

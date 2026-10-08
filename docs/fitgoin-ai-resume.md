@@ -1,4 +1,16 @@
-# FitGoIn AI: latest checkpoint — 2026-10-06
+# FitGoIn AI: latest checkpoint — 2026-10-08
+
+The user explicitly authorized Stage 2C on October 6 after Stage 2B: conversational changes to the saved program and a simple current-workout mode in the existing chat, real two-account/RLS/error acceptance, and publication after verification. Earlier instructions not to start 2B/2C describe historical publication-only tasks and are superseded by those later requests. Stage 3 remains outside the authorized scope.
+
+Stage 2C backend `fitgoin-ai` v21 is deployed. Its six source files were fetched back and exactly match this candidate. The recorded migration is `20261008045739_ai_conversation_program_edits`. No new table: cursor, pending proposal and unavailable equipment remain in the owner-private `fgi_ai_profiles.data`, with programs in existing versioned `fgi_ai_plans`. Read `docs/ai-workout-stage2c-20261008.md` for the required 20-point report.
+
+Stage 2C passed 110 automated tests, deploy dry-run, 76 mocked UI regression checks and 23 real Auth/REST/Edge/OpenAI acceptance checks. The completed live evidence is in `qa/ai-stage2c`. A real invalid provider result and a database conflict retained the old active program; SQL confirmed zero committed messages/new version for the conflict. Real physical iPhone/Safari and semantic difficulty review remain limitations.
+
+The previously outstanding frontend stages 1/2A/2B are now published on https://fitgoin.com from main `92a39bf8b8166eecaa8c5a3df870a0fef5dfac1e`, Worker version `393f415e-c488-4e36-bcf3-7952bd47d98c`. All 31 public file bytes matched and guest UI passed at 360/390/768/1440 px. The publication-only recurring task was stopped after verification.
+
+Stage 2C frontend publication and final temporary-account cleanup are still being completed. `DESKTOP-EJAAHVB` is online; use only the separate clean clone `C:\Users\HP\Documents\FitGoIn-Publish-20261007-1058`. Preserve the original worktree and all other checkouts. After saving reviewed main, run `npm.cmd run check`, `npm.cmd run deploy:dry`, then only `npm.cmd run deploy` via `scripts/safe-deploy.mjs` to `fitgoin-production`. Verify release bytes, `fitgoin-ai-workout.mjs`, guest UI and the real authorized production flow. Never use the legacy `fitgoin` Worker or print secrets. Do not begin Stage 3.
+
+## Historical checkpoint — 2026-10-06
 
 Stage 1 chat stability, Stage 2A sports memory and the subsequently authorized Stage 2B personal programs continue the existing project. Read `ai-chat-stage1-20261006.md`, `ai-memory-stage2a-20261006.md` and the latest `ai-program-stage2b-20261006.md`; the October 4 notes below are historical. The API balance has been replenished and real AI calls have succeeded. Do not repeat the obsolete quota-blocked setup or rebuild the assistant.
 

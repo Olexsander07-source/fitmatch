@@ -1,0 +1,301 @@
+{
+  "live": true,
+  "completed": true,
+  "checks": [
+    {
+      "name": "new user starts with genuine missing data and no fabricated program",
+      "passed": true
+    },
+    {
+      "name": "conversation fills new-user memory and actually creates and saves a personalized program",
+      "passed": true,
+      "plan_id": "809b583e-6b57-4931-8b68-fe0690d74062"
+    },
+    {
+      "name": "memory and the exact active program survive reload and fresh sign-in",
+      "passed": true
+    },
+    {
+      "name": "spoken frequency change saves memory and an adapted active version, retaining the old version",
+      "passed": true
+    },
+    {
+      "name": "weekday-only edit preserves every workout and exercise while saving the schedule",
+      "passed": true
+    },
+    {
+      "name": "today and tomorrow use the real stored schedule without a new program",
+      "passed": true
+    },
+    {
+      "name": "start command and existing program button open a mobile workout inside the same chat",
+      "passed": true
+    },
+    {
+      "name": "rest, technique and next use the actual current exercise, with no invented set completion",
+      "passed": true
+    },
+    {
+      "name": "replacement button changes only the selected exercise and carries the cursor to the saved version",
+      "passed": true,
+      "from": "Разведение гантелей лёжа",
+      "to": "Отжимания от пола"
+    },
+    {
+      "name": "suggested replacement persists after reload but activates only after successful confirmation",
+      "passed": true
+    },
+    {
+      "name": "barbell denial updates inventory and replaces only dependent saved exercises",
+      "passed": true,
+      "dependent_exercises": 3
+    },
+    {
+      "name": "squat request changes an actual saved target or asks for selection, never inventing one",
+      "passed": true,
+      "saved_squat_targets": 1
+    },
+    {
+      "name": "new gym setting clears unknown equipment and preserves the old program until clarification",
+      "passed": true
+    },
+    {
+      "name": "explicit gym inventory completes adaptation with a genuinely saved active version",
+      "passed": true
+    },
+    {
+      "name": "four-day change creates four real workouts and invalidates the incompatible three-day schedule",
+      "passed": true
+    },
+    {
+      "name": "goal answer uses saved personal memory",
+      "passed": true
+    },
+    {
+      "name": "real saved program and workout UI fit four screen widths",
+      "passed": true
+    },
+    {
+      "name": "second real JWT cannot read modify or delete the first memory, cursor, proposal or program",
+      "passed": true
+    },
+    {
+      "name": "manual Supabase API cannot call privileged program completion",
+      "passed": true
+    },
+    {
+      "name": "second account sees its own empty program instead of the first account data",
+      "passed": true
+    },
+    {
+      "name": "real concurrent database change rejects stale memory and program atomically, with no false success",
+      "passed": true
+    },
+    {
+      "name": "old active program remains visible after a failed adaptation and reload",
+      "passed": true
+    },
+    {
+      "name": "no browser JavaScript errors",
+      "passed": true
+    }
+  ],
+  "requests": [
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 5761,
+      "plan_id": null,
+      "request_id": "4f291390-4d4a-4ea6-afc6-57fcea426175"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 16503,
+      "program_saved": true,
+      "plan_id": "809b583e-6b57-4931-8b68-fe0690d74062",
+      "request_id": "f41101a6-9508-44bd-a14f-1b227eecc38b"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 1669,
+      "program_id": "809b583e-6b57-4931-8b68-fe0690d74062",
+      "plan_id": null,
+      "request_id": "58a28068-4fb2-4ca1-a4be-a77ac631af58"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 15233,
+      "program_saved": true,
+      "plan_id": "08a18656-ccc8-4a6c-b5d1-527fb21bdc86",
+      "request_id": "1d9d8d3f-7397-4e91-be49-a55986520b57"
+    },
+    {
+      "action": "chat",
+      "status": 422,
+      "elapsed_ms": 4462,
+      "error": "memory_update_invalid",
+      "request_id": "47561bc8-1edc-40a6-b3b7-df447d6c7a1a"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 1461,
+      "program_saved": true,
+      "plan_id": "3110d316-f3b7-4f4e-8adc-953c917af5ec",
+      "request_id": "6cc7d226-c75f-4851-8e42-bfab93686e89"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 1712,
+      "program_id": "3110d316-f3b7-4f4e-8adc-953c917af5ec",
+      "plan_id": null,
+      "request_id": "06aa6a17-bd9d-47e4-8e85-d53d75fe2494"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 2334,
+      "program_id": "3110d316-f3b7-4f4e-8adc-953c917af5ec",
+      "plan_id": null,
+      "request_id": "0ea4e74d-8d35-4251-98f4-b371dba28238"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 1569,
+      "plan_id": null,
+      "request_id": "95175f65-68ac-4223-94da-4e33496f65a1"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 7425,
+      "plan_id": null,
+      "request_id": "6e9f640b-1fcc-4e1a-a667-00c9aed5efbb"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 2012,
+      "plan_id": null,
+      "request_id": "475d246f-7a88-410f-a7ca-b07757898db8"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 2290,
+      "plan_id": null,
+      "request_id": "9907705c-3e9f-4e99-973b-4769f7fb632b"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 8188,
+      "plan_id": null,
+      "request_id": "c8fe6c3e-3124-4292-8c12-9d2f99196768"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 7671,
+      "program_saved": true,
+      "plan_id": "23f0f0d2-0ce3-4aeb-8fda-450eb8fb4358",
+      "request_id": "d6b53f51-c0e7-4a85-af5c-92dd1a5dbbfd"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 7008,
+      "plan_id": null,
+      "request_id": "64d42b1f-5697-4fbe-aa3e-05335f2f70bc"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 1699,
+      "program_saved": true,
+      "plan_id": "9a9624e6-dad7-4048-a025-268279bb4f2f",
+      "request_id": "13a3f374-d90b-4519-91e4-662a83b75fb4"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 9529,
+      "program_saved": true,
+      "plan_id": "79ed28fa-51a2-4def-a1be-1c3a7b5056f3",
+      "request_id": "5bd2a878-b48e-4d94-9432-9f9e7f86692e"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 8231,
+      "program_saved": true,
+      "plan_id": "a877c47c-9e8f-46be-8e2f-1931d97b095a",
+      "request_id": "ebe70e31-4a57-45cd-9125-1b0b2336270e"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 3537,
+      "plan_id": null,
+      "request_id": "0067d996-3cd9-4224-b3d4-ea3a2b00cab7"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 12919,
+      "program_saved": true,
+      "plan_id": "26174b6e-00b6-4730-869e-ea94691c6bf1",
+      "request_id": "a11206c2-6a07-4427-91bd-a9cb49fcf6e6"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 14703,
+      "program_saved": true,
+      "plan_id": "bd9a7d5d-a35c-4d72-840e-5ea0656b47a1",
+      "request_id": "61266424-4df2-4b2b-8ee3-48d9f69d948e"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 3869,
+      "plan_id": null,
+      "request_id": "cab00da8-555f-4617-af23-87f16d294607"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 1798,
+      "program_id": null,
+      "plan_id": null,
+      "request_id": "47da12cd-f377-4ca4-ad61-5b3c94f55765"
+    },
+    {
+      "action": "chat",
+      "status": 502,
+      "elapsed_ms": 70056,
+      "error": "invalid_plan",
+      "request_id": "9df7af19-9ace-465b-99fd-c838a2aa73b6"
+    },
+    {
+      "action": "chat",
+      "status": 200,
+      "elapsed_ms": 46967,
+      "program_saved": true,
+      "plan_id": "14cde694-d0c6-48e3-a874-457e30a2b4ec",
+      "request_id": "fd0e775a-b1d3-4613-9e86-baa4054fa097"
+    },
+    {
+      "action": "chat",
+      "status": 503,
+      "elapsed_ms": 26302,
+      "error": "backend_unavailable",
+      "request_id": "1c057010-0886-4287-be29-fa6f7161b5fe"
+    }
+  ]
+}

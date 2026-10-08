@@ -3,6 +3,7 @@ import {AIError,GOALS,CHAT_SCHEMA} from './fitgoin-ai-core.mjs';
 
 export const MEMORY_FIELDS=['name','age','height_cm','weight_kg','goal','target','experience','training_experience','setting','equipment','days_per_week','minutes','restrictions','preferred_sports'];
 export const MEMORY_LABELS={name:'Имя',age:'Возраст',height_cm:'Рост, см',weight_kg:'Вес, кг',goal:'Цель',target:'Желаемый результат',experience:'Уровень подготовки',training_experience:'Опыт тренировок',setting:'Место тренировок',equipment:'Оборудование',days_per_week:'Тренировок в неделю',minutes:'Минут на тренировку',restrictions:'Сообщённые ограничения',preferred_sports:'Предпочитаемые виды спорта'};
+MEMORY_LABELS.weekdays='Дни тренировок';
 const ranges={age:[13,100],height_cm:[100,230],weight_kg:[30,300],days_per_week:[1,6],minutes:[10,90]};
 const enums={goal:GOALS,experience:['beginner','intermediate','advanced'],setting:['home','gym','outdoor']};
 const limits={name:100,target:300,training_experience:300,equipment:600,restrictions:800};
@@ -76,7 +77,7 @@ export function prepareMemoryPatch(data,updates,message){
  patch.memory_confirmed_fields=[...known];
  return {patch,fields,data:{...data,...patch}};
 }
-export function memoryDisplayValue(field,value){return Array.isArray(value)?value.join(', '):labels[value]||String(value||(['equipment','restrictions'].includes(field)?'Нет':'Не указано'));}
+export function memoryDisplayValue(field,value){return Array.isArray(value)?(field==='weekdays'?value.map(x=>['Вс','Пн','Вт','Ср','Чт','Пт','Сб'][x]):value).join(', '):labels[value]||String(value||(['equipment','restrictions'].includes(field)?'Нет':'Не указано'));}
 export function memoryQuestionAnswer(message,facts){
  const text=lower(message).replace(/[?!.]+$/,'');const questions=[['goal',/^(?:какая у меня цель|какая моя цель|what is my goal|quel est mon objectif)$/],['days_per_week',/^(?:сколько раз в неделю я тренируюсь|сколько у меня тренировок в неделю|how many times a week do i train)$/],['weight_kg',/^(?:какой у меня сейчас вес|какой мой вес|сколько я вешу|what is my (?:current )?weight)$/],['setting',/^(?:где я тренируюсь|где я занимаюсь|where do i train)$/],['equipment',/^(?:какое оборудование у меня есть|какое у меня оборудование|what equipment do i have)$/],['name',/^(?:как меня зовут|what is my name)$/]];
  const found=questions.find(([,pattern])=>pattern.test(text));if(!found)return null;const field=found[0];const english=/^[a-z]/.test(text);
