@@ -65,3 +65,9 @@ footer{background:#0c1825;border-color:var(--line);padding:32px 0}footer>.contai
 .fgi-ai-plan>summary{cursor:pointer;list-style-position:inside}
 .ai-program-exercises p{margin:6px 0;line-height:1.55;overflow-wrap:anywhere}
 @media(max-width:600px){.ai-program-summary .fgi-ai-week{grid-template-columns:minmax(0,1fr)}.ai-program-summary .fgi-ai-plan{min-width:0;padding:16px}.ai-program-summary .actions{flex-wrap:wrap}}
+.ai-current-workout,.ai-edit-proposal{margin:16px 0;padding:18px;border:1px solid rgba(181,203,187,.4);border-radius:20px;background:rgba(14,27,31,.6)}
+.ai-current-exercises{display:grid;gap:12px;padding-left:24px;margin:18px 0}
+.ai-current-exercises li{padding:12px;border:1px solid transparent;border-radius:14px;overflow-wrap:anywhere}
+.ai-current-exercises li.is-current{border-color:#b5cbbb;background:rgba(181,203,187,.1)}
+.ai-current-exercises h4{margin:0 0 8px;font-size:1rem}.ai-current-workout .actions{flex-wrap:wrap}
+@media(max-width:480px){.ai-current-workout,.ai-edit-proposal{padding:12px}.ai-current-workout .btn{max-width:100%;white-space:normal;min-height:44px}}

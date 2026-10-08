@@ -9,13 +9,13 @@ export function programIntent(message=''){
  const s=message.trim();
  if(/пример|например|цитат|гипотет|for example|hypothet/i.test(s))return null;
  if(/^(?:не создавай|отмени|пока не надо|cancel)/i.test(s))return 'cancel';
- if(/(?:что|какая|какую|what).*(?:тренир|трениров|workout).*(?:завтра|tomorrow)/i.test(s))return 'tomorrow';
- if(/(?:что|какая|какую|what).*(?:тренир|трениров|workout).*(?:сегодня|today)/i.test(s))return 'today';
+ if(/(?:что|какая|какую|what).*(?:завтра|tomorrow)/i.test(s)&&/тренир|трениров|workout/i.test(s))return 'tomorrow';
+ if(/(?:что|какая|какую|what).*(?:сегодня|today)/i.test(s)&&/тренир|трениров|workout/i.test(s))return 'today';
  if(/^(?:покажи|какая|какова|show|what).*(?:мо[яюей]|у меня|my).*(?:программ|план|program|plan)/i.test(s))return 'show';
  if(/^(?:составь|создай|обнови|перестрой|переделай|зроби|створи|create|build|update).*(?:программ|трениров|workout|training|програм|тренув)/i.test(s)||/^что мне лучше тренировать[?!.]*$/i.test(s))return 'create';
  return null;
 }
-export const programFacts=(data={})=>({...Object.fromEntries(Object.entries(sportsMemory(data)).filter(([k])=>k!=='name')),weekdays:Array.isArray(data.weekdays)?data.weekdays:[]});
+export const programFacts=(data={})=>({...Object.fromEntries(Object.entries(sportsMemory(data)).filter(([k])=>k!=='name')),weekdays:Array.isArray(data.weekdays)?data.weekdays:[],...(data.unavailable_equipment?.length?{unavailable_equipment:data.unavailable_equipment}:{})});
 export function programBlocked(data={}){
  const p=sportsMemory(data);
  return (p.age!==undefined&&p.age<18)||Boolean(data.needs_professional)||Boolean(p.restrictions?.trim())||(p.goal==='Похудение'&&p.height_cm&&p.weight_kg&&p.weight_kg/(p.height_cm/100)**2<18.5);
@@ -26,17 +26,18 @@ export function missingProgramQuestion(data){
 }
 const lower=s=>String(s).toLocaleLowerCase().replace(/ё/g,'е');
 const equipmentGroups=[/гантел|dumbbell/,/коврик|mat\b/,/штанг|barbell/,/скамь|bench/,/турник|pull.?up/,/резин|эспандер|band/,/гир[яьи]|kettlebell/,/тренажер|machine/];
-export function availableEquipment(required,inventory){
+export function availableEquipment(required,inventory,excluded=[]){
  if(/^(?:без оборудования|собственный вес|none|bodyweight|no equipment)$/i.test(required.trim()))return true;
  const wanted=lower(required),actual=lower(inventory);
+ if(excluded.some(x=>equipmentGroups.some(r=>r.test(lower(x))&&r.test(wanted))||wanted.includes(lower(x))))return false;
  const groups=equipmentGroups.filter(r=>r.test(wanted));
  const amounts=required.match(/\d+(?:[.,]\d+)?/g)||[];
  if(amounts.some(n=>!(inventory.match(/\d+(?:[.,]\d+)?/g)||[]).includes(n)))return false;
  return groups.length?groups.every(r=>r.test(actual)):actual.includes(wanted);
 }
-export function usableAlternative(exercise,inventory,level){
+export function usableAlternative(exercise,inventory,level,excluded=[]){
  const e=exercise,alternative=lower(e.alternative),primary=lower(e.required_equipment),gear=lower(e.alternative_equipment);
- if(!availableEquipment(gear,inventory)||alternative===lower(e.name))return false;
+ if(!availableEquipment(gear,inventory,excluded)||alternative===lower(e.name))return false;
  if(equipmentGroups.some(r=>r.test(primary)&&r.test(gear)))return false;
  if(level==='beginner'&&/пистолет|одноног|на одной ноге|pistol|one.leg|single.leg/i.test(alternative))return false;
  if(level==='beginner'&&/отжиман|push.?up/i.test(alternative)&&!(/стен|колен|wall|knee|высок|incline/i.test(alternative)))return false;
@@ -84,8 +85,8 @@ export function validateProgram(doc,data){
    insist(e.sets>=1&&e.sets<=5,'sets');
    insist(e.rest_seconds>=0&&e.rest_seconds<=240&&(e.sets===1||e.rest_seconds>=30),'rest_seconds');
    insist(e.minutes>=.5&&e.minutes<=30,'exercise_duration');
-   insist(availableEquipment(e.required_equipment,p.equipment),'equipment');
-   insist(usableAlternative(e,p.equipment,p.experience),'alternative');
+   insist(availableEquipment(e.required_equipment,p.equipment,data.unavailable_equipment),'equipment');
+   insist(usableAlternative(e,p.equipment,p.experience,data.unavailable_equipment),'alternative');
    insist(e.minutes*60>=exerciseSeconds(e),'exercise_time',{workout:w.day,exercise:w.exercises.indexOf(e)+1,received_minutes:e.minutes,min_minutes:Math.ceil(exerciseSeconds(e)/30)/2});
    total+=e.minutes;
   }
