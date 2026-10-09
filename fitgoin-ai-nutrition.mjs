@@ -8,6 +8,7 @@ const goalLabels={loss:'снижение веса',gain:'набор мышечн
 const activityLabels={sedentary:'низкая',light:'умеренная',active:'высокая'};
 const incidental=/например|цитат|мо(?:й|ему|его) (?:друг|клиент|брат)|моя (?:подруга|сестра)|если|представим|for example|my friend|hypothet|if |par exemple|mon ami|«|»|[“”"]/iu;
 const temporary=/сегодня|завтра|на эту неделю|на этой неделе|один раз|today|tomorrow|this week|aujourd.hui|demain/iu;
+const foodStatement=/(?:я не ем|я (?:теперь|снова) ем|мои пищевые|в питании я предпочитаю|я вег(?:ан|етариан)|я предпочитаю \d\s*прием|(?:я хочу|хочу) есть \d|моя цель (?:по питанию|в питании)|i (?:do not|don't) eat|je ne mange pas|i eat (?:again|now)|my food preferences|my dietary restrictions|my nutrition goal|i am (?:vegan|vegetarian)|i prefer \d\s*meals)/iu;
 const clinical=/беремен|кормлю груд|диабет|анорекс|булими|расстройств.*пищев|тяжел.*аллерг|pregnan|breastfeed|diabet|anorex|bulimi|eating disorder|severe allerg/iu;
 const medicalText=d=>[d.restrictions,d.diet,d.nutrition_preferences?.restrictions,d.nutrition_preferences?.preferences].filter(x=>typeof x==='string').join(' ');
 const text=(x,n)=>typeof x==='string'&&x.trim().length<=n&&!/[\u0000-\u001f]/.test(x)?x.trim():undefined;
@@ -81,10 +82,11 @@ export function personalNutrition(data,program=null,currentMessage=''){
 }
 export function nutritionTurn(data,message,module,program=null){
  const calculate=nutritionCalculationIntent(message),read=/^(?:что я не ем|какие у меня пищевые предпочтения|покажи мои пищевые предпочтения|what are my food preferences)[?!.]*$/iu.test(message.trim());
+ const nonDurableFood=foodStatement.test(norm(message))&&(temporary.test(message)||incidental.test(message)||/\?\s*$/u.test(message));
  const memory=nutritionMemory(data,message),continueCalculation=data.nutrition_pending===true&&memory.fields.length>0;
- if(!calculate&&!read&&!memory.fields.some(x=>x.startsWith('nutrition_preferences.')||['activity','diet'].includes(x))&&!continueCalculation)return null;
+ if(!calculate&&!read&&!memory.fields.some(x=>x.startsWith('nutrition_preferences.')||['activity','diet'].includes(x))&&!continueCalculation&&!nonDurableFood)return null;
  if(calculate&&module!=='nutrition')return {answer:'Для персонального расчёта калорий и БЖУ выбери «AI-питание» в доступных тебе AI-модулях.',extra:{}};
- const prefs=nutritionPreferences(memory.data);let answer='',estimate=null,missing=[];
+ const prefs=nutritionPreferences(memory.data);let answer=nonDurableFood?(temporary.test(message)?'Это временный пищевой выбор. Постоянные пищевые предпочтения остаются прежними.':'Для сохранения нужно твоё прямое утверждение о постоянном предпочтении, например: «Я не ем рыбу».'):'',estimate=null,missing=[];
  if(read){const labels=[];if(prefs.excluded_foods?.length)labels.push('Не ешь: '+prefs.excluded_foods.join(', '));if(prefs.restrictions)labels.push('Пищевые ограничения: '+prefs.restrictions);if(prefs.preferences)labels.push('Предпочтения: '+prefs.preferences);if(prefs.meals_per_day)labels.push('Приёмов пищи в день: '+prefs.meals_per_day);if(prefs.goal)labels.push('Цель питания: '+goalLabels[prefs.goal]);answer=labels.length?'По сохранённой памяти:\n'+labels.join('\n'):'Пищевые предпочтения пока не сохранены. Можно сообщить, например: «Я не ем рыбу».';}
  if((calculate||continueCalculation)&&module==='nutrition'){
   const result=personalNutrition(memory.data,program,message);answer=result.answer;estimate=result.estimate||null;missing=result.missing||[];memory.patch.nutrition_pending=result.status==='missing';

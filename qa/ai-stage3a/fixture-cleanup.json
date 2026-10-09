@@ -1,0 +1,83 @@
+{
+  "verified_at": "2026-10-09T12:08:59.288Z",
+  "deleted_temporary_accounts": 2,
+  "fixture_ids": {
+    "owner": "0be6da9a-906b-4b57-8a7e-291953b63923",
+    "other": "0d6e7815-72fd-4d13-bec5-caba4714a625",
+    "program_id": "a81b5544-6e6e-46b7-a60e-52937a5a5a5a"
+  },
+  "tables": [
+    {
+      "table_name": "auth.users",
+      "remaining": 0
+    },
+    {
+      "table_name": "auth.identities",
+      "remaining": 0
+    },
+    {
+      "table_name": "auth.sessions",
+      "remaining": 0
+    },
+    {
+      "table_name": "auth.refresh_tokens",
+      "remaining": 0
+    },
+    {
+      "table_name": "public.profiles",
+      "remaining": 0
+    },
+    {
+      "table_name": "public.fgi_ai_profiles",
+      "remaining": 0
+    },
+    {
+      "table_name": "public.fgi_ai_conversations",
+      "remaining": 0
+    },
+    {
+      "table_name": "public.fgi_ai_messages",
+      "remaining": 0
+    },
+    {
+      "table_name": "public.fgi_ai_plans",
+      "remaining": 0
+    },
+    {
+      "table_name": "public.fgi_ai_food",
+      "remaining": 0
+    },
+    {
+      "table_name": "public.fgi_ai_feedback",
+      "remaining": 0
+    },
+    {
+      "table_name": "public.fgi_ai_workouts",
+      "remaining": 0
+    },
+    {
+      "table_name": "fgi_private.ai_friend_grants",
+      "remaining": 0
+    },
+    {
+      "table_name": "fgi_private.ai_requests",
+      "remaining": 0
+    },
+    {
+      "table_name": "fgi_private.ai_cost_ledger",
+      "remaining": 0
+    },
+    {
+      "table_name": "fgi_private.ai_customers",
+      "remaining": 0
+    },
+    {
+      "table_name": "fgi_private.ai_subscriptions",
+      "remaining": 0
+    },
+    {
+      "table_name": "fgi_private.ai_checkout_sessions",
+      "remaining": 0
+    }
+  ]
+}
