@@ -15,7 +15,7 @@ Continues PR #14 and the existing marketplace. Monthly products: training €20,
 
 Do not enable Stripe automatic tax without verifying an active tax registration and the treatment of final EUR prices. Stripe Tax requires registrations; a flag alone does not establish tax collection. Real Stripe account availability is not established by a sandbox connection.
 
-Deploy both `fitgoin-ai` and `fitgoin-ai-billing`, including root dependencies `fitgoin-ai-core.mjs` and `fitgoin-ai-paid.mjs`. Both have gateway JWT verification disabled because the former authenticates every POST with Supabase Auth getUser and the latter combines independently authenticated customer actions with a signed Stripe webhook path. Public GET exposes only configuration status.
+The `fitgoin-ai` bundle contains its entrypoint and root dependencies `fitgoin-ai-core.mjs`, `fitgoin-ai-paid.mjs`, `fitgoin-ai-memory.mjs`, `fitgoin-ai-program.mjs`, `fitgoin-ai-workout.mjs` and `fitgoin-ai-nutrition.mjs`. Deploy all seven together when changing AI behavior. The separate billing function needs only its existing core/paid dependencies and is not redeployed for stages 2C/3A. Both have gateway JWT verification disabled because the former authenticates every POST with Supabase Auth getUser and the latter combines independently authenticated customer actions with a signed Stripe webhook path. Public GET exposes only configuration status.
 
 ## Access and billing lifecycle
 

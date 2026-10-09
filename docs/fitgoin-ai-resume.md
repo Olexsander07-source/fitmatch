@@ -36,7 +36,9 @@ The user asked to finish the paid AI trainer while preserving the existing site,
 
 ## Implementation and saved branch
 
-Continue draft PR #14 on feat/ai-assistant-20261003; parent before completion was 3f5b71b0721652f61da11104b25399aa65fee168. Production main remains bb2e6f0a0a8adc44d48a3ef510b10232e442a675. The PR has not been merged and static production has not been published.
+Current continuation (9 October 2026): stages 1/2A/2B/2C are published. Stage 2C closure is on `main` f26a9719525b9c04fe5e65af27273073f569ef22; temporary 2C accounts are deleted. See `ai-workout-stage2c-20261008.md`. Stage 3A nutrition foundation is the current verified candidate; see `ai-nutrition-stage3a-20261009.md` for implementation, exact acceptance status and publication steps. Do not repeat the old 2C publication or start menus/the next substage. The paragraphs below are the historical 4 October checkpoint, not the current release status.
+
+Historical: Continue draft PR #14 on feat/ai-assistant-20261003; parent before completion was 3f5b71b0721652f61da11104b25399aa65fee168. Production main remains bb2e6f0a0a8adc44d48a3ef510b10232e442a675. The PR has not been merged and static production has not been published.
 
 - Training €20/month, independent nutrition €10/month, bundle €30/month; explicit server-owned invited access. Editable metadata and return pages never unlock access.
 - Authenticated Checkout/Customer Portal, signed and retry-safe lifecycle webhooks, live/test separation, paid periods, separate refund/dispute risks and a shared pending Checkout session preventing duplicate sessions across tabs.
