@@ -1,0 +1,44 @@
+{
+  "at": "2026-10-08T06:09:01.146Z",
+  "base": "https://fitgoin.com/",
+  "live": true,
+  "fixture": false,
+  "passed": true,
+  "program_id": "14cde694-d0c6-48e3-a874-457e30a2b4ec",
+  "checks": [
+    {
+      "name": "actual production login loads the expected private active program",
+      "passed": true
+    },
+    {
+      "name": "production chat reads the saved program without regeneration",
+      "passed": true
+    },
+    {
+      "name": "production program button opens the actual workout in the existing chat",
+      "passed": true
+    },
+    {
+      "name": "production workout technique command returns stored exercise context",
+      "passed": true
+    },
+    {
+      "name": "production reload restores the same program and current workout",
+      "passed": true
+    },
+    {
+      "name": "authorized production workout fits four screen widths",
+      "passed": true
+    },
+    {
+      "name": "all deployed AI memory program and workout modules load",
+      "passed": true
+    },
+    {
+      "name": "no production page errors or failed first-party requests",
+      "passed": true
+    }
+  ],
+  "pageErrors": [],
+  "failedRequests": []
+}

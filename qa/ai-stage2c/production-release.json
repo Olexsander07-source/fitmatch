@@ -1,0 +1,21 @@
+{
+  "verified": true,
+  "site": "https://fitgoin.com/",
+  "worker": "fitgoin-production",
+  "worker_version": "fd5c297a-b492-40ef-81e2-0d48c5ed58a8",
+  "traffic_percent": 100,
+  "commit": "887220ff60dd3849926ca33f42eb4791468da5de",
+  "built_at": "2026-10-08T05:59:19.505Z",
+  "build_id": "38feed91-acbf-4060-9d69-90adebd87599",
+  "public_files_matching": 32,
+  "backend_version": 21,
+  "backend_source_files_matching": 6,
+  "publication_command": "npm.cmd run deploy",
+  "publication_script": "scripts/safe-deploy.mjs",
+  "windows_check_passed": 110,
+  "windows_check_failed": 0,
+  "windows_deploy_dry_exit": 0,
+  "windows_deploy_exit": 0,
+  "oauth_refresh_required": true,
+  "legacy_worker_used": false
+}
