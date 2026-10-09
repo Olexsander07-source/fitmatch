@@ -6,6 +6,7 @@ import {createAIHandler} from '../supabase/functions/fitgoin-ai/index.mjs';
 import {sportsMemory,missingSportsMemory,prepareMemoryPatch} from '../fitgoin-ai-memory.mjs';
 import {programIntent,PROGRAM_SCHEMA,programFacts,reconcileProgramTime,validateProgram,finalizeProgram,calendarWorkout,programOutdated,availableEquipment} from '../fitgoin-ai-program.mjs';
 import {conversationMemory,workoutIntent,currentWorkout,workoutCommand,targetsForEdit,applyExerciseEdits,providerDocument,equipmentTargets} from '../fitgoin-ai-workout.mjs';
+import {nutritionPreferences,nutritionMemory,personalNutrition,nutritionTurn} from '../fitgoin-ai-nutrition.mjs';
 
 const USER='10000000-0000-4000-8000-000000000001',OTHER='10000000-0000-4000-8000-000000000002',CONV='20000000-0000-4000-8000-000000000001',REQUEST='30000000-0000-4000-8000-000000000001';
 const PROFILE={...normalizeProfile({goal:'Похудение',sport:'fitness',age:28,height_cm:180,weight_kg:80,days_per_week:3,minutes:30,weekdays:[1,3,5],equipment:'Коврик',language:'ru'}),memory_confirmed_fields:['restrictions']};
@@ -403,4 +404,83 @@ test('2C new gym place preserves old version until equipment is explicitly suppl
  const plan=activeFixture(),message='Я теперь хожу в зал',updates=[{field:'setting',value:'gym',evidence:message}],s=setup({plans:[plan],response:providerResponse({answer:'Сменим упражнения.',memory_updates:updates})});
  const result=await (await s.request({message})).json();assert.equal(result.program_pending,true);assert.equal(result.kind,null);assert.deepEqual(result.missing_fields,['equipment']);
  const other=setup({plans:[plan],response:providerResponse({answer:'Обсуди программу в модуле тренировок.',memory_updates:[]})});assert.equal((await (await other.request({module:'nutrition',message:'Замени приседания'})).json()).program_saved,undefined);
+});
+
+test('3A missing raw activity is requested instead of using a normalized default',()=>{
+ const raw={age:28,height_cm:180,weight_kg:80,goal:'Похудение'};
+ const result=personalNutrition(raw);assert.equal(result.status,'missing');assert.deepEqual(result.missing,['activity']);assert.match(result.answer,/общая активность/);assert.equal(result.estimate,undefined);
+ const blank=personalNutrition({});assert.deepEqual(blank.missing,['age','height_cm','weight_kg','activity','nutrition_goal']);assert.match(blank.answer,/лет.*рост/);
+});
+test('3A all four nutrition goals use real measurements and coherent macros',()=>{
+ const estimates=['loss','gain','maintain','performance'].map(goal=>{
+  const r=personalNutrition({...PROFILE,nutrition_preferences:{goal}});assert.equal(r.status,'ready');
+  assert.equal(r.estimate.inputs.weight_kg,80);assert.equal(r.estimate.inputs.age,28);assert.equal(r.estimate.inputs.height_cm,180);assert.equal(r.estimate.inputs.activity,'light');
+  assert(Math.abs(r.estimate.calories-(r.estimate.protein_g*4+r.estimate.fat_g*9+r.estimate.carbs_g*4))<=9);
+  assert(r.estimate.calories_low>=1600);assert(r.estimate.calories_high<=4500);assert.equal(r.estimate.preferences.goal,goal);assert.equal(r.estimate.meals,undefined);return r.estimate;
+ });
+ assert(estimates[0].calories<estimates[2].calories);assert(estimates[1].calories>estimates[2].calories);assert.equal(estimates[2].calories,estimates[3].calories);
+ const lighter=personalNutrition({...PROFILE,weight_kg:65,nutrition_preferences:{goal:'maintain'}});assert(lighter.estimate.calories<estimates[2].calories);
+});
+test('3A dangerous or clinical calculations never return a numeric prescription',()=>{
+ for(const change of [{age:17},{needs_professional:true},{restrictions:'боль при нагрузке'},{nutrition_preferences:{restrictions:'беременность'}},{weight_kg:40,height_cm:190},{weight_kg:300,height_cm:150}]){
+  const r=personalNutrition({...PROFILE,...change});assert.equal(r.status,'professional');assert.equal(r.estimate,undefined);
+ }
+ const current=nutritionTurn(PROFILE,'Я беременна. Рассчитай мои калории и БЖУ','nutrition');assert.equal(current.extra.nutrition_estimate,undefined);assert.match(current.answer,/специалист/);
+});
+test('3A explicit food memory can be added, read after reload and corrected',()=>{
+ const first=nutritionMemory(PROFILE,'Я не ем рыбу');assert.deepEqual(first.patch.nutrition_preferences.excluded_foods,['рыба']);assert.equal(first.data.weight_kg,80);assert.deepEqual(first.data.weekdays,[1,3,5]);
+ const persisted=JSON.parse(JSON.stringify(first.data));assert.match(nutritionTurn(persisted,'Что я не ем?','nutrition').answer,/рыба/);
+ const second=nutritionMemory(persisted,'Я не ем свинину');assert.deepEqual(second.data.nutrition_preferences.excluded_foods,['рыба','свинина']);
+ const corrected=nutritionMemory(second.data,'Я снова ем рыбу');assert.deepEqual(corrected.data.nutrition_preferences.excluded_foods,['свинина']);
+});
+test('3A temporary choices, questions, quotes and third-party facts are not permanent preferences',()=>{
+ for(const message of ['Сегодня я не ем рыбу','Я не ем рыбу сегодня','На этой неделе я не ем рыбу','Например, я не ем рыбу','Мой друг: я не ем рыбу','Моему другу 28 лет. Я не ем рыбу','«Я не ем рыбу»','Я не ем рыбу?','I do not eat fish today'])assert.deepEqual(nutritionMemory(PROFILE,message).patch,{},message);
+ assert.equal(nutritionTurn(PROFILE,'Сегодня я не ем рыбу','nutrition'),null);
+});
+test('3A preferences, restrictions, meal count and nutrition goal share the existing memory',()=>{
+ const r=nutritionMemory(PROFILE,'Мои пищевые предпочтения: растительная пища. Мои пищевые ограничения: без молока. Я предпочитаю 4 приема пищи в день. Моя цель в питании — поддержание веса');
+ assert.deepEqual(r.data.nutrition_preferences,{restrictions:'без молока',meals_per_day:4,goal:'maintain'});assert.equal(r.data.diet,'растительная пища');assert.equal(nutritionPreferences(r.data).preferences,'растительная пища');assert.equal(r.data.goal,'Похудение');assert.equal(r.data.days_per_week,3);
+ assert.throws(()=>nutritionPreferences({nutrition_preferences:{meals_per_day:0}}));assert.throws(()=>nutritionPreferences({nutrition_preferences:{goal:'crash diet'}}));assert.throws(()=>nutritionPreferences({nutrition_preferences:{unknown:'value'}}));
+});
+test('3A missing-data continuation accepts the latest explicit facts without asking again',()=>{
+ const pending=nutritionTurn({},'Рассчитай мои калории и БЖУ','nutrition');assert.equal(pending.extra.memory_patch.nutrition_pending,true);assert.equal(pending.extra.nutrition_estimate,undefined);
+ const next=nutritionTurn(pending.extra.memory_patch,'Мне 28 лет. Рост 180 см. Вес 80 кг. Моя общая активность — умеренная. Моя цель в питании — поддержание веса','nutrition');
+ assert.equal(next.extra.nutrition_estimate.inputs.weight_kg,80);assert.equal(next.extra.memory_patch.nutrition_pending,false);assert.match(next.answer,/белки/);
+});
+test('3A saved program is real planned context and never an extra calorie expenditure',()=>{
+ const program={id:REQUEST,document:{workouts:[{}, {}, {}, {}]}};
+ const a=personalNutrition(PROFILE),b=personalNutrition(PROFILE,program);assert.equal(a.estimate.calories,b.estimate.calories);assert.equal(b.estimate.inputs.program_id,REQUEST);assert.equal(b.estimate.inputs.planned_workouts,4);assert.match(b.answer,/частота в профиле отличается/);
+});
+test('3A deterministic nutrition uses Auth, access, owner context and atomic completion without a provider',async()=>{
+ const s=setup({env:{OPENAI_API_KEY:''},plans:[{id:REQUEST,document:{workouts:[{},{},{}]}}]});
+ const r=await s.request({module:'nutrition',message:'Рассчитай мои калории и БЖУ'});assert.equal(r.status,200);const result=await r.json();assert.equal(result.kind,null);assert.equal(result.nutrition_estimate.inputs.weight_kg,80);
+ assert(s.calls.some(c=>c.url.endsWith('/auth/v1/user')));assert(s.calls.some(c=>c.url.endsWith('/rpc/fgi_ai_access')));assert(s.calls.some(c=>c.url.includes('/fgi_ai_plans?user_id=eq.'+USER)&&c.url.includes('kind=eq.training')&&c.url.includes('status=eq.active')));
+ assert.equal(s.calls.filter(c=>c.url.includes('api.openai.com')).length,0);const saved=s.calls.find(c=>c.url.endsWith('/rpc/fgi_ai_complete'));assert.equal(saved.body.p_user,USER);assert.equal(saved.body.p_kind,null);assert.equal(saved.body.p_result.memory_patch.nutrition_pending,false);assert.equal(result.program_saved,undefined);
+});
+test('3A a save failure returns an error, never a preference-save confirmation',async()=>{
+ const s=setup({completeFails:true});const r=await s.request({module:'nutrition',message:'Я не ем рыбу'});assert.equal(r.status,503);const result=await r.json();assert.equal(result.error,'backend_unavailable');assert.equal(result.answer,undefined);assert(s.calls.some(c=>c.url.endsWith('/rpc/fgi_ai_fail')));
+});
+test('3A foreign conversation and missing module access cannot reach nutrition save',async()=>{
+ for(const change of [{foreignConversation:true},{invalidAuth:true},{access:{modules:['training'],friend:true}}]){
+  const s=setup(change);assert.notEqual((await s.request({module:'nutrition',message:'Я не ем рыбу'})).status,200);assert(!s.calls.some(c=>c.url.endsWith('/rpc/fgi_ai_complete')));
+ }
+ const allowed=setup();const result=await(await allowed.request({module:'training',message:'Рассчитай мои калории и БЖУ'})).json();assert.equal(result.nutrition_estimate,undefined);assert.match(result.answer,/AI-питание/);assert.equal(result.program_saved,undefined);
+});
+test('3A normal nutrition advice receives saved preferences and actual active training context',async()=>{
+ const s=setup({profile:{...PROFILE,nutrition_preferences:{excluded_foods:['рыба'],meals_per_day:4}},plans:[{id:REQUEST,document:{workouts:[{},{},{}]}}]});assert.equal((await s.request({module:'nutrition',message:'Как выбирать продукты с достаточным белком?'})).status,200);
+ const provider=s.calls.find(c=>c.url.includes('api.openai.com'));const data=provider.body.input.find(x=>x.content.includes('USER DATA')).content;assert.match(data,/current_saved_nutrition_preferences.*рыба/);assert.match(data,/active_training_program/);assert.match(provider.body.instructions,/not completed workouts/);
+});
+test('3A the latest explicit nutrition goal wins without replacing the training goal',()=>{
+ const previous={...PROFILE,goal:'Набор мышечной массы',nutrition_preferences:{goal:'gain'}};
+ const result=nutritionTurn(previous,'Хочу похудеть. Рассчитай мои калории и БЖУ','nutrition');assert.equal(result.extra.nutrition_estimate.goal,'loss');assert.equal(result.extra.memory_patch.nutrition_preferences.goal,'loss');assert.equal(result.extra.memory_patch.goal,undefined);
+});
+test('3A extreme requested calories and explicit clinical facts cannot be bypassed by the fast path',()=>{
+ const low=nutritionTurn(PROFILE,'Рассчитай мне калории и БЖУ на 800 ккал','nutrition');assert.equal(low.extra.nutrition_estimate,undefined);assert.match(low.answer,/экстремальную/);
+ const clinical=nutritionTurn(PROFILE,'Я беременна. Рассчитай мои калории и БЖУ','nutrition');assert.equal(clinical.extra.memory_patch.needs_professional,true);assert.equal(clinical.extra.memory_patch.restrictions,'Я беременна');assert.equal(clinical.extra.nutrition_estimate,undefined);
+});
+test('3A decimal measurements supplied with a question are used without repeating intake',()=>{
+ const r=nutritionTurn({activity:'light',goal:'Похудение'},'Мне 28 лет, мой рост 180 см, я вешу 80.5 кг, рассчитай мои калории и БЖУ?','nutrition');assert.equal(r.extra.nutrition_estimate.inputs.weight_kg,80.5);assert.equal(r.extra.missing_fields,undefined);assert.equal(r.extra.memory_patch.weight_kg,80.5);
+});
+test('3A a reported exercise expenditure is not mistaken for an extreme food limit',()=>{
+ const r=nutritionTurn(PROFILE,'Потратил 250 ккал. Рассчитай мои калории и БЖУ','nutrition');assert(r.extra.nutrition_estimate);assert.equal(r.extra.nutrition_estimate.calories,personalNutrition(PROFILE).estimate.calories);
 });

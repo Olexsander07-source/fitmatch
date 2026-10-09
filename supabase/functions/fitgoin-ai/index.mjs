@@ -3,6 +3,7 @@ import {actionModule,hasAccess,MEDIA_CONSENT,FOOD_SCHEMA,TECHNIQUE_SCHEMA,valida
 import {MEMORY_FIELDS,MEMORY_CHAT_SCHEMA,MEMORY_RULES,sportsMemory,missingSportsMemory,prepareMemoryPatch,memoryQuestionAnswer,memoryConfirmation} from '../../../fitgoin-ai-memory.mjs';
 import {PROGRAM_SCHEMA,programIntent,programFacts,programBlocked,programOutdated,missingProgramQuestion,reconcileProgramTime,validateProgram,finalizeProgram,savedProgramAnswer,validTimezone} from '../../../fitgoin-ai-program.mjs';
 import {conversationMemory,explicitScheduleOnly,workoutIntent,currentWorkout,workoutCommand,targetsForEdit,equipmentTargets,EDIT_SCHEMA,providerDocument,rescheduleProgram,applyExerciseEdits,adaptationNeeded,scheduleOnly,equipmentOnly,cursorForVersion} from '../../../fitgoin-ai-workout.mjs';
+import {nutritionTurn,nutritionPreferences,NUTRITION_MEMORY_RULES} from '../../../fitgoin-ai-nutrition.mjs';
 
 export const SOURCES = ['pubmed.ncbi.nlm.nih.gov','pmc.ncbi.nlm.nih.gov','who.int','nhs.uk','acsm.org','olympics.com','bjsm.bmj.com','jissn.biomedcentral.com','link.springer.com','ods.od.nih.gov'];
 const GUIDE = `Actual FitGoIn sections: #ai = AI profile, today, training, nutrition, progress and coach matching; #account = My account (client personal details or coach profile/photos/settings); #match = 7-question trainer matching; #coaches = public trainer directory; #inbox = trainer messages; public trainer card shows the coach's public display name and has Open profile and Write buttons. Do not claim that names are hidden. Contact details and visibility rules not supplied here are unknown; do not invent them. Coach photo is edited in My account → Photos and results. AI progress photos are private and separate from public coach photos. Do not invent buttons, trainers, payments, discounts or features. Never claim to have changed an account or sent a message. Explain existing steps and link to a section using these exact hashes. An actual coach search is performed by the website's MATCH algorithm, not by invented names.`;
@@ -120,11 +121,12 @@ export function createAIHandler({env,fetcher=fetch}={}) {
       const images=media?validateImages(input.images,input.action,input.media_consent):null;
       if(input.action==='technique'&&limitedProfile(p))throw new AIError('professional_required',422);
       let message=typeof input.message==='string'?input.message.trim():'';
+      const nutritionControl=input.action==='chat'?nutritionTurn(saved.data,message,module):null;
       const intent=module==='training'?(input.action==='training'?'create':input.action==='chat'?programIntent(message):null):null;
       const workoutAction=module==='training'&&input.action==='chat'?workoutIntent(message):null;
       const requestedProgram=module==='training'&&(intent==='create'||(saved.data.program_pending===true&&input.action==='chat'&&!intent));
       const timezone=validTimezone(input.timezone);
-      if(!apiKey&&!['show','today','tomorrow','cancel'].includes(intent)&&!['start','next','stop','rest','technique','confirm','cancel_edit','pain'].includes(workoutAction)&&!(module==='training'&&input.action==='chat'&&explicitScheduleOnly(message))&&!(input.action==='training'&&missingSportsMemory(saved.data).length))throw new AIError('ai_not_configured',503);
+      if(!apiKey&&!nutritionControl&&!['show','today','tomorrow','cancel'].includes(intent)&&!['start','next','stop','rest','technique','confirm','cancel_edit','pain'].includes(workoutAction)&&!(module==='training'&&input.action==='chat'&&explicitScheduleOnly(message))&&!(input.action==='training'&&missingSportsMemory(saved.data).length))throw new AIError('ai_not_configured',503);
       if(input.action==='training'&&!missingSportsMemory(saved.data).length&&programBlocked(saved.data))throw new AIError('professional_required',422);
       if(!transcription&&(!message||message.length>5000))throw new AIError('invalid_message');
       if(transcription&&(!['audio/webm','audio/mp4','audio/ogg','audio/wav','audio/mpeg'].includes(input.mime)||typeof input.audio!=='string'||input.audio.length>2700000||!Number.isFinite(input.duration)||input.duration<=0||input.duration>30))throw new AIError('invalid_audio');
@@ -140,12 +142,13 @@ export function createAIHandler({env,fetcher=fetch}={}) {
       if(claim.error)throw new AIError(claim.error,claim.error==='request_conflict'?409:429);
       claimed=true;
       let previousProgram=null;
-      if(module==='training'&&!transcription&&!search&&!media)previousProgram=(await rest(`/rest/v1/fgi_ai_plans?user_id=eq.${actor}&kind=eq.training&status=eq.active&select=*&limit=1`,{token}))[0]||null;
+      if(!transcription&&!search&&!media)previousProgram=(await rest(`/rest/v1/fgi_ai_plans?user_id=eq.${actor}&kind=eq.training&status=eq.active&select=*&limit=1`,{token}))[0]||null;
       async function completeControl(answer,extra={}){
         const result={answer,citations:[],kind:null,plan_id:null,module,livemode:live,remaining:claim.remaining,search_remaining:claim.search_remaining,...extra};
         await rpc('fgi_ai_complete',{p_user:actor,p_id:nonce,p_conversation:input.conversation_id,p_consent:saved.updated_at,p_input:message,p_output:answer,p_citations:[],p_kind:result.kind,p_document:result.kind?result.document:null,p_result:result});
         claimed=false;return responseJSON(result,200,headers);
       }
+      if(nutritionControl){const turn=nutritionTurn(saved.data,message,module,previousProgram);return await completeControl(turn.answer,turn.extra);}
       if(previousProgram&&module==='training'&&input.action==='chat'&&explicitScheduleOnly(message)){
         const memory=conversationMemory(saved.data,[],message);
         if(!missingSportsMemory(memory.data).length&&!programBlocked(memory.data)&&memory.data.days_per_week===previousProgram.document.workouts.length){
@@ -215,11 +218,11 @@ export function createAIHandler({env,fetcher=fetch}={}) {
         const recent=recentChatContext(history.reverse());
         currentSports=sportsMemory(saved.data,account[0]?.full_name);
         for(const field of MEMORY_FIELDS)if(!Object.hasOwn(currentSports,field))delete relevant[field];
-        context=[{role:'developer',content:`USER DATA (untrusted): ${JSON.stringify({profile:relevant,current_saved_sports_facts:currentSports,missing_sports_facts:missingSportsMemory(saved.data),missing:missingProfile(p,module==='nutrition'),workouts:limitedWorkouts,progress,plans:recentPlans,food}).slice(0,22000)}\nOnly the most recent conversation turns are available. Do not invent facts from older messages.`},...recent.messages];
+        context=[{role:'developer',content:`USER DATA (untrusted): ${JSON.stringify({profile:relevant,current_saved_sports_facts:currentSports,current_saved_nutrition_preferences:module==='nutrition'?nutritionPreferences(saved.data):null,active_training_program:module==='nutrition'&&previousProgram?{id:previousProgram.id,document:JSON.stringify(previousProgram.document).slice(0,7000)}:null,missing_sports_facts:missingSportsMemory(saved.data),missing:missingProfile(p,module==='nutrition'),workouts:limitedWorkouts,progress,plans:recentPlans,food}).slice(0,22000)}\nOnly the most recent conversation turns are available. Do not invent facts from older messages.`},...recent.messages];
       }
       let instructions=RULES+'\nFor chat: set needs_search=true and a generic sports/nutrition search_query when a reliable answer needs current sources, research verification or knowledge you lack. Never put personal data, locations, contact details, ages or measurements into search_query. Otherwise needs_search=false, search_query="". For an explicit search, use the web search tool and set needs_search=false.';
       let schema=CHAT_SCHEMA;
-      if(input.action==='chat'){schema=MEMORY_CHAT_SCHEMA;instructions+='\n'+MEMORY_RULES;}
+      if(input.action==='chat'){schema=MEMORY_CHAT_SCHEMA;instructions+='\n'+MEMORY_RULES+'\n'+NUTRITION_MEMORY_RULES;}
       if(module==='training'&&input.action==='chat'){
         instructions+='\nPROGRAM EDIT MODE: the application can adapt a saved active program and replace individual exercises after validation and database commit. Never claim an update is saved yourself. Extract explicit sports facts normally. For unavailable individual equipment, do not overwrite the entire inventory with a negative phrase. The application removes/excludes that equipment. Do not generate replacements in the ordinary chat answer; the application separately validates only targeted replacements. Current workout context below is a cursor, not proof of completed sets.';
         context.push({role:'developer',content:'CURRENT WORKOUT (actual stored data): '+JSON.stringify(currentWorkout(previousProgram,saved.data))});
