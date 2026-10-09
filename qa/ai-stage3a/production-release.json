@@ -1,0 +1,60 @@
+{
+  "verified_at": "2026-10-09T11:43:33.856Z",
+  "main_commit": "00abc75a9621f548458c06db8acdfa1d3ad8d881",
+  "backend_version": 22,
+  "backend_exact_source_files": 7,
+  "backend_verified_at": "2026-10-09T11:31:12.285Z",
+  "migration_version": "20261009112851",
+  "windows": {
+    "ci_exit": 0,
+    "check_exit": 0,
+    "dry_exit": 0,
+    "tests": 126,
+    "passed": 126,
+    "checkout": "C:\\Users\\HP\\Documents\\FitGoIn-Stage3A-20261009-1320",
+    "verified_at": "2026-10-09T11:27:29.768Z"
+  },
+  "github": {
+    "pr": 32,
+    "workflow_run": 37923610837,
+    "conclusion": "success"
+  },
+  "cloudflare": {
+    "worker": "fitgoin-production",
+    "version": "13330c7c-d2f1-417c-895e-f4ef0d8d58e0",
+    "percent": 100,
+    "safe_deploy_exit": 0,
+    "verified_asset_files": 32,
+    "release": {
+      "exit_code": 0,
+      "commit": "00abc75a9621f548458c06db8acdfa1d3ad8d881",
+      "built_at": "2026-10-09T11:35:01.847Z",
+      "build_id": "c268fd79-4102-4d84-bca3-04261de0016c"
+    },
+    "auth_refresh": "existing Wrangler OAuth session refreshed by read-only whoami after pre-upload HTTP 401; safe deploy repeated without bypass"
+  },
+  "real_auth_ui": "partial; final corrected acceptance blocked by Desktop Commander no response",
+  "postdeploy_sql": {
+    "passed": true,
+    "checked_at": "2026-10-09T11:41:07Z",
+    "result": "nutrition memory save, reload, bounds, conflict, cache and owner/foreign RLS passed"
+  },
+  "followup": {
+    "pr": 33,
+    "head": "f5b07d58b079abf376c15ce90c61de900f40165b",
+    "local_tests": 128,
+    "ci": {
+      "run": 37926624195,
+      "conclusion": "success"
+    },
+    "windows_results": "not received",
+    "publication": "not merged or deployed"
+  },
+  "connection_failure": {
+    "at": "2026-10-09T12:03:03.565Z",
+    "error": "Timeout - no response from device",
+    "device_id": "3781e4e7-445b-4422-9e4f-4f8792661d50",
+    "windows_check_call": "77e10afb-cea2-48cf-b6ea-b8022cb4c5e9",
+    "windows_dry_call": "a5d6085c-21b9-4c34-ae30-b1a1b15a1ed7"
+  }
+}

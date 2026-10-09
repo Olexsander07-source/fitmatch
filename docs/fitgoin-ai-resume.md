@@ -36,7 +36,7 @@ The user asked to finish the paid AI trainer while preserving the existing site,
 
 ## Implementation and saved branch
 
-Current continuation (9 October 2026): stages 1/2A/2B/2C are published. Stage 2C closure is on `main` f26a9719525b9c04fe5e65af27273073f569ef22; temporary 2C accounts are deleted. See `ai-workout-stage2c-20261008.md`. Stage 3A nutrition foundation is the current verified candidate; see `ai-nutrition-stage3a-20261009.md` for implementation, exact acceptance status and publication steps. Do not repeat the old 2C publication or start menus/the next substage. The paragraphs below are the historical 4 October checkpoint, not the current release status.
+Current continuation (9 October 2026): stages 1/2A/2B/2C are published. Stage 2C closure is on `main` f26a9719525b9c04fe5e65af27273073f569ef22; temporary 2C accounts are deleted. See `ai-workout-stage2c-20261008.md`. Stage 3A first release is on main 00abc75a9621f548458c06db8acdfa1d3ad8d881 / backend v22, but final acceptance found a transient-food memory defect. The correction in PR #33 passes local/CI 128 tests; Windows result retrieval is blocked by Desktop Commander device timeouts. QA users were deleted. Stage 3A is not closed; see `ai-nutrition-stage3a-20261009.md` for implementation, exact acceptance status and publication steps. Do not repeat the old 2C publication or start menus/the next substage. The paragraphs below are the historical 4 October checkpoint, not the current release status.
 
 Historical: Continue draft PR #14 on feat/ai-assistant-20261003; parent before completion was 3f5b71b0721652f61da11104b25399aa65fee168. Production main remains bb2e6f0a0a8adc44d48a3ef510b10232e442a675. The PR has not been merged and static production has not been published.
 
