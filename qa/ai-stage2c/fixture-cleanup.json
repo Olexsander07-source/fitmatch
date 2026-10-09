@@ -1,0 +1,81 @@
+{
+  "verified_at": "2026-10-09T10:31:47.544Z",
+  "project_id": "ypbhcgcwkpiujcakvaji",
+  "removed_temporary_accounts": 2,
+  "fixture_user_ids": [
+    "d7548f6a-0f98-4944-9dc8-a5791a4d1365",
+    "5827e03b-4d0e-4431-98a5-70d938465391"
+  ],
+  "identity_guard": "Each known QA UUID matched its exact @example.invalid email before deletion.",
+  "scope": "Only the two Stage 2C accounts created for acceptance testing; related rows removed by existing foreign-key cascades.",
+  "remaining": [
+    {
+      "entity": "auth.users",
+      "remaining": 0
+    },
+    {
+      "entity": "auth.identities",
+      "remaining": 0
+    },
+    {
+      "entity": "auth.sessions",
+      "remaining": 0
+    },
+    {
+      "entity": "auth.refresh_tokens",
+      "remaining": 0
+    },
+    {
+      "entity": "public.profiles",
+      "remaining": 0
+    },
+    {
+      "entity": "public.fgi_ai_profiles",
+      "remaining": 0
+    },
+    {
+      "entity": "public.fgi_ai_conversations",
+      "remaining": 0
+    },
+    {
+      "entity": "public.fgi_ai_messages",
+      "remaining": 0
+    },
+    {
+      "entity": "public.fgi_ai_plans",
+      "remaining": 0
+    },
+    {
+      "entity": "public.fgi_ai_food",
+      "remaining": 0
+    },
+    {
+      "entity": "public.fgi_ai_feedback",
+      "remaining": 0
+    },
+    {
+      "entity": "fgi_private.ai_friend_grants",
+      "remaining": 0
+    },
+    {
+      "entity": "fgi_private.ai_requests",
+      "remaining": 0
+    },
+    {
+      "entity": "fgi_private.ai_cost_ledger",
+      "remaining": 0
+    },
+    {
+      "entity": "fgi_private.ai_customers",
+      "remaining": 0
+    },
+    {
+      "entity": "fgi_private.ai_subscriptions",
+      "remaining": 0
+    },
+    {
+      "entity": "fgi_private.ai_checkout_sessions",
+      "remaining": 0
+    }
+  ]
+}
