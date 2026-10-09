@@ -7,7 +7,7 @@ let redactError=value=>String(value);
 async function input(){const rl=readline.createInterface({input:process.stdin});console.log('READY: ephemeral QA credentials on stdin, never logged.');const line=await new Promise(r=>rl.once('line',r));rl.close();return JSON.parse(line);}
 (async()=>{
  const {owner,other,program_id}=await input(),base='https://fitgoin.com/',api='https://ypbhcgcwkpiujcakvaji.supabase.co',checks=[],trace=[],errors=[],failures=[],loaded=new Set();
- const key=fs.readFileSync(path.join(__dirname,'..','fitmatch.js'),'utf8').match(/key: '(sb_publishable_[^']+)'/)[1],proxy=process.env.HTTPS_PROXY||process.env.HTTP_PROXY;
+ const key=fs.readFileSync(path.join(process.env.FGI_SOURCE_ROOT||path.join(__dirname,'..'),'fitmatch.js'),'utf8').match(/key: '(sb_publishable_[^']+)'/)[1],proxy=process.env.HTTPS_PROXY||process.env.HTTP_PROXY;
  redactError=value=>[owner,other].reduce((s,a)=>s.replaceAll(a.password,'[redacted]').replaceAll(a.email,'[QA email]'),String(value)).replace(/eyJ[A-Za-z0-9_.-]+/g,'[redacted token]');
  const browser=await chromium.launch({headless:true,executablePath:process.env.FGI_CHROME,args:process.platform==='win32'?[]:['--no-sandbox'],...(proxy?{proxy:{server:new URL(proxy).origin}}:{})});
  const context=await browser.newContext({viewport:{width:390,height:844},timezoneId:'Europe/Paris',ignoreHTTPSErrors:Boolean(proxy)}),page=await context.newPage();
@@ -17,19 +17,24 @@ async function input(){const rl=readline.createInterface({input:process.stdin});
  page.on('response',r=>{if(r.url().startsWith(base)){if(r.status()>=400)failures.push({url:r.url(),status:r.status()});else loaded.add(new URL(r.url()).pathname)}});
  const pass=(name,extra={})=>{checks.push({name,passed:true,...extra});console.log('PASS '+name)};
  const ready=async()=>{await page.waitForFunction(()=>document.getElementById('fitgoinAI')?.getAttribute('aria-busy')==='false');await page.locator('#fitgoinAI [data-ai-form=chat] button[type=submit]:enabled').waitFor();};
- const command=async message=>{
+ let nextTurn=0;
+ const command=async(message,statuses=[200])=>{
+  // The existing limit is five requests per minute. Pace the live acceptance
+  // instead of changing limits or clearing request records between turns.
+  const delay=Math.max(0,nextTurn-Date.now());if(delay)await page.waitForTimeout(delay);nextTurn=Date.now()+13000;
   await ready();const response=page.waitForResponse(r=>r.url().startsWith(api+'/functions/v1/fitgoin-ai')&&r.request().method()==='POST'&&JSON.parse(r.request().postData()||'{}').action==='chat');
   await page.locator('#fitgoinAI [name=message]').fill(message);await page.locator('#fitgoinAI [data-ai-form=chat] button[type=submit]').click();
   const r=await response,data=await r.json();trace.push({message,status:r.status(),answer:data.answer||null,nutrition_estimate:data.nutrition_estimate||null,memory_saved:data.memory_saved||false,missing_fields:data.missing_fields||[],error:data.error||null});
-  assert.equal(r.status(),200,JSON.stringify({status:r.status(),error:data.error}));await ready();return data;
+  assert(statuses.includes(r.status()),JSON.stringify({status:r.status(),error:data.error}));await ready();return data;
  };
  const profile=()=>page.evaluate(async({key,api})=>{const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/+esm');const db=createClient(api,key);const {data,error}=await db.from('fgi_ai_profiles').select('data').single();if(error)throw Error('Own profile read failed');return data.data;},{key,api});
  try{
   await page.goto(base+'?stage3a_verify='+Date.now());await page.waitForFunction(()=>typeof document.getElementById('authOpen')?.onclick==='function');
   const cookies=page.locator('#cookieBanner [data-cookie-choice=necessary]');if(await cookies.isVisible())await cookies.click();
+  await page.locator('#fitgoinAI [data-ai-action=login]').waitFor({state:'attached'});
   await page.locator('#authOpen').click();await page.locator('#authDialog[open]').waitFor();
   await page.locator('#authForm [name=email]').fill(owner.email);await page.locator('#authForm [name=password]').fill(owner.password);await page.locator('#authForm button[type=submit]').click();
-  await page.locator('#authDialog').waitFor({state:'hidden'});await page.goto(base+'#ai');await page.locator('#ai.active').waitFor();await ready();
+  try{await page.locator('#authDialog').waitFor({state:'hidden'});}catch{throw Error('Real QA login failed: '+await page.locator('#authMessage').innerText());}await page.goto(base+'#ai');await page.locator('#ai.active').waitFor();await ready();
   await page.locator('#fitgoinAI [data-ai-module]').selectOption('nutrition');await ready();
   const calculated=await command('Рассчитай мои калории и БЖУ'),estimate=calculated.nutrition_estimate;
   assert(estimate);assert.equal(calculated.kind,null);assert.equal(estimate.inputs.age,28);assert.equal(estimate.inputs.height_cm,180);assert.equal(estimate.inputs.weight_kg,80);assert.equal(estimate.inputs.activity,'light');assert.equal(estimate.inputs.days_per_week,3);assert.equal(estimate.inputs.program_id,program_id);assert.equal(estimate.inputs.planned_workouts,3);assert.equal(estimate.goal,'loss');assert.equal(estimate.meals,undefined);assert.match(calculated.answer,/приблизительн/);pass('real calculation uses own saved measurements, goal, activity, frequency and active program', {estimate});
@@ -38,7 +43,7 @@ async function input(){const rl=readline.createInterface({input:process.stdin});
   const prefs=await profile();assert.deepEqual(prefs.nutrition_preferences.excluded_foods,['рыба','свинина']);assert.equal(prefs.nutrition_preferences.restrictions,'без молока');assert.equal(prefs.nutrition_preferences.meals_per_day,4);assert.equal(prefs.diet,'растительная пища');pass('restrictions, meal count and preferences share existing private memory');
   await page.reload();await ready();await page.locator('#fitgoinAI [data-ai-module]').selectOption('nutrition');await ready();
   assert.deepEqual((await profile()).nutrition_preferences,prefs.nutrition_preferences);const remembered=await command('Что я не ем?');assert.match(remembered.answer,/рыба/);assert.match(remembered.answer,/свинина/);assert.match(remembered.answer,/растительная пища/);pass('reload and actual chat restore durable food memory');
-  await command('Сегодня я не ем мясо');assert.deepEqual((await profile()).nutrition_preferences,prefs.nutrition_preferences);pass('a one-day food choice does not overwrite durable preferences');
+  const temporary=await command('Сегодня я не ем мясо');assert.equal(temporary.memory_saved,false);assert.deepEqual(await profile(),prefs);pass('a one-day food choice cannot change any profile field or safety flag');
   await command('Я снова ем рыбу');assert.deepEqual((await profile()).nutrition_preferences.excluded_foods,['свинина']);pass('explicit correction removes only the corrected excluded food');
   const calories={loss:estimate.calories};
   for(const [goal,label] of [['gain','набор мышечной массы'],['maintain','поддержание веса'],['performance','улучшение спортивной формы']]){
@@ -71,6 +76,9 @@ async function input(){const rl=readline.createInterface({input:process.stdin});
   for(const file of ['fitgoin-ai.js','fitgoin-ai-memory.mjs','fitgoin-ai-program.mjs','fitgoin-ai-workout.mjs'])assert(loaded.has('/'+file),'module not loaded '+file);pass('existing deployed AI modules load successfully');
   assert.deepEqual(errors,[]);assert.deepEqual(failures,[]);pass('no page errors or failed first-party requests');
   if(process.env.FGI_AI_QA_OUT)fs.writeFileSync(path.join(process.env.FGI_AI_QA_OUT,'production-stage3a.json'),JSON.stringify({at:new Date().toISOString(),base,live:true,data:'synthetic ephemeral QA accounts; real Auth, REST, Edge and UI',passed:true,checks,trace,pageErrors:errors,failedRequests:failures},null,2));
+ }catch(error){
+  if(process.env.FGI_AI_QA_OUT){fs.mkdirSync(process.env.FGI_AI_QA_OUT,{recursive:true});fs.writeFileSync(path.join(process.env.FGI_AI_QA_OUT,'production-stage3a-failed.json'),JSON.stringify({at:new Date().toISOString(),base,live:true,passed:false,failure:redactError(error.message),checks,trace,pageErrors:errors,failedRequests:failures},null,2));}
+  throw error;
  }finally{
   try{await page.evaluate(async({key,api})=>{const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/+esm');const db=createClient(api,key);const {error}=await db.auth.signOut();if(error)throw Error('QA sign-out failed');},{key,api});await page.waitForFunction(()=>!localStorage.getItem('sb-ypbhcgcwkpiujcakvaji-auth-token'));}catch{console.error('QA logout unconfirmed; remove temporary accounts and sessions.');}
   await browser.close();

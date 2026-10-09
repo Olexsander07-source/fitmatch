@@ -435,7 +435,17 @@ test('3A explicit food memory can be added, read after reload and corrected',()=
 });
 test('3A temporary choices, questions, quotes and third-party facts are not permanent preferences',()=>{
  for(const message of ['Сегодня я не ем рыбу','Я не ем рыбу сегодня','На этой неделе я не ем рыбу','Например, я не ем рыбу','Мой друг: я не ем рыбу','Моему другу 28 лет. Я не ем рыбу','«Я не ем рыбу»','Я не ем рыбу?','I do not eat fish today'])assert.deepEqual(nutritionMemory(PROFILE,message).patch,{},message);
- assert.equal(nutritionTurn(PROFILE,'Сегодня я не ем рыбу','nutrition'),null);
+ assert.equal(nutritionTurn(PROFILE,'Сегодня я не ем рыбу','nutrition').extra.memory_saved,false);
+});
+test('3A non-durable food assertions never reach provider extraction or change sports restrictions and safety flags',async()=>{
+ for(const message of ['Сегодня я не ем мясо','Я не ем рыбу сегодня','Например, я не ем рыбу','Мой друг: я не ем рыбу','«Я не ем рыбу»','Я не ем рыбу?']){
+  const s=setup({env:{OPENAI_API_KEY:''},response:providerResponse({answer:'Saved.',memory_updates:[{field:'restrictions',value:message,evidence:message}]})});
+  const response=await s.request({module:'nutrition',message});assert.equal(response.status,200,message);const result=await response.json();assert.equal(result.memory_saved,false);assert.equal(result.memory_patch,undefined);assert(!s.calls.some(x=>x.url.includes('api.openai.com')));
+  const saved=s.calls.find(x=>x.url.endsWith('/rpc/fgi_ai_complete')).body;assert.equal(saved.p_result.memory_patch,undefined);assert.equal(saved.p_result.program_saved,undefined);assert.equal(PROFILE.restrictions,'');assert.equal(PROFILE.needs_professional,false);
+ }
+});
+test('3A a calculation with a temporary food choice uses the unchanged profile without false exclusions',async()=>{
+ const s=setup({env:{OPENAI_API_KEY:''}}),response=await s.request({module:'nutrition',message:'Сегодня я не ем рыбу. Рассчитай мои калории и БЖУ'});assert.equal(response.status,200);const result=await response.json();assert.equal(result.nutrition_estimate.inputs.weight_kg,80);assert.equal(result.memory_saved,false);assert.deepEqual(result.nutrition_estimate.preferences,{});assert.deepEqual(result.memory_patch,{nutrition_pending:false});assert(!s.calls.some(x=>x.url.includes('api.openai.com')));
 });
 test('3A preferences, restrictions, meal count and nutrition goal share the existing memory',()=>{
  const r=nutritionMemory(PROFILE,'Мои пищевые предпочтения: растительная пища. Мои пищевые ограничения: без молока. Я предпочитаю 4 приема пищи в день. Моя цель в питании — поддержание веса');

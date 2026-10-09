@@ -1,0 +1,156 @@
+{
+  "at": "2026-10-09T11:47:02.449Z",
+  "base": "https://fitgoin.com/",
+  "live": true,
+  "passed": false,
+  "failure": "Cannot read properties of undefined (reading 'goal')",
+  "checks": [
+    {
+      "name": "real calculation uses own saved measurements, goal, activity, frequency and active program",
+      "passed": true,
+      "estimate": {
+        "calories_low": 1950,
+        "calories_high": 2200,
+        "protein_low": 112,
+        "protein_high": 160,
+        "method": "Mifflin–St Jeor; approximate activity, no individual metabolic measurement",
+        "calories": 2100,
+        "protein_g": 128,
+        "fat_g": 70,
+        "carbs_g": 240,
+        "goal": "loss",
+        "inputs": {
+          "age": 28,
+          "height_cm": 180,
+          "weight_kg": 80,
+          "activity": "light",
+          "days_per_week": 3,
+          "program_id": "a81b5544-6e6e-46b7-a60e-52937a5a5a5a",
+          "planned_workouts": 3
+        },
+        "preferences": {},
+        "assumptions": [
+          "Диапазон использует оба коэффициента Mifflin–St Jeor; пол не угадывается.",
+          "Коэффициент общей активности уже включает тренировки; расход по программе повторно не прибавляется.",
+          "Программа описывает запланированные занятия, а не выполненные тренировки."
+        ]
+      }
+    },
+    {
+      "name": "explicit fish exclusion is confirmed only after a durable save",
+      "passed": true
+    },
+    {
+      "name": "restrictions, meal count and preferences share existing private memory",
+      "passed": true
+    },
+    {
+      "name": "reload and actual chat restore durable food memory",
+      "passed": true
+    },
+    {
+      "name": "a one-day food choice does not overwrite durable preferences",
+      "passed": true,
+      "guarded_extraction_error": null
+    },
+    {
+      "name": "explicit correction removes only the corrected excluded food",
+      "passed": true
+    }
+  ],
+  "trace": [
+    {
+      "message": "Рассчитай мои калории и БЖУ",
+      "status": 200,
+      "answer": "Ориентир для цели «снижение веса»: 1950–2200 ккал в сутки. Для средней точки 2100 ккал: белки ≈ 128 г, жиры ≈ 70 г, углеводы ≈ 240 г. По сохранённым данным: 28 лет, 180 см, 80 кг; общая активность — умеренная. Сохранённая программа: 3 запланированных тренировок.\n\nЭто приблизительная оценка, а не медицинское назначение. Диапазон учитывает два коэффициента формулы без угадывания пола. Активность включает тренировки; их расход не прибавляю второй раз. Реальная потребность может отличаться.",
+      "nutrition_estimate": {
+        "calories_low": 1950,
+        "calories_high": 2200,
+        "protein_low": 112,
+        "protein_high": 160,
+        "method": "Mifflin–St Jeor; approximate activity, no individual metabolic measurement",
+        "calories": 2100,
+        "protein_g": 128,
+        "fat_g": 70,
+        "carbs_g": 240,
+        "goal": "loss",
+        "inputs": {
+          "age": 28,
+          "height_cm": 180,
+          "weight_kg": 80,
+          "activity": "light",
+          "days_per_week": 3,
+          "program_id": "a81b5544-6e6e-46b7-a60e-52937a5a5a5a",
+          "planned_workouts": 3
+        },
+        "preferences": {},
+        "assumptions": [
+          "Диапазон использует оба коэффициента Mifflin–St Jeor; пол не угадывается.",
+          "Коэффициент общей активности уже включает тренировки; расход по программе повторно не прибавляется.",
+          "Программа описывает запланированные занятия, а не выполненные тренировки."
+        ]
+      },
+      "memory_saved": false,
+      "missing_fields": [],
+      "error": null
+    },
+    {
+      "message": "Я не ем рыбу",
+      "status": 200,
+      "answer": "Сохранено в твоей памяти: исключённые продукты.",
+      "nutrition_estimate": null,
+      "memory_saved": true,
+      "missing_fields": [],
+      "error": null
+    },
+    {
+      "message": "Я не ем свинину. Мои пищевые предпочтения: растительная пища. Мои пищевые ограничения: без молока. Я предпочитаю 4 приема пищи в день",
+      "status": 200,
+      "answer": "Сохранено в твоей памяти: исключённые продукты, пищевые предпочтения, пищевые ограничения, число приёмов пищи.",
+      "nutrition_estimate": null,
+      "memory_saved": true,
+      "missing_fields": [],
+      "error": null
+    },
+    {
+      "message": "Что я не ем?",
+      "status": 200,
+      "answer": "По сохранённой памяти:\nНе ешь: рыба, свинина\nПищевые ограничения: без молока\nПредпочтения: растительная пища\nПриёмов пищи в день: 4",
+      "nutrition_estimate": null,
+      "memory_saved": false,
+      "missing_fields": [],
+      "error": null
+    },
+    {
+      "message": "Сегодня я не ем мясо",
+      "status": 200,
+      "answer": "Сохранено в твоём спортивном профиле:\nСообщённые ограничения: Сегодня я не ем мясо\n\nСегодня ты не ешь мясо. С учётом этого, твои ограничения на сегодня:\n- Не ешь: мясо, рыба, свинина\n- Без молока\n- Предпочтения: растительная пища\n\nЕсли потребуется скорректировать рекомендации или меню на сегодня, учту эти ограничения. Для постоянного изменения профиля уточни, хочешь ли ты исключить мясо всегда или только сегодня.",
+      "nutrition_estimate": null,
+      "memory_saved": true,
+      "missing_fields": [],
+      "error": null
+    },
+    {
+      "message": "Я снова ем рыбу",
+      "status": 200,
+      "answer": "Сохранено в твоей памяти: исключённые продукты.",
+      "nutrition_estimate": null,
+      "memory_saved": true,
+      "missing_fields": [],
+      "error": null
+    },
+    {
+      "message": "Моя цель в питании — набор мышечной массы. Рассчитай мои калории и БЖУ",
+      "status": 200,
+      "answer": "Сохранено в твоей памяти: цель питания.\n\nС указанными возрастом, ограничениями или запросом жёсткой диеты индивидуальные калории и БЖУ нужно обсудить со специалистом. Я могу объяснить общие принципы питания; экстремальную диету не предлагаю.",
+      "nutrition_estimate": null,
+      "memory_saved": true,
+      "missing_fields": [],
+      "error": null
+    }
+  ],
+  "pageErrors": [],
+  "failedRequests": [],
+  "backend_version": 22,
+  "diagnostic": "The one-day check originally compared only nutrition_preferences. Subsequent full-profile read confirmed the transient food statement was saved in sports restrictions and enabled needs_professional, causing the next calculation to be refused. This is a failed run, not acceptance."
+}
