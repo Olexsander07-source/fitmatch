@@ -1,3 +1,11 @@
+## Latest checkpoint — stage 3D, 10 October 2026
+
+Stage 3D is a verified candidate in [draft PR #36](https://github.com/Olexsander07-source/fitmatch/pull/36), source `dc933f48774f14e54c27be6fa76b35edabc9ae10`, tree `c5a3c51815c8e5f104149b004e4b334f7ea53c11`; GitHub CI #101 passed ([run](https://github.com/Olexsander07-source/fitmatch/actions/runs/38045682302)). Branch `codex/ai-progress-stage3d-20261010`, stacked on the 3C candidate `68a11b37d46d3948cca25837b25a766973ad0b94` (PR #35; 3B PR #34). See [full 3D report](ai-progress-stage3d-20261010.md). Existing progress/workout tables are reused; every new measurement is a row, profile weight stays coherent, deterministic history answers never use planned loads as actual results. No automatic analytics or program adaptation added.
+
+186 Node checks, Linux deploy dry run (33 files, final exiting marker), 68 progress UI scenarios, 48 workout/40 nutrition UI regressions, real combined 3B/3C/3D PostgreSQL/RLS rollback suites passed. QA evidence and final source hashes are in `qa/ai-stage3d/`. No fixtures or candidate schema persist in production. Read the full report before any release.
+
+Production remains 3A `d87ab9759a9573a1d6d62405c0846bf114ff8aaa`. 3B/3C/3D have not been merged, migrated or deployed. DESKTOP-EJAAHVB is Offline. Mandatory Windows `npm.cmd run check` and `npm.cmd run deploy:dry` and live production acceptance remain. Use a separate clean checkout and the full candidate Edge handler, then only `npm.cmd run deploy` through safe-deploy to `fitgoin-production`. Do not use legacy `fitgoin`, expose secrets, touch the original dirty Windows checkout, or expand scope.
+
 # FitGoIn AI: latest checkpoint — 2026-10-10
 
 ## Последний checkpoint — этап 3C, 10 октября 2026
