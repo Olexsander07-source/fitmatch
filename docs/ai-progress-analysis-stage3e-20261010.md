@@ -2,7 +2,9 @@
 
 10 октября 2026. **Проверенный кандидат; этапы 3B–3E ещё не опубликованы на https://fitgoin.com.** Работа продолжает действующие 3A–3D, выполнена в отдельном checkout `fitgoin-stage3e`, ветка `codex/ai-progress-analysis-stage3e-20261010`, от 3D `110f5ba1cb563e126f9eb542387045fb4bf633a7`. Исходный Windows checkout и чужие незакоммиченные изменения не затрагивались. Запрос пользователя на публикацию всех оставшихся этапов принят; повторного разрешения не требуется.
 
-Кандидаты зависят друг от друга: [3B / PR #34](https://github.com/Olexsander07-source/fitmatch/pull/34) → [3C / PR #35](https://github.com/Olexsander07-source/fitmatch/pull/35) → [3D / PR #36](https://github.com/Olexsander07-source/fitmatch/pull/36) → этот 3E. Source commit, PR и CI будут записаны после сохранения этого checkpoint.
+Кандидаты зависят друг от друга: [3B / PR #34](https://github.com/Olexsander07-source/fitmatch/pull/34) → [3C / PR #35](https://github.com/Olexsander07-source/fitmatch/pull/35) → [3D / PR #36](https://github.com/Olexsander07-source/fitmatch/pull/36) → [3E / PR #37](https://github.com/Olexsander07-source/fitmatch/pull/37).
+
+Кандидат сохранён в [PR #37](https://github.com/Olexsander07-source/fitmatch/pull/37), source checkpoint `72be626cd6ee32a96d8d36895922f0e3a7d9897a`, tree `9c30549673882930141bfc880c51b7611162c365`. [GitHub CI #103](https://github.com/Olexsander07-source/fitmatch/actions/runs/38059163286) завершился **success** (check и production build). Следующий checkpoint отчёта не меняет проверенный код.
 
 Свежая проверка 10 октября: `origin/main` и [production release.json](https://fitgoin.com/release.json) — `d87ab9759a9573a1d6d62405c0846bf114ff8aaa` (3A, сборка 9 октября, 13:56:57 UTC); Supabase Edge `fitgoin-ai` ACTIVE, версия 23. DESKTOP-EJAAHVB по Desktop Commander **Offline**. Обязательные Windows `npm.cmd run check`, `npm.cmd run deploy:dry` и безопасная публикация пока недоступны. Linux проверки ниже не подменяют выпуск и не означают, что сайт обновлён.
 
@@ -78,6 +80,7 @@
 
 | Проверка | Результат |
 | --- | --- |
+| GitHub Actions Verify FitGoIn #103 | **Success**, tree точно совпадает с локальным проверенным кандидатом |
 | Linux `npm run check` и повтор в `deploy:dry` | **216/216**, включая 30 новых 3E |
 | Linux `npm run deploy:dry` | Успех, 33 production файла и финальный `--dry-run: exiting now.`; ничего не опубликовано |
 | Настоящий Supabase PostgreSQL, candidate migrations 3B–3E в одной BEGIN/ROLLBACK | Все четыре SQL suites прошли |

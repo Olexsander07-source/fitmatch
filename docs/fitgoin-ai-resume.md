@@ -1,6 +1,6 @@
 ## Latest checkpoint — stage 3E, 10 October 2026
 
-Stage 3E continues the verified 3D candidate `110f5ba1cb563e126f9eb542387045fb4bf633a7` in branch `codex/ai-progress-analysis-stage3e-20261010`. Read [the full 3E report](ai-progress-analysis-stage3e-20261010.md). Source commit, PR and CI are recorded after the source checkpoint is saved.
+Stage 3E is saved in [draft PR #37](https://github.com/Olexsander07-source/fitmatch/pull/37), source `72be626cd6ee32a96d8d36895922f0e3a7d9897a`, tree `9c30549673882930141bfc880c51b7611162c365`; [GitHub CI #103](https://github.com/Olexsander07-source/fitmatch/actions/runs/38059163286) passed. It continues the verified 3D candidate `110f5ba1cb563e126f9eb542387045fb4bf633a7` in branch `codex/ai-progress-analysis-stage3e-20261010`. Read [the full 3E report](ai-progress-analysis-stage3e-20261010.md). A following docs/evidence checkpoint preserves this tested source.
 
 The user explicitly requests 3E and publication of all earlier unpublished stages. Existing authorization covers implementation, verification and the safe release; do not ask for it again. 3B PR #34 → 3C PR #35 → 3D PR #36 → 3E form one dependency chain. Earlier prohibitions on analytics/new stages in historical checkpoints are superseded only by these explicit later requests. Do not add any stage after 3E.
 
