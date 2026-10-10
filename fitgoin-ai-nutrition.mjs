@@ -8,7 +8,7 @@ const goalLabels={loss:'снижение веса',gain:'набор мышечн
 const activityLabels={sedentary:'низкая',light:'умеренная',active:'высокая'};
 const incidental=/например|цитат|мо(?:й|ему|его) (?:друг|клиент|брат)|моя (?:подруга|сестра)|если|представим|for example|my friend|hypothet|if |par exemple|mon ami|«|»|[“”"]/iu;
 const temporary=/сегодня|завтра|на эту неделю|на этой неделе|один раз|today|tomorrow|this week|aujourd.hui|demain/iu;
-const foodStatement=/(?:я не ем|я (?:теперь|снова) ем|мои пищевые|в питании я предпочитаю|я вег(?:ан|етариан)|я предпочитаю \d\s*прием|(?:я хочу|хочу) есть \d|моя цель (?:по питанию|в питании)|i (?:do not|don't) eat|je ne mange pas|i eat (?:again|now)|my food preferences|my dietary restrictions|my nutrition goal|i am (?:vegan|vegetarian)|i prefer \d\s*meals)/iu;
+const foodStatement=/(?:я не ем|я не люблю|мне не нравится|я (?:теперь|снова) ем|мои пищевые|в питании я предпочитаю|я вег(?:ан|етариан)|я предпочитаю \d\s*прием|(?:я хочу|хочу) есть \d|моя цель (?:по питанию|в питании)|i (?:do not|don't) eat|je ne mange pas|i eat (?:again|now)|my food preferences|my dietary restrictions|my nutrition goal|i am (?:vegan|vegetarian)|i prefer \d\s*meals)/iu;
 const clinical=/беремен|кормлю груд|диабет|анорекс|булими|расстройств.*пищев|тяжел.*аллерг|pregnan|breastfeed|diabet|anorex|bulimi|eating disorder|severe allerg/iu;
 const medicalText=d=>[d.restrictions,d.diet,d.nutrition_preferences?.restrictions,d.nutrition_preferences?.preferences].filter(x=>typeof x==='string').join(' ');
 const text=(x,n)=>typeof x==='string'&&x.trim().length<=n&&!/[\u0000-\u001f]/.test(x)?x.trim():undefined;
@@ -26,7 +26,7 @@ export function nutritionPreferences(data={}){
  return result;
 }
 export function nutritionCalculationIntent(message){
- const s=norm(message);return !/например|for example|мой друг|my friend|формул|formula|«|»|[“”"]/iu.test(s)&&/(калори|бжу|macros|calories|calorie|proteins? fats?)/iu.test(s)&&/(рассч|посчит|сколько|мои|мне|моя|calculate|estimate|my |combien|calcule)/iu.test(s);
+ const s=norm(message);return !/например|for example|мой друг|my friend|формул|formula|«|»|[“”"]/iu.test(s)&&/(калори|бжу|белк|macros|calories|calorie|proteins?)/iu.test(s)&&/(рассч|посчит|сколько|мои|мне|моя|calculate|estimate|my |combien|calcule)/iu.test(s);
 }
 export function nutritionMemory(data,message){
  const previous=nutritionPreferences(data),prefs={...previous},fields=[],patch={},updates=[];
@@ -34,7 +34,7 @@ export function nutritionMemory(data,message){
  for(const raw of message.split(/[!;\n]+|\.(?!\d)/u)){
   const s=norm(raw);if(!s||(s.includes('?')&&!nutritionCalculationIntent(s)))continue;let m;
   if(!temporary.test(raw)){
-  if((m=s.match(/^(?:я не ем|i (?:do not|don't) eat|je ne mange pas) (.+)$/u))){
+  if((m=s.match(/^(?:я не ем|я не люблю|мне не нравится|i (?:do not|don't) eat|je ne mange pas) (.+)$/u))){
    const foods=m[1].split(/\s*[,]\s*|\s+(?:и|and|et)\s+/u).map(canonicalFood);
    if(foods.some(x=>!text(x,100)))throw invalid();prefs.excluded_foods=[...new Set([...(prefs.excluded_foods||[]),...foods])];fields.push('excluded_foods');
   }else if((m=s.match(/^(?:я (?:теперь|снова) ем|i eat (?:again|now)) (.+)$/u))){
@@ -43,8 +43,8 @@ export function nutritionMemory(data,message){
   else if((m=s.match(/^(?:мои пищевые предпочтения|в питании я предпочитаю|my food preferences)\s*[:—-]?\s*(.+)$/u))){patch.diet=m[1];fields.push('diet');}
   else if(/^(?:я вегетарианец|я вегетарианка|я веган|я веганка|i am vegan|i am vegetarian)$/u.test(s)){patch.diet=s;fields.push('diet');}
   else if((m=s.match(/^(?:я предпочитаю|я хочу|хочу|i prefer) (\d)\s*(?:приема? пищи|приемов пищи|meals)(?: в день| per day)?$/u))||(m=s.match(/^(?:я хочу|хочу) есть (\d) раза? в день$/u))){prefs.meals_per_day=Number(m[1]);fields.push('meals_per_day');}
-  else if((m=s.match(/^(?:моя цель (?:по питанию|в питании)|my nutrition goal)\s*[:—-]?\s*(.+)$/u))||(m=s.match(/^(?:я хочу|хочу|i want to)\s+(похудеть|снизить вес|набирать мышечную массу|набрать мышечную массу|поддерживать вес|улучшить спортивную форму|lose weight|gain muscle|maintain weight|improve performance)(?:\s|$)/u))){
-   const v=m[1];prefs.goal=/похуд|сниз.*вес|сниж.*вес|weight loss|lose weight/u.test(v)?'loss':/мышеч|набор.*масс|muscle gain|gain muscle/u.test(v)?'gain':/поддерж|maintain/u.test(v)?'maintain':/спортив.*форм|performance/u.test(v)?'performance':null;fields.push('goal');
+  else if((m=s.match(/^(?:моя цель (?:по питанию|в питании)|my nutrition goal)\s*[:—-]?\s*(.+)$/u))||(m=s.match(/^(?:я хочу|хочу|i want to)\s+(похудеть|снизить вес|набирать мышечную массу|набрать мышечную массу|набрать массу|поддерживать вес|улучшить спортивную форму|lose weight|gain muscle|maintain weight|improve performance)(?:\s|$)/u))){
+   const v=m[1];prefs.goal=/похуд|сниз.*вес|сниж.*вес|weight loss|lose weight/u.test(v)?'loss':/мышеч|набр?а.*масс|набор.*масс|muscle gain|gain muscle/u.test(v)?'gain':/поддерж|maintain/u.test(v)?'maintain':/спортив.*форм|performance/u.test(v)?'performance':null;fields.push('goal');
   }else if((m=s.match(/^(?:моя общая активность|my overall activity)\s*[:—-]?\s*(низкая|умеренная|высокая|sedentary|light|active)$/u))){patch.activity=({низкая:'sedentary',умеренная:'light',высокая:'active'})[m[1]]||m[1];fields.push('activity');}
   }
   if(/^(?:я |у меня |i am |i have )/iu.test(s)&&clinical.test(s))updates.push({field:'restrictions',value:raw.trim(),evidence:raw.trim()});

@@ -15,7 +15,9 @@ Continues PR #14 and the existing marketplace. Monthly products: training €20,
 
 Do not enable Stripe automatic tax without verifying an active tax registration and the treatment of final EUR prices. Stripe Tax requires registrations; a flag alone does not establish tax collection. Real Stripe account availability is not established by a sandbox connection.
 
-The `fitgoin-ai` bundle contains its entrypoint and root dependencies `fitgoin-ai-core.mjs`, `fitgoin-ai-paid.mjs`, `fitgoin-ai-memory.mjs`, `fitgoin-ai-program.mjs`, `fitgoin-ai-workout.mjs` and `fitgoin-ai-nutrition.mjs`. Deploy all seven together when changing AI behavior. The separate billing function needs only its existing core/paid dependencies and is not redeployed for stages 2C/3A. Both have gateway JWT verification disabled because the former authenticates every POST with Supabase Auth getUser and the latter combines independently authenticated customer actions with a signed Stripe webhook path. Public GET exposes only configuration status.
+The Stage 3B `fitgoin-ai` bundle contains its entrypoint and root dependencies `fitgoin-ai-core.mjs`, `fitgoin-ai-paid.mjs`, `fitgoin-ai-memory.mjs`, `fitgoin-ai-program.mjs`, `fitgoin-ai-workout.mjs`, `fitgoin-ai-nutrition.mjs` and `fitgoin-ai-meals.mjs`. Deploy all eight together when changing AI behavior, after verifying the nutrition version migration. The separate billing function needs only its existing core/paid dependencies and is not redeployed for stages 2C/3A/3B. Both have gateway JWT verification disabled because the former authenticates every POST with Supabase Auth getUser and the latter combines independently authenticated customer actions with a signed Stripe webhook path. Public GET exposes only configuration status.
+
+Stage 3B menus and single-food replacements use bounded portions and a server-owned basic composition catalogue. The current nutrition version is changed only by an explicit confirmation of an owner-private draft. See `docs/ai-nutrition-stage3b-20261010.md` for actual verification and outstanding production gates; this source bundle is not itself proof of publication.
 
 ## Access and billing lifecycle
 

@@ -1,4 +1,8 @@
-# FitGoIn AI: latest checkpoint — 2026-10-08
+# FitGoIn AI: latest checkpoint — 2026-10-10
+
+The user explicitly authorized Stage 3B personal daily nutrition plans, preserving the existing Stage 3A calculations and food memory. Read `ai-nutrition-stage3b-20261010.md` first. The corrected 3A release is main d87ab9759a9573a1d6d62405c0846bf114ff8aaa, backend v23; the public release marker was freshly verified on October 10. Stage 3B is a separate candidate, not yet published: 151 Node tests, actual PostgreSQL transaction/RLS acceptance with rollback, and 40 browser checks of the actual frontend/handler with isolated Auth/REST fixtures have passed. Windows check/dry, production migration/backend/frontend publication and real Auth acceptance remain. DESKTOP-EJAAHVB was offline at the latest device check. Preserve the original dirty checkout. Do not merge/deploy until the prescribed checks pass; publish only through `npm.cmd run deploy` and safe-deploy on clean main to `fitgoin-production`. Do not add workouts, analytics or another stage. Existing authorization covers finishing this work; do not ask the user to repeat it.
+
+## Historical checkpoint — 2026-10-08
 
 The user explicitly authorized Stage 2C on October 6 after Stage 2B: conversational changes to the saved program and a simple current-workout mode in the existing chat, real two-account/RLS/error acceptance, and publication after verification. Earlier instructions not to start 2B/2C describe historical publication-only tasks and are superseded by those later requests. Stage 3 remains outside the authorized scope.
 
