@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-10T14:17:11.486Z",
+  "stage": "3E",
+  "node": {
+    "command": "npm run check",
+    "platform": "Linux",
+    "passed": true,
+    "tests": 216
+  },
+  "dry": {
+    "command": "npm run deploy:dry",
+    "platform": "Linux",
+    "passed": true,
+    "public_files": 33,
+    "final_marker": "--dry-run: exiting now.",
+    "production_published": false
+  },
+  "browser": {
+    "stage3e": 64,
+    "stage3d": 68,
+    "stage3c": 48,
+    "stage3b": 40,
+    "total": 220,
+    "widths": [
+      360,
+      390,
+      768,
+      1440
+    ],
+    "environment": "actual frontend and handler with isolated Auth/REST fixtures; not live production Auth"
+  },
+  "windows_checks_run": false,
+  "publication_blocker": "Desktop Commander DESKTOP-EJAAHVB is Offline",
+  "production_changed": false
+}

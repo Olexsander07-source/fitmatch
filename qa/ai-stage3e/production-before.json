@@ -1,0 +1,12 @@
+{
+  "checked_on": "2026-10-10",
+  "url": "https://fitgoin.com/release.json",
+  "commit": "d87ab9759a9573a1d6d62405c0846bf114ff8aaa",
+  "built_at": "2026-10-09T13:56:57.402Z",
+  "build_id": "94b25968-042f-4c7e-b6df-0ddedc39c3dc",
+  "edge_function": "fitgoin-ai",
+  "edge_version": 23,
+  "edge_status": "ACTIVE",
+  "candidate_stages_published": false,
+  "desktop_status": "Offline"
+}

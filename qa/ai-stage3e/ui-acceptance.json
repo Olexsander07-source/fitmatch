@@ -1,0 +1,329 @@
+{
+  "date": "2026-10-10T14:13:57.383Z",
+  "environment": "local actual frontend and handler; isolated Auth/REST fixtures",
+  "passed": true,
+  "checks": [
+    {
+      "name": "empty history cannot fabricate measurements or an adaptation",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "actual dates, counts and heavy-session proposal leave the active program untouched",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "private proposal survives reload without becoming a program",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "explicit refusal preserves the program and all actual exercise results",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "confirmation API failure cannot falsely acknowledge a saved version",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "lost confirmation response is recovered from history without another program version",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "confirmed new version preserves the previous program, other exercises and journal",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "same confirmation nonce cannot create a duplicate program version",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "reload loads the confirmed active version from saved rows",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "light-session progression requires explicit technique/no-pain confirmation",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "analysis RPC failure does not display a fabricated or stale report",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "progress analysis cards fit mobile and desktop viewports with usable controls",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "account switch clears the previous report and proposal",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "logout and re-login restore the owner active version only",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "dangerous symptoms stop the actual session and ordinary recommendations",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "urgent advice remains visible during a Supabase save failure",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "empty history cannot fabricate measurements or an adaptation",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "actual dates, counts and heavy-session proposal leave the active program untouched",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "private proposal survives reload without becoming a program",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "explicit refusal preserves the program and all actual exercise results",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "confirmation API failure cannot falsely acknowledge a saved version",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "lost confirmation response is recovered from history without another program version",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "confirmed new version preserves the previous program, other exercises and journal",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "same confirmation nonce cannot create a duplicate program version",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "reload loads the confirmed active version from saved rows",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "light-session progression requires explicit technique/no-pain confirmation",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "analysis RPC failure does not display a fabricated or stale report",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "progress analysis cards fit mobile and desktop viewports with usable controls",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "account switch clears the previous report and proposal",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "logout and re-login restore the owner active version only",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "dangerous symptoms stop the actual session and ordinary recommendations",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "urgent advice remains visible during a Supabase save failure",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "empty history cannot fabricate measurements or an adaptation",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "actual dates, counts and heavy-session proposal leave the active program untouched",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "private proposal survives reload without becoming a program",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "explicit refusal preserves the program and all actual exercise results",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "confirmation API failure cannot falsely acknowledge a saved version",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "lost confirmation response is recovered from history without another program version",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "confirmed new version preserves the previous program, other exercises and journal",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "same confirmation nonce cannot create a duplicate program version",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "reload loads the confirmed active version from saved rows",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "light-session progression requires explicit technique/no-pain confirmation",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "analysis RPC failure does not display a fabricated or stale report",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "progress analysis cards fit mobile and desktop viewports with usable controls",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "account switch clears the previous report and proposal",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "logout and re-login restore the owner active version only",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "dangerous symptoms stop the actual session and ordinary recommendations",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "urgent advice remains visible during a Supabase save failure",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "empty history cannot fabricate measurements or an adaptation",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "actual dates, counts and heavy-session proposal leave the active program untouched",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "private proposal survives reload without becoming a program",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "explicit refusal preserves the program and all actual exercise results",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "confirmation API failure cannot falsely acknowledge a saved version",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "lost confirmation response is recovered from history without another program version",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "confirmed new version preserves the previous program, other exercises and journal",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "same confirmation nonce cannot create a duplicate program version",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "reload loads the confirmed active version from saved rows",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "light-session progression requires explicit technique/no-pain confirmation",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "analysis RPC failure does not display a fabricated or stale report",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "progress analysis cards fit mobile and desktop viewports with usable controls",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "account switch clears the previous report and proposal",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "logout and re-login restore the owner active version only",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "dangerous symptoms stop the actual session and ordinary recommendations",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "urgent advice remains visible during a Supabase save failure",
+      "width": 1440,
+      "passed": true
+    }
+  ],
+  "providerCalls": 0,
+  "errors": []
+}
