@@ -2,7 +2,7 @@
 
 ## Последний checkpoint — этап 3C, 10 октября 2026
 
-Проверенный кандидат `codex/ai-workout-log-stage3c-20261010` после 3B `6825f7a` (PR #34). Единая запись реальных тренировок в существующей `fgi_ai_workouts`: подтверждение завершения, реальные подходы, optional duration/difficulty/comment, атомарность и дедупликация. Отчёт: [ai-workout-stage3c-20261010.md](ai-workout-stage3c-20261010.md).
+Проверенный кандидат [PR #35](https://github.com/Olexsander07-source/fitmatch/pull/35), ветка `codex/ai-workout-log-stage3c-20261010`, source checkpoint `4252310`, CI #99 success, после 3B `6825f7a` (PR #34). Единая запись реальных тренировок в существующей `fgi_ai_workouts`: подтверждение завершения, реальные подходы, optional duration/difficulty/comment, атомарность и дедупликация. Отчёт: [ai-workout-stage3c-20261010.md](ai-workout-stage3c-20261010.md).
 
 168 тестов, Linux deploy:dry, 48 браузерных проверок 3C и 40 питания прошли. Настоящий SQL/RLS suite с миграцией кандидата и регрессией 3B прошёл в BEGIN/ROLLBACK; fixture и schema leftovers отсутствуют. Production не менялся: main/release `d87ab975`, DESKTOP-EJAAHVB offline. Не заявлять 3B/3C опубликованными и не пропускать Windows check/dry. Публикация только через существующий safe-deploy в fitgoin-production.
 

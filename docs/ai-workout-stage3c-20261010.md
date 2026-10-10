@@ -1,6 +1,8 @@
 # FitGoIn AI — этап 3C: выполненные тренировки
 
-10 октября 2026. Проверенный кандидат после 3A и 3B. **На production этап 3C не опубликован.** Компьютер DESKTOP-EJAAHVB определяется Desktop Commander как offline, поэтому обязательные Windows-команды `npm.cmd run check` и `npm.cmd run deploy:dry` сейчас выполнить нельзя.
+10 октября 2026. Проверенный кандидат после 3A и 3B. **На production этап 3C не опубликован.** Компьютер DESKTOP-EJAAHVB определяется Desktop Commander как offline, поэтому обязательные по [AGENTS.md](../AGENTS.md) Windows-команды `npm.cmd run check` и `npm.cmd run deploy:dry` сейчас выполнить нельзя.
+
+Кандидат сохранён в [PR #35](https://github.com/Olexsander07-source/fitmatch/pull/35), отдельным изменением после 3B. Исходный checkpoint `4252310db37e2555530388d39fd413b1347c435f`, tree `63e16a76157b127616acb09cdf1600349bfbd437`. [GitHub CI #99](https://github.com/Olexsander07-source/fitmatch/actions/runs/38040420571) завершился успешно: check и production build. Последующий checkpoint отчёта не меняет проверенный код.
 
 Работа выполнена в отдельном checkout `fitgoin-stage3c`, ветка `codex/ai-workout-log-stage3c-20261010`, от проверенного кандидата 3B `6825f7a53d1862d16434aabccdff2b32588267b6` (PR #34). Исходный Windows checkout и чужие незакоммиченные изменения не затрагивались. `main` и https://fitgoin.com/release.json по свежей проверке остаются на `d87ab9759a9573a1d6d62405c0846bf114ff8aaa`, сборка от 9 октября 2026, 13:56:57 UTC.
 
@@ -55,6 +57,7 @@ Backend получает владельца через проверку токе
 
 | Проверка | Результат |
 | --- | --- |
+| GitHub Actions Verify FitGoIn #99 | **Success**, проверен точно совпадающий Git tree кандидата |
 | `npm run check` и проверки внутри `deploy:dry` на Linux | **168/168**, включая прежние этапы, питание, голос, hosting и безопасный deploy |
 | `npm run deploy:dry` на Linux | Код 0; сборка 33 файлов; подтверждён финальный `--dry-run: exiting now.` |
 | Настоящий Supabase PostgreSQL с candidate migration внутри `BEGIN/ROLLBACK` | Старт, четыре подхода 80 кг × 8, сохранение и чтение владельцем; неизвестные значения остаются null; явные 45 мин / 8 из 10 сохраняются |
