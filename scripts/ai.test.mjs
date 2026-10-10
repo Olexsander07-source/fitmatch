@@ -186,12 +186,14 @@ test('backend sends complete recent history in order and the current message las
  assert.deepEqual(request.input.filter(m=>m.role!=='developer').map(m=>m.content),['I have no equipment','Earlier answer','Only twelve minutes now','Long reply '+ 'x'.repeat(3000),'Explain my latest limits']);
  assert(s.calls.find(c=>c.url.includes('/fgi_ai_messages?')).url.includes('limit=40'));
 });
-test('failed plan gets one bounded repair and only the validated plan is committed',async()=>{
+test('nutrition creation computes portions without trusting an invalid provider plan or accepting it',async()=>{
  const bad=nutrition();bad.protein_g=500;
- const s=setup({responses:[providerResponse(bad),providerResponse(nutrition())]});
- assert.equal((await s.request({action:'nutrition'})).status,200);
- assert.equal(s.calls.filter(c=>c.url.includes('api.openai.com')).length,2);
- assert.equal(s.calls.filter(c=>c.url.endsWith('/rpc/fgi_ai_complete')).length,1);
+ const s=setup({responses:[providerResponse(bad)]});
+ const response=await s.request({action:'nutrition'});assert.equal(response.status,200);
+ assert.equal(s.calls.filter(c=>c.url.includes('api.openai.com')).length,0);
+ const saved=s.calls.filter(c=>c.url.endsWith('/rpc/fgi_ai_complete'));assert.equal(saved.length,1);
+ assert.equal(saved[0].body.p_kind,null);assert.equal(saved[0].body.p_document,null);
+ assert.equal(saved[0].body.p_result.nutrition_plan_pending.mode,'proposal');
 });
 test('provider rejection still settles reserved cost without storing a fabricated response',async()=>{
  const s=setup({response:{status:'incomplete',usage:{input_tokens:100,output_tokens:20},output:[]}});
@@ -200,18 +202,16 @@ test('provider rejection still settles reserved cost without storing a fabricate
  assert(!s.calls.some(c=>c.url.endsWith('/rpc/fgi_ai_complete')));
 });
 
-test('a numerically invalid plan gets one repair and only the valid result is stored',async()=>{
-  const bad=nutrition();bad.meals[0].calories=1500;
-  const s=setup({responses:[providerResponse(bad),providerResponse(nutrition())]});
-  const response=await s.request({action:'nutrition',module:'nutrition'});
-  assert.equal(response.status,200);
-  const calls=s.calls.filter(x=>x.url.includes('api.openai.com'));
-  assert.equal(calls.length,2);
-  const saved=s.calls.find(x=>x.url.includes('fgi_ai_complete'));
-  assert.deepEqual(saved.body.p_document,nutrition());
-  const reserve=s.calls.find(x=>x.url.includes('fgi_ai_reserve')).body.p_amount;
-  assert(reserve>.45,'Reserve must cover both possible provider calls');
+test('a nutrition proposal has portion-derived totals and consumes no provider reservation',async()=>{
+ const bad=nutrition();bad.meals[0].calories=1500;
+ const s=setup({responses:[providerResponse(bad)]}),response=await s.request({action:'nutrition',module:'nutrition'});
+ assert.equal(response.status,200);const result=await response.json(),d=result.nutrition_plan_pending.document;
+ assert.equal(result.nutrition_saved,undefined);assert.equal(result.kind,null);
+ assert.equal(Math.round(d.protein_g*4+d.fat_g*9+d.carbs_g*4),d.calories);
+ assert(d.meals.every(m=>m.items.every(x=>x.quantity_g>0)));
+ assert(!s.calls.some(x=>x.url.includes('api.openai.com')||x.url.includes('fgi_ai_reserve')));
 });
+
 test('invalid repair remains rejected and both billed attempts are metered',async()=>{
   const bad={...training(),workouts:[]};
   const billed={...providerResponse(bad),usage:{input_tokens:100,output_tokens:50}};

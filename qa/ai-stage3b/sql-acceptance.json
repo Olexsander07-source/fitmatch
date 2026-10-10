@@ -1,0 +1,14 @@
+{
+  "date": "2026-10-10T07:03:35.908162+00:00",
+  "project": "ypbhcgcwkpiujcakvaji",
+  "passed": true,
+  "candidate_migration": "20261009141146_ai_nutrition_plan_versions.sql",
+  "execution": "candidate DDL and test in a real PostgreSQL transaction, full rollback",
+  "result": "meal proposal, confirmation, archive, nonce, stale profile/base, rollback and owner/foreign RLS passed",
+  "cleanup": {
+    "temporary_users": 0,
+    "temporary_plans": 0,
+    "candidate_index": null
+  },
+  "coverage": "compact portion storage fixtures; Auth JWT sub simulated under authenticated role, actual browser Auth remains a production acceptance gate"
+}
