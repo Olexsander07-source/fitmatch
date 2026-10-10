@@ -1,6 +1,6 @@
 # FitGoIn — этап 3D: история тренировок и веса
 
-10 октября 2026. **Проверенный кандидат, ещё не опубликован на https://fitgoin.com.** Работа продолжает 3A и кандидаты 3B/3C, выполнена в отдельном чистом checkout `fitgoin-stage3d`, ветка `codex/ai-progress-stage3d-20261010`, от `68a11b37d46d3948cca25837b25a766973ad0b94`. Чужие изменения и исходный Windows checkout сохранены.
+10 октября 2026. **Проверенный кандидат, ещё не опубликован на https://fitgoin.com.** Кандидат сохранён в [PR #36](https://github.com/Olexsander07-source/fitmatch/pull/36), source checkpoint `dc933f48774f14e54c27be6fa76b35edabc9ae10`, tree `c5a3c51815c8e5f104149b004e4b334f7ea53c11`. [GitHub CI #101](https://github.com/Olexsander07-source/fitmatch/actions/runs/38045682302) завершился **success** (check и production build). Последующий checkpoint отчёта не изменяет проверенный код. Работа продолжает 3A и кандидаты 3B/3C, выполнена в отдельном чистом checkout `fitgoin-stage3d`, ветка `codex/ai-progress-stage3d-20261010`, от `68a11b37d46d3948cca25837b25a766973ad0b94`. Чужие изменения и исходный Windows checkout сохранены.
 
 3B находится в PR #34, 3C — в PR #35. Они пока не объединены с `main`. По свежей проверке `origin/main` и https://fitgoin.com/release.json остаются на `d87ab9759a9573a1d6d62405c0846bf114ff8aaa` (сборка 9 октября 2026, 13:56:57 UTC). Компьютер DESKTOP-EJAAHVB определяется Desktop Commander как **Offline**. Поэтому обязательные по AGENTS.md Windows-команды `npm.cmd run check` и `npm.cmd run deploy:dry`, production migration, Edge deployment и проверка опубликованного 3D не выполнены. Linux dry run не заменяет этот выпускной шаг.
 
@@ -72,6 +72,7 @@
 
 | Проверка | Результат |
 | --- | --- |
+| GitHub Actions Verify FitGoIn #101 | **Success**, точно совпадающий tree кандидата |
 | Linux `npm run check` и проверки в `deploy:dry` | **186/186**, включая 18 новых 3D и прежние 3B/3C |
 | Linux `npm run deploy:dry` | Успех, 33 production файла, код 0 и финальный `--dry-run: exiting now.`; публикации не было |
 | Настоящий Supabase PostgreSQL, candidate 3B/3C/3D в одной `BEGIN/ROLLBACK` | Разные даты, несколько измерений в один день, старый вес, профиль, chat nonce, stale failure, photo path/remove, сохранение всей истории |
