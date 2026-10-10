@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-10T14:17:11.486Z",
+  "project": "FitGoIn",
+  "mode": "real PostgreSQL BEGIN/ROLLBACK",
+  "passed": true,
+  "stages": [
+    "3B",
+    "3C",
+    "3D",
+    "3E"
+  ],
+  "migrations": [
+    "20261009141146",
+    "20261010083455",
+    "20261010101602",
+    "20261010132150"
+  ],
+  "checks": [
+    "dated measurements and daily latest",
+    "whole interval completed count: 233",
+    "actual food journal vs saved menu",
+    "historical version calendar, unknown days and today excluded",
+    "actual exercise records only",
+    "owner-only data/module access",
+    "proposal does not replace active plan",
+    "decline preserves program",
+    "profile, evidence, active session and pain conflicts roll back",
+    "confirmation archives exact previous document and keeps journals",
+    "nonce replay has no duplicate or internal instructions",
+    "authenticated second account RLS and browser/anonymous RPC EXECUTE denied"
+  ],
+  "no_production_schema_applied": true
+}

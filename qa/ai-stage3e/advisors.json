@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-10",
+  "scope": "production after rollback; candidate schema not installed",
+  "error_count": 0,
+  "security": [
+    {
+      "name": "rls_enabled_no_policy",
+      "level": "INFO",
+      "count": 7,
+      "existing": true,
+      "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy"
+    },
+    {
+      "name": "auth_leaked_password_protection",
+      "level": "WARN",
+      "count": 1,
+      "existing": true,
+      "remediation": "https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection"
+    }
+  ],
+  "performance": [
+    {
+      "name": "unused_index",
+      "level": "INFO",
+      "count": 3,
+      "existing": true,
+      "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index"
+    }
+  ],
+  "settings_changed": false
+}

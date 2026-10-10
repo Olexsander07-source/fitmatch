@@ -14,6 +14,7 @@ Object.assign(ERRORS,{memory_update_invalid:'Не удалось однозна�
 Object.assign(ERRORS,{invalid_progress:'Проверь вес (20–300 кг), точность до 0,01 кг и дату измерения: дата не может быть в будущем.',progress_immutable:'Сохранённые измерения не перезаписываются. Добавь новую запись.'});
 Object.assign(ERRORS,{workout_changed:'Тренировка или результаты уже изменились. Обнови историю и проверь запись перед повтором.',invalid_workout_result:'Проверь подходы, повторения, вес и необязательную сложность: результат не сохранён.',confirmation_required:'Подтверди завершение тренировки перед сохранением.'});
 Object.assign(ERRORS,{program_changed:'Программа уже изменилась. Обнови историю и выбери упражнение из активной версии.',invalid_workout:'Не удалось найти тренировку или упражнение в активной программе. Выбери его из карточки.'});
+Object.assign(ERRORS,{progress_proposal_changed:'Предложение или данные уже изменились. Обнови разбор прогресса перед подтверждением; программа не изменена.'});
 Object.assign(ERRORS,{nutrition_plan_changed:'Рацион или данные профиля уже изменились. Обнови историю; при изменении цели или числа приёмов пищи составь новый черновик.',invalid_nutrition_plan:'Рацион не прошёл проверку порций и БЖУ. Он не был сохранён.',nutrition_preferences_conflict:'Не удалось составить сбалансированный базовый рацион с этими ограничениями. Уточни доступные продукты.'});
 const field=(title,input)=>`<label>${title}${input}</label>`;
 const options=(values,current)=>values.map(v=>{const [key,label]=Array.isArray(v)?v:[v,v];return `<option value="${esc(key)}"${key===current?' selected':''}>${esc(label)}</option>`;}).join('');
@@ -27,7 +28,7 @@ export function mountFitGoInAI(root,opts) {
   let intakeStep=0,profileConsent=false,savedIds=[],savedMessages=[],drawerOpen=false,requestActive=false,userStopped=false,searchDraft=false;
   let busy=false,status='',statusError=false,configured=false,controller=null,active=null,restTimer=null,recorder=null,micStream=null,voicePending=false,voiceTicket=0,voiceText='',draft='',lastLoad=0,readinessRequest=null,destroyed=false;
   let access={modules:[],checkout_enabled:false},food=[],analysis=null,module='training';
-  let pending=null,historyLimit=80,moreHistory=false,preferredConversation=null,progressPending=null,progressShown=30,workoutsShown=30;
+  let pending=null,historyLimit=80,moreHistory=false,preferredConversation=null,progressPending=null,progressShown=30,workoutsShown=30,analysisReport=null;
   // Only this tab's draft and delivery state. Completed history lives in Supabase.
   const chatKey=()=>`fgi-ai-chat:${actor}`;
   function persistChat(){if(actor)try{sessionStorage.setItem(chatKey(),JSON.stringify({conversation_id:conversation?.id||preferredConversation,module,draft,searchDraft,pending,progressPending}));}catch{}}
@@ -45,7 +46,7 @@ export function mountFitGoInAI(root,opts) {
     if(actor)try{sessionStorage.removeItem(chatKey());}catch{}
     epoch++;controller?.abort();controller=null;stopVoice();clearInterval(restTimer);restTimer=null;
     programExpanded=false;actor=null;loaded=false;profile=null;profileDraft=null;conversation=null;conversations=[];messages=[];plans=[];sessions=[];progress=[];shares=[];received=[];photoURLs.clear();active=null;voiceText='';draft='';busy=false;status='';statusError=false;
-    access={modules:[],checkout_enabled:false};food=[];analysis=null;module='training';pending=null;historyLimit=80;moreHistory=false;preferredConversation=null;progressPending=null;progressShown=30;workoutsShown=30;
+    access={modules:[],checkout_enabled:false};food=[];analysis=null;module='training';pending=null;historyLimit=80;moreHistory=false;preferredConversation=null;progressPending=null;progressShown=30;workoutsShown=30;analysisReport=null;
     intakeStep=0;profileConsent=false;savedIds=[];savedMessages=[];drawerOpen=false;requestActive=false;userStopped=false;searchDraft=false;view='ask';document.body.style.overflow='';
     if(window.speechSynthesis)window.speechSynthesis.cancel();
   }
@@ -68,7 +69,7 @@ export function mountFitGoInAI(root,opts) {
     } finally{clearTimeout(timeout);if(controller===requestController)controller=null;}
   }
   async function load(e=epoch) {
-    if(!actor)return;const id=actor;
+    if(!actor)return;const id=actor;analysisReport=null;
     const results=await Promise.all([
       db().from('fgi_ai_profiles').select('*').eq('user_id',id).maybeSingle(),
       db().from('fgi_ai_conversations').select('*').eq('user_id',id).order('created_at',{ascending:false}).limit(50),
@@ -161,9 +162,17 @@ export function mountFitGoInAI(root,opts) {
     dialog(`<h2>Подтверди порцию и оценку</h2><form data-ai-form="food" data-source="${source}"><div class="form-grid">${field('Название',input('name',value.name||'','text','maxlength="160" required'))}${field('Дата',input('recorded_on',dateNow(),'date','required'))}${['calories_low','calories_high','protein_g','fat_g','carbs_g'].map(k=>field(({calories_low:'Калории · нижняя оценка',calories_high:'Калории · верхняя оценка',protein_g:'Белки, г',fat_g:'Жиры, г',carbs_g:'Углеводы, г'})[k],input(k,value[k]??'','number',`min="0" max="${k.startsWith('calories')?5000:600}" step="0.1" required`))).join('')}</div><p class="hint">Исправь данные по фактической порции, упаковке или известному рецепту. Сохранение не изменяет твоё меню автоматически.</p><button class="btn primary" type="submit">Подтверждаю, сохранить</button></form>`);
   }
   const latest=kind=>kind==='training'?activeProgram(plans):plans.find(x=>x.kind===kind&&x.status==='active');
+  function progressProposalPanel(){
+    const proposal=profile?.data?.program_edit_pending,plan=latest('training');
+    if(proposal?.kind!=='progress_analysis'||proposal.mode!=='proposal')return '';
+    if(proposal.program_id!==plan?.id)return '<div class="panel"><p>Предложение относится к прежней программе. Обнови разбор перед подтверждением.</p></div>';
+    if(proposal.conversation_id!==conversation?.id)return `<div class="panel"><p>Адаптация обсуждалась в другом диалоге.</p><button type="button" class="btn" data-ai-history="${esc(proposal.conversation_id)}">Открыть предложение</button></div>`;
+    const changes=(proposal.changes||[]).map(c=>{const w=plan.document.workouts.find(w=>w.id===c.workout_id),e=w?.exercises.find(e=>e.id===c.exercise_id);return `<li>${esc(w?.title)} · ${esc(e?.name)}: <strong>${esc(c.before)} → ${esc(c.after)}</strong> ${c.field==='sets'?'подходов':'повторений'}</li>`;}).join('');
+    return `<section class="panel ai-edit-proposal" data-progress-proposal="${esc(proposal.id)}"><h3>Предлагаемая адаптация</h3><p>${esc(proposal.reason)}</p><ul>${changes}</ul><p class="hint">Активная программа ещё не изменена. После согласия создадим новую версию; предыдущая версия и результаты сохранятся.</p>${proposal.operation==='increase_reps'?'<label><input type="checkbox" data-ai-progression-consent> Подтверждаю: техника уверенная, боли нет.</label>':''}<div class="actions">${button('confirm-progress-edit','Применить изменение',true,`data-draft-id="${esc(proposal.id)}" data-program-id="${esc(plan.id)}"`)}${button('cancel-progress-edit','Не менять программу',false,`data-draft-id="${esc(proposal.id)}" data-program-id="${esc(plan.id)}"`)}</div></section>`;
+  }
   function simpleWorkoutPanel(){
     const plan=latest('training'),state=currentWorkout(plan,profile?.data),proposal=profile?.data?.program_edit_pending;
-    const confirmation=proposal?.mode==='proposal'&&proposal.program_id===plan?.id?`<div class="ai-edit-proposal" data-edit-proposal><p>Предложенная замена: ${proposal.replacements.map(c=>esc(c.exercise.name)).join(', ')}. Активная программа ещё не изменена.</p><div class="actions">${button('confirm-edit','Сохранить замену',true)}${button('cancel-edit','Отменить замену')}</div></div>`:'';
+    const confirmation=proposal?.kind==='progress_analysis'?progressProposalPanel():proposal?.mode==='proposal'&&proposal.program_id===plan?.id?`<div class="ai-edit-proposal" data-edit-proposal><p>Предложенная замена: ${(proposal.replacements||[]).map(c=>esc(c.exercise.name)).join(', ')}. Активная программа ещё не изменена.</p><div class="actions">${button('confirm-edit','Сохранить замену',true)}${button('cancel-edit','Отменить замену')}</div></div>`:'';
     const completion=completionPanel();
     if(active)return confirmation+completion+activeView();
     const choices=sessions.filter(x=>!x.completed_at&&x.data?.status==='active');
@@ -215,6 +224,7 @@ export function mountFitGoInAI(root,opts) {
     const measurements=progress.filter(r=>r.weight_kg!=null),completed=sessions.filter(s=>s.completed_at&&s.data?.status==='completed').sort((a,b)=>Date.parse(b.completed_at)-Date.parse(a.completed_at));
     const last=measurements[0];
     return `<h2>Мой прогресс</h2><div class="fgi-ai-week"><article class="panel"><h3>Последнее измерение</h3><p>${last?`${esc(last.recorded_on)} · <strong>${esc(Number(last.weight_kg).toLocaleString('ru-RU'))} кг</strong>`:'Измерений веса пока нет.'}</p><p class="hint">Каждое измерение сохраняется отдельно, включая повторное измерение в тот же день.</p></article><article class="panel"><h3>Последняя выполненная тренировка</h3><p>${completed[0]?`${esc(new Date(completed[0].completed_at).toLocaleString('ru-RU'))} · ${esc(completed[0].data.workout?.title||'Тренировка')}`:'Выполненных тренировок пока нет.'}</p><p class="hint">Плановые нагрузки и остановленные занятия не считаются выполненными.</p></article></div>
+      <section class="panel section-small" data-progress-analysis><h3>Разбор прогресса</h3><p class="hint">Вес, завершённые занятия и фактический дневник питания. Расчёты используют всю историю за выбранный период, даже если список ниже сокращён.</p>${button('analyze-progress','Проанализировать 28 дней',true,!configured?'disabled':'')}${analysisReport?`<div data-analysis-answer>${analysisReport.answer.split('\n\n').map(p=>'<p>'+esc(p)+'</p>').join('')}</div>`:'<p class="muted">Запроси разбор. Без измерений и записанных результатов AI не придумывает динамику.</p>'}</section>${progressProposalPanel()}
       <div class="panel section-small"><h3>Новое измерение</h3><form data-ai-form="progress"><div class="form-grid">${field('Дата измерения',input('recorded_on',dateNow(),'date',`required max="${dateNow()}" min="2000-01-01"`))}${field('Вес, кг',input('weight_kg','','number','min="20" max="300" step="0.01"'))}${field('Талия, см · необязательно',input('waist_cm','','number','min="20" max="300" step="0.1"'))}${field('Сон, часов · необязательно',input('sleep_hours','','number','min="0" max="24" step="0.5"'))}${field('Энергия, 1–5 · необязательно',input('energy','','number','min="1" max="5" step="1"'))}${field('Личное фото · необязательно','<input name="photo" type="file" accept="image/jpeg,image/png,image/webp">')}</div>${field('Комментарий',`<textarea name="notes" rows="2" maxlength="1500"></textarea>`)}<p class="hint">Предыдущие записи сохраняются. Вес профиля обновляется по последнему измерению по дате. Фотография остаётся приватной и не анализируется AI.</p><button type="submit" class="btn primary">Сохранить измерение</button></form>${progressPending?button('retry-progress','Проверить и повторить запись',false):''}</div>
       <h3 class="section-small">История веса и измерений</h3><div class="fgi-ai-history" data-progress-history>${progress.slice(0,progressShown).map(r=>`<article class="panel" data-measurement-id="${esc(r.id)}"><strong>${esc(r.recorded_on)}</strong><p>${r.weight_kg!=null?`${esc(Number(r.weight_kg).toLocaleString('ru-RU'))} кг · `:''}${r.waist_cm!=null?`${esc(Number(r.waist_cm).toLocaleString('ru-RU'))} см · `:''}${r.sleep_hours!=null?`Сон ${esc(r.sleep_hours)} ч · `:''}${r.energy!=null?`Энергия ${esc(r.energy)}/5`:''}</p><p>${esc(r.notes)}</p>${photoURLs.has(r.photo_path)?`<img class="fgi-ai-photo" src="${esc(photoURLs.get(r.photo_path))}" alt="Личное фото прогресса ${esc(r.recorded_on)}" loading="lazy">`:''}${r.photo_path?button('remove-photo','Удалить фото',false,`data-progress-id="${esc(r.id)}"`):''}</article>`).join('')||'<p class="muted">История измерений пока пуста. Добавь измерение в форме или напиши AI «Сегодня я вешу 84 кг».</p>'}</div>${progress.length>progressShown&&progressShown<999?button('more-progress','Показать более ранние измерения'):''}
       <div class="panel section-small" data-workout-history><h3>История выполненных тренировок</h3>${completed.slice(0,workoutsShown).map(s=>`<details><summary>${esc(new Date(s.completed_at).toLocaleString('ru-RU'))} · ${esc(s.data.workout?.title||'Тренировка')} · ${(s.data.sets||[]).length} подходов</summary><p>Выполнена${s.data.duration_minutes!=null?' · '+esc(s.data.duration_minutes)+' мин':''}${s.data.difficulty!=null?' · сложность '+esc(s.data.difficulty)+'/10':''}</p>${s.data.comment?'<p>'+esc(s.data.comment)+'</p>':''}<ul>${(s.data.sets||[]).map(x=>`<li>${esc(x.exercise)}: ${x.reps!=null?esc(x.reps)+' повторений':'повторения не указаны'}${x.weight_kg!=null?` · ${esc(x.weight_kg)} кг`:' · вес не указан'}${x.rpe!=null?' · сложность '+esc(x.rpe)+'/10':''}${x.comment?' · '+esc(x.comment):''}</li>`).join('')}</ul>${!(s.data.sets||[]).length?'<p class="muted">Результаты упражнений не записаны.</p>':''}</details>`).join('')||'<p class="muted">История выполненных тренировок пока пуста.</p>'}${completed.length>workoutsShown&&workoutsShown<999?button('more-workouts','Показать более ранние тренировки'):''}</div>
@@ -271,13 +281,14 @@ export function mountFitGoInAI(root,opts) {
     assert(e);
     if(typeof result.answer!=='string'||!result.answer.trim())throw Error('connection_uncertain');
     pending=null;requestActive=false;persistChat();
+    if(result.safety_warning&&result.answer_saved===false){notice(result.answer+' Ответ показан, но сохранение истории и отметки остановки не подтверждено. Не продолжай тренировку.',true);return;}
     if(conversation.title==='FitGoIn AI'){
       // Cosmetic title failure must never turn a committed answer into a resend.
       const renamed=await db().from('fgi_ai_conversations').update({title:body.message.slice(0,80)}).eq('id',conversation.id).eq('user_id',actor).then(value=>value,()=>({error:true}));assert(e);
       if(!renamed.error)conversation.title=body.message.slice(0,80);
     }
     try{await load(e);}catch(error){assert(e);notice('Ответ сохранён на сервере. Не удалось обновить историю; нажми «Обновить».',true);throw Error('history_refresh_failed');}
-    if(result.nutrition_view)view=originatingView==='nutrition'||body.action==='nutrition'?'nutrition':'ask';else if(result.kind)view=result.kind==='nutrition'?'nutrition':'ask';else view=result.workout_view&&originatingView==='today'||result.workout_completed&&originatingView==='today'?'today':'ask';
+    if(result.progress_analysis){analysisReport=result.progress_analysis;view=originatingView==='progress'?'progress':'ask';}else if(originatingView==='progress'&&body.program_target?.draft_id)view='progress';else if(result.nutrition_view)view=originatingView==='nutrition'||body.action==='nutrition'?'nutrition':'ask';else if(result.kind)view=result.kind==='nutrition'?'nutrition':'ask';else view=result.workout_view&&originatingView==='today'||result.workout_completed&&originatingView==='today'?'today':'ask';
     if(result.workout_selected)active=sessions.find(x=>x.id===result.workout_selected)||active;
     programExpanded=Boolean(result.program_view||result.kind==='training');
     notice(result.progress_saved?'Измерение сохранено в истории.':result.nutrition_saved?'Рацион сохранён. Он будет доступен после повторного входа.':result.nutrition_plan_pending?.mode==='proposal'?'Черновик готов. Проверь порции и подтверди сохранение.':result.program_saved?(result.program_previous_id?'Новая версия программы сохранена. Предыдущая версия сохранена в архиве.':'Программа сохранена. Она будет доступна после повторного входа.'):result.program_pending?'Уточним недостающие данные в чате.':result.memory_saved?'Данные профиля обновлены, ответ сохранён в истории.':'Ответ сохранён в истории.');
@@ -480,6 +491,7 @@ export function mountFitGoInAI(root,opts) {
     if(action==='manual-food'){foodDialog();return;}
     if(action==='confirm-food'&&analysis?.type==='food_photo'){foodDialog({name:analysis.document.title,...analysis.document.total},'confirmed_photo');return;}
     if(action==='technique'){dialog(mediaForm('technique'));return;}
+    const progressionConfirmed=action==='confirm-progress-edit'&&Boolean(q('[data-ai-progression-consent]')?.checked);
     if(action==='share-preview'){previewShare(b.dataset.coach);return;}
     if(action==='delete-data'){dialog('<h2>Удалить данные AI?</h2><p>Будут удалены спортивный профиль, AI-переписка, планы, результаты, фотографии и переданные сводки. Основной аккаунт и сообщения тренерам сохранятся. Удаление AI-данных не отменяет подписку; её нужно отменить отдельно в «Доступ к AI».</p><form data-ai-form="delete"><label>Введи УДАЛИТЬ<input name="confirm" required pattern="УДАЛИТЬ" autocomplete="off"></label><button type="submit" class="btn">Удалить данные AI</button></form>');return;}
     if(action==='speak'){const text=messages.find(m=>m.id===b.dataset.messageId)?.body;if(text&&window.speechSynthesis){speechSynthesis.cancel();const speech=new SpeechSynthesisUtterance(text);speech.lang=normalizeProfile(profile?.data).language;speechSynthesis.speak(speech);}return;}
@@ -497,6 +509,12 @@ export function mountFitGoInAI(root,opts) {
       if(action==='retry-message')await retryMessage(e);
       if(action==='new-chat'){if(pending?.state==='uncertain'){notice('Сначала проверь доставку предыдущего вопроса.',true);return;}const next=unwrap(await db().from('fgi_ai_conversations').insert({user_id:actor}).select().single());assert(e);conversation=next;messages=[];draft='';searchDraft=false;historyLimit=80;pending=null;persistChat();view='ask';menu(false);await load(e);notice('Новый разговор. Твой профиль и результаты сохраняются.');}
       if(action==='create-training')await ask('training','Создай программу тренировок по моим сохранённым спортивным данным.',e);
+      if(action==='analyze-progress'){analysisReport=null;module=hasAccess(access,'training')?'training':'nutrition';await ask('chat','Проанализируй мой прогресс за 28 дней.',e);}
+      if(action==='confirm-progress-edit'||action==='cancel-progress-edit'){
+        const proposal=profile?.data?.program_edit_pending;
+        if(action==='confirm-progress-edit'&&proposal?.operation==='increase_reps'&&!progressionConfirmed){notice('Подтверди уверенную технику и отсутствие боли перед прогрессией.');return;}
+        module='training';await ask('chat',action==='cancel-progress-edit'?'Не меняй программу':proposal?.operation==='increase_reps'?'Подтверждаю прогрессию: техника уверенная, боли нет.':'Сохрани адаптацию',e,{program_id:b.dataset.programId,draft_id:b.dataset.draftId});
+      }
       const simpleMessages={'simple-start':'Начинаем тренировку','simple-technique':'Как правильно делать это упражнение?','simple-rest':'Сколько отдыхать?','simple-next':'Что дальше?','simple-stop':'Заверши тренировку','confirm-edit':'Сохрани замену','cancel-edit':'Отмени замену'};
       if(simpleMessages[action]){module='training';await ask('chat',simpleMessages[action],e);}
       if(action==='simple-replace'){module='training';await ask('chat','Замени это упражнение в моей программе.',e,{program_id:latest('training')?.id,workout_id:b.dataset.workoutId,exercise_id:b.dataset.exerciseId});}
