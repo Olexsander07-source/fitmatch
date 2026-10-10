@@ -1,5 +1,12 @@
 # FitGoIn AI: latest checkpoint — 2026-10-10
 
+## Последний checkpoint — этап 3C, 10 октября 2026
+
+Проверенный кандидат [PR #35](https://github.com/Olexsander07-source/fitmatch/pull/35), ветка `codex/ai-workout-log-stage3c-20261010`, source checkpoint `4252310`, CI #99 success, после 3B `6825f7a` (PR #34). Единая запись реальных тренировок в существующей `fgi_ai_workouts`: подтверждение завершения, реальные подходы, optional duration/difficulty/comment, атомарность и дедупликация. Отчёт: [ai-workout-stage3c-20261010.md](ai-workout-stage3c-20261010.md).
+
+168 тестов, Linux deploy:dry, 48 браузерных проверок 3C и 40 питания прошли. Настоящий SQL/RLS suite с миграцией кандидата и регрессией 3B прошёл в BEGIN/ROLLBACK; fixture и schema leftovers отсутствуют. Production не менялся: main/release `d87ab975`, DESKTOP-EJAAHVB offline. Не заявлять 3B/3C опубликованными и не пропускать Windows check/dry. Публикация только через существующий safe-deploy в fitgoin-production.
+
+
 The user explicitly authorized Stage 3B personal daily nutrition plans, preserving the existing Stage 3A calculations and food memory. Read `ai-nutrition-stage3b-20261010.md` first. The corrected 3A release is main d87ab9759a9573a1d6d62405c0846bf114ff8aaa, backend v23; the public release marker was freshly verified on October 10. Stage 3B is a separate candidate, not yet published: 151 Node tests, actual PostgreSQL transaction/RLS acceptance with rollback, and 40 browser checks of the actual frontend/handler with isolated Auth/REST fixtures have passed. GitHub CI #97 (38033636887) passed for source commit dbcc0b67521a4c496ce6d35cbbd81ba5a5c1eb28. PR #34 is a draft. Windows check/dry, production migration/backend/frontend publication and real Auth acceptance remain. DESKTOP-EJAAHVB was offline at the latest device check. Preserve the original dirty checkout. Do not merge/deploy until the prescribed checks pass; publish only through `npm.cmd run deploy` and safe-deploy on clean main to `fitgoin-production`. Do not add workouts, analytics or another stage. Existing authorization covers finishing this work; do not ask the user to repeat it.
 
 ## Historical checkpoint — 2026-10-08
