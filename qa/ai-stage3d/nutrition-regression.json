@@ -1,0 +1,209 @@
+{
+  "date": "2026-10-10T10:30:06.395Z",
+  "environment": "local actual frontend and handler; isolated Auth/REST fixtures",
+  "passed": true,
+  "checks": [
+    {
+      "name": "create honours saved food exclusions and meal count without accepting",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "one product replacement keeps every other exact portion",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "explicit confirmation accepts the edited menu once",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "page reload restores exact accepted portions",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "sign out and sign in restore the current version",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "mobile layout fits viewport and touch buttons",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "new proposals and cancellation preserve the accepted version",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "switching account clears previous UI data",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "Supabase commit failure cannot replace or claim to save a plan",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "database load failure has a visible error without stale cards",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "create honours saved food exclusions and meal count without accepting",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "one product replacement keeps every other exact portion",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "explicit confirmation accepts the edited menu once",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "page reload restores exact accepted portions",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "sign out and sign in restore the current version",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "mobile layout fits viewport and touch buttons",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "new proposals and cancellation preserve the accepted version",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "switching account clears previous UI data",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "Supabase commit failure cannot replace or claim to save a plan",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "database load failure has a visible error without stale cards",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "create honours saved food exclusions and meal count without accepting",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "one product replacement keeps every other exact portion",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "explicit confirmation accepts the edited menu once",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "page reload restores exact accepted portions",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "sign out and sign in restore the current version",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "mobile layout fits viewport and touch buttons",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "new proposals and cancellation preserve the accepted version",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "switching account clears previous UI data",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "Supabase commit failure cannot replace or claim to save a plan",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "database load failure has a visible error without stale cards",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "create honours saved food exclusions and meal count without accepting",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "one product replacement keeps every other exact portion",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "explicit confirmation accepts the edited menu once",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "page reload restores exact accepted portions",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "sign out and sign in restore the current version",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "mobile layout fits viewport and touch buttons",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "new proposals and cancellation preserve the accepted version",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "switching account clears previous UI data",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "Supabase commit failure cannot replace or claim to save a plan",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "database load failure has a visible error without stale cards",
+      "width": 1440,
+      "passed": true
+    }
+  ],
+  "providerCalls": 0,
+  "errors": []
+}

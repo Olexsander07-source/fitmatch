@@ -1,0 +1,349 @@
+{
+  "date": "2026-10-10T10:34:24.900Z",
+  "environment": "local actual frontend and handler; isolated Auth/REST fixtures",
+  "passed": true,
+  "checks": [
+    {
+      "name": "empty history has honest text and simple cards without charts",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "different dates append rows and profile tracks latest",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "backdated measurement preserves current profile weight",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "same-date measurements both remain in history",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "all dates and comments survive page reload",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "chat weight comparison is from saved chronological measurements",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "last workout and week count exclude stopped sessions",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "previous exercise load is actual recorded bench result",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "missing exercise data is not invented",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "chat measurement and performed workouts reload into progress cards",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "mobile progress cards and controls fit viewport",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "another account cannot inherit previous history in UI",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "logout and re-login restore only owner saved measurements",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "form API error remains retryable with same measurement ID",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "uncertain delivery and retry cannot duplicate form measurement",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "history API failure is an error, not fabricated empty history",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "Supabase load error does not display stale history",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "empty history has honest text and simple cards without charts",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "different dates append rows and profile tracks latest",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "backdated measurement preserves current profile weight",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "same-date measurements both remain in history",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "all dates and comments survive page reload",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "chat weight comparison is from saved chronological measurements",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "last workout and week count exclude stopped sessions",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "previous exercise load is actual recorded bench result",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "missing exercise data is not invented",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "chat measurement and performed workouts reload into progress cards",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "mobile progress cards and controls fit viewport",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "another account cannot inherit previous history in UI",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "logout and re-login restore only owner saved measurements",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "form API error remains retryable with same measurement ID",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "uncertain delivery and retry cannot duplicate form measurement",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "history API failure is an error, not fabricated empty history",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "Supabase load error does not display stale history",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "empty history has honest text and simple cards without charts",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "different dates append rows and profile tracks latest",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "backdated measurement preserves current profile weight",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "same-date measurements both remain in history",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "all dates and comments survive page reload",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "chat weight comparison is from saved chronological measurements",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "last workout and week count exclude stopped sessions",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "previous exercise load is actual recorded bench result",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "missing exercise data is not invented",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "chat measurement and performed workouts reload into progress cards",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "mobile progress cards and controls fit viewport",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "another account cannot inherit previous history in UI",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "logout and re-login restore only owner saved measurements",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "form API error remains retryable with same measurement ID",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "uncertain delivery and retry cannot duplicate form measurement",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "history API failure is an error, not fabricated empty history",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "Supabase load error does not display stale history",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "empty history has honest text and simple cards without charts",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "different dates append rows and profile tracks latest",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "backdated measurement preserves current profile weight",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "same-date measurements both remain in history",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "all dates and comments survive page reload",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "chat weight comparison is from saved chronological measurements",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "last workout and week count exclude stopped sessions",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "previous exercise load is actual recorded bench result",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "missing exercise data is not invented",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "chat measurement and performed workouts reload into progress cards",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "mobile progress cards and controls fit viewport",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "another account cannot inherit previous history in UI",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "logout and re-login restore only owner saved measurements",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "form API error remains retryable with same measurement ID",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "uncertain delivery and retry cannot duplicate form measurement",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "history API failure is an error, not fabricated empty history",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "Supabase load error does not display stale history",
+      "width": 1440,
+      "passed": true
+    }
+  ],
+  "providerCalls": 0,
+  "errors": []
+}
