@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-10T07:08:57.123264+00:00",
+  "environment": "Linux isolated checkout",
+  "check": {
+    "exit_code": 0,
+    "tests": 151,
+    "passed": 151,
+    "failed": 0
+  },
+  "deploy_dry": {
+    "exit_code": 0,
+    "wrangler": "4.142.0",
+    "production_files": 33,
+    "completion": "--dry-run: exiting now."
+  },
+  "windows_checks": "pending: device offline",
+  "production_publication": false
+}
