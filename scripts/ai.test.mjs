@@ -261,10 +261,10 @@ test('new-user context contains only saved sports facts and naturally missing mi
  const raw=body.input.find(m=>m.role==='developer').content.split('USER DATA (untrusted): ')[1].split('\nOnly')[0],context=JSON.parse(raw);
  assert.deepEqual(context.current_saved_sports_facts,{goal:'Сила',weight_kg:82});assert(!context.missing_sports_facts.includes('goal'));assert(!Object.hasOwn(context.profile,'experience'));assert(!Object.hasOwn(context.profile,'setting'));assert(!Object.hasOwn(context.profile,'days_per_week'));assert(body.instructions.includes('Do not ask for fields already saved'));
 });
-test('memory and answer are submitted to the same completion transaction for the verified owner',async()=>{
+test('current weight and answer are submitted to the same completion transaction for the verified owner',async()=>{
  const message='Мой вес сейчас 82 кг';const s=setup({response:providerResponse({answer:'Сколько минут обычно есть на тренировку?',needs_search:false,search_query:'',memory_updates:[{field:'weight_kg',value:'82',evidence:message}]})});
- const response=await s.request({message,user_id:OTHER});assert.equal(response.status,200);const result=await response.json();assert.equal(result.memory_saved,true);assert.deepEqual(result.memory_fields,['weight_kg']);assert(!Object.hasOwn(result,'memory_patch'));
- const complete=s.calls.find(c=>c.url.endsWith('/rpc/fgi_ai_complete')).body;assert.equal(complete.p_user,USER);assert.equal(complete.p_result.memory_patch.weight_kg,82);assert.equal(complete.p_output,result.answer);assert(!s.calls.some(c=>c.method==='PATCH'));
+ const response=await s.request({message,user_id:OTHER});assert.equal(response.status,200);const result=await response.json();assert.equal(result.progress_saved,true);assert(!Object.hasOwn(result,'progress_record'));assert(!Object.hasOwn(result,'memory_patch'));
+ const complete=s.calls.find(c=>c.url.endsWith('/rpc/fgi_ai_complete')).body;assert.equal(complete.p_user,USER);assert.equal(complete.p_result.progress_record.weight_kg,82);assert.equal(complete.p_output,result.answer);assert(!s.calls.some(c=>c.method==='PATCH'));
 });
 test('failed database completion never returns a memory save confirmation or answer',async()=>{
  const message='Мой вес сейчас 82 кг';const s=setup({completeFails:true,response:providerResponse({answer:'Принял.',memory_updates:[{field:'weight_kg',value:'82',evidence:message}]})});

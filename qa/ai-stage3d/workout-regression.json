@@ -1,0 +1,249 @@
+{
+  "date": "2026-10-10T10:30:02.468Z",
+  "environment": "local actual frontend and handler; isolated Auth/REST fixtures",
+  "passed": true,
+  "checks": [
+    {
+      "name": "today starts the existing program in one shared session",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "chat records correct exercise without inventing difficulty",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "repeated grouped result does not duplicate sets",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "reload restores session and form records next exercise with optional fields",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "mobile viewport and touch controls remain usable",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "finish opens confirmation and cancellation leaves session active",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "chat proposal survives refresh and explicit confirmation saves known values",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "completed results and comment reload from saved history",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "repeat completion leaves record and timestamp unchanged",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "account change clears previous results from UI",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "commit failure cannot finish or change a saved program or nutrition",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "database load failure shows error without stale session",
+      "width": 360,
+      "passed": true
+    },
+    {
+      "name": "today starts the existing program in one shared session",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "chat records correct exercise without inventing difficulty",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "repeated grouped result does not duplicate sets",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "reload restores session and form records next exercise with optional fields",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "mobile viewport and touch controls remain usable",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "finish opens confirmation and cancellation leaves session active",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "chat proposal survives refresh and explicit confirmation saves known values",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "completed results and comment reload from saved history",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "repeat completion leaves record and timestamp unchanged",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "account change clears previous results from UI",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "commit failure cannot finish or change a saved program or nutrition",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "database load failure shows error without stale session",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "today starts the existing program in one shared session",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "chat records correct exercise without inventing difficulty",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "repeated grouped result does not duplicate sets",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "reload restores session and form records next exercise with optional fields",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "mobile viewport and touch controls remain usable",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "finish opens confirmation and cancellation leaves session active",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "chat proposal survives refresh and explicit confirmation saves known values",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "completed results and comment reload from saved history",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "repeat completion leaves record and timestamp unchanged",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "account change clears previous results from UI",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "commit failure cannot finish or change a saved program or nutrition",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "database load failure shows error without stale session",
+      "width": 768,
+      "passed": true
+    },
+    {
+      "name": "today starts the existing program in one shared session",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "chat records correct exercise without inventing difficulty",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "repeated grouped result does not duplicate sets",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "reload restores session and form records next exercise with optional fields",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "mobile viewport and touch controls remain usable",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "finish opens confirmation and cancellation leaves session active",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "chat proposal survives refresh and explicit confirmation saves known values",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "completed results and comment reload from saved history",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "repeat completion leaves record and timestamp unchanged",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "account change clears previous results from UI",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "commit failure cannot finish or change a saved program or nutrition",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "database load failure shows error without stale session",
+      "width": 1440,
+      "passed": true
+    }
+  ],
+  "providerCalls": 0,
+  "errors": []
+}

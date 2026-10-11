@@ -6,6 +6,7 @@ import {conversationMemory,explicitScheduleOnly,workoutIntent,currentWorkout,wor
 import {nutritionTurn,nutritionPreferences,NUTRITION_MEMORY_RULES} from '../../../fitgoin-ai-nutrition.mjs';
 import {mealIntent,mealsTurn} from '../../../fitgoin-ai-meals.mjs';
 import {validateWorkoutInput,workoutLogIntent,workoutLogTurn} from '../../../fitgoin-ai-workout-log.mjs';
+import {progressIntent,weightRecord,historyAnswer} from '../../../fitgoin-ai-progress.mjs';
 
 export const SOURCES = ['pubmed.ncbi.nlm.nih.gov','pmc.ncbi.nlm.nih.gov','who.int','nhs.uk','acsm.org','olympics.com','bjsm.bmj.com','jissn.biomedcentral.com','link.springer.com','ods.od.nih.gov'];
 const GUIDE = `Actual FitGoIn sections: #ai = AI profile, today, training, nutrition, progress and coach matching; #account = My account (client personal details or coach profile/photos/settings); #match = 7-question trainer matching; #coaches = public trainer directory; #inbox = trainer messages; public trainer card shows the coach's public display name and has Open profile and Write buttons. Do not claim that names are hidden. Contact details and visibility rules not supplied here are unknown; do not invent them. Coach photo is edited in My account → Photos and results. AI progress photos are private and separate from public coach photos. Do not invent buttons, trainers, payments, discounts or features. Never claim to have changed an account or sent a message. Explain existing steps and link to a section using these exact hashes. An actual coach search is performed by the website's MATCH algorithm, not by invented names.`;
@@ -119,6 +120,7 @@ export function createAIHandler({env,fetcher=fetch}={}) {
       const images=media?validateImages(input.images,input.action,input.media_consent):null;
       if(input.action==='technique'&&limitedProfile(p))throw new AIError('professional_required',422);
       let message=typeof input.message==='string'?input.message.trim():'';
+      const progressAction=input.action==='chat'?progressIntent(message):null;
       const nutritionControl=input.action==='chat'?nutritionTurn(saved.data,message,module):null;
       const mealRequest=module==='nutrition'&&(input.action==='nutrition'||input.action==='chat'&&(mealIntent(message)||saved.data.nutrition_plan_pending?.mode==='request'));
       if(input.nutrition_target!==undefined&&(!input.nutrition_target||typeof input.nutrition_target!=='object'||Array.isArray(input.nutrition_target)||Object.keys(input.nutrition_target).some(k=>!['plan_id','draft_id','meal_id','item_id'].includes(k))||['plan_id','draft_id'].some(k=>input.nutrition_target[k]!==undefined&&input.nutrition_target[k]!==null&&!UUID.test(input.nutrition_target[k]))||['meal_id','item_id'].some(k=>input.nutrition_target[k]!==undefined&&(typeof input.nutrition_target[k]!=='string'||input.nutrition_target[k].length>40))))throw new AIError('invalid_nutrition_plan',422);
@@ -129,7 +131,7 @@ export function createAIHandler({env,fetcher=fetch}={}) {
       const logAction=module==='training'&&input.action==='chat'?workoutLogIntent(message,saved.data,input.workout_payload):null;
       const requestedProgram=module==='training'&&(intent==='create'||(saved.data.program_pending===true&&input.action==='chat'&&!intent));
       const timezone=validTimezone(input.timezone);
-      if(!apiKey&&!logAction&&!nutritionControl&&!mealRequest&&!['show','today','tomorrow','cancel'].includes(intent)&&!['start','next','stop','rest','technique','confirm','cancel_edit','pain'].includes(workoutAction)&&!(module==='training'&&input.action==='chat'&&explicitScheduleOnly(message))&&!(input.action==='training'&&missingSportsMemory(saved.data).length))throw new AIError('ai_not_configured',503);
+      if(!apiKey&&!progressAction&&!logAction&&!nutritionControl&&!mealRequest&&!['show','today','tomorrow','cancel'].includes(intent)&&!['start','next','stop','rest','technique','confirm','cancel_edit','pain'].includes(workoutAction)&&!(module==='training'&&input.action==='chat'&&explicitScheduleOnly(message))&&!(input.action==='training'&&missingSportsMemory(saved.data).length))throw new AIError('ai_not_configured',503);
       if(input.action==='training'&&!missingSportsMemory(saved.data).length&&programBlocked(saved.data))throw new AIError('professional_required',422);
       if(!transcription&&(!message||message.length>5000))throw new AIError('invalid_message');
       if(transcription&&(!['audio/webm','audio/mp4','audio/ogg','audio/wav','audio/mpeg'].includes(input.mime)||typeof input.audio!=='string'||input.audio.length>2700000||!Number.isFinite(input.duration)||input.duration<=0||input.duration>30))throw new AIError('invalid_audio');
@@ -149,8 +151,17 @@ export function createAIHandler({env,fetcher=fetch}={}) {
       const previousNutrition=module==='nutrition'&&!transcription&&!search&&!media?(await rest(`/rest/v1/fgi_ai_plans?user_id=eq.${actor}&kind=eq.nutrition&status=eq.active&select=*&limit=1`,{token}))[0]||null:null;
       async function completeControl(answer,extra={}){
         const result={answer,citations:[],kind:null,plan_id:null,module,livemode:live,remaining:claim.remaining,search_remaining:claim.search_remaining,...extra};
+        if(result.memory_patch?.weight_kg!==undefined)result.measurement_timezone=timezone;
         await rpc('fgi_ai_complete',{p_user:actor,p_id:nonce,p_conversation:input.conversation_id,p_consent:saved.updated_at,p_input:message,p_output:answer,p_citations:[],p_kind:result.kind,p_document:result.kind?result.document:null,p_result:result});
-        claimed=false;const {workout_changes,...visible}=result;return responseJSON(visible,200,headers);
+        claimed=false;const {workout_changes,progress_record,measurement_timezone,...visible}=result;return responseJSON(visible,200,headers);
+      }
+      if(progressAction){
+        if(progressAction.kind==='record_weight'){
+          const turn=weightRecord(message,timezone);
+          return await completeControl(turn.answer,turn.record?{progress_record:turn.record,progress_saved:true}:{});
+        }
+        const history=await rpc('fgi_ai_history',{p_user:actor,p_timezone:timezone||'UTC',p_terms:progressAction.terms||[]});
+        return await completeControl(historyAnswer(progressAction,history,timezone),{history_view:true});
       }
       if(mealRequest){const turn=mealsTurn(saved.data,message,input.action,module,previousNutrition,previousProgram,input.nutrition_target);if(turn)return await completeControl(turn.answer,turn.extra);}
       if(nutritionControl){const turn=nutritionTurn(saved.data,message,module,previousProgram);return await completeControl(turn.answer,turn.extra);}
@@ -357,7 +368,7 @@ export function createAIHandler({env,fetcher=fetch}={}) {
       if(kind==='training'){result.program_saved=true;result.program_pending=false;result.program_previous_id=previousProgram?.id||null;result.profile_snapshot=programFacts(memory.data);result.program_edit_pending=null;result.current_workout=cursorForVersion(saved.data.current_workout,previousProgram,result.plan_id,document);result.workout_view=Boolean(result.current_workout);answer=edited?'Изменение сохранено в новой активной версии программы. Предыдущая версия сохранена в архиве.':`Программа «${document.title}» сохранена. ${document.workouts.length} тренировок по твоим спортивным данным. Упражнения и замены доступны в карточках.`;result.answer=(memory.fields.length?memoryConfirmation(memory.fields,memory.data,message)+'\n\n':'')+answer;}
       if(kind==='training')answer=result.answer;
       await settle();
-      await rpc('fgi_ai_complete',{p_user:actor,p_id:nonce,p_conversation:input.conversation_id,p_consent:saved.updated_at,p_input:message,p_output:answer,p_citations:parsed.citations,p_kind:kind,p_document:kind?document:null,p_result:{...result,...(memory.fields.length?{memory_patch:memory.patch}:{})}});
+      await rpc('fgi_ai_complete',{p_user:actor,p_id:nonce,p_conversation:input.conversation_id,p_consent:saved.updated_at,p_input:message,p_output:answer,p_citations:parsed.citations,p_kind:kind,p_document:kind?document:null,p_result:{...result,...(memory.fields.length?{memory_patch:memory.patch}:{}),...(memory.patch?.weight_kg!==undefined?{measurement_timezone:timezone}:{})}});
       claimed=false;return responseJSON(result,200,headers);
     } catch(error) {
       // Rejected output still consumed provider resources; keep accurate cost controls.

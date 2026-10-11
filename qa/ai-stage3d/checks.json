@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-10T10:38:05.262264+00:00",
+  "base": "68a11b37d46d3948cca25837b25a766973ad0b94",
+  "checks": {
+    "node_passed": 186,
+    "dry_run": "passed; 33 production files; --dry-run: exiting now.",
+    "ui_progress": 68,
+    "ui_workout_regression": 48,
+    "ui_nutrition_regression": 40,
+    "real_postgres_rollback": true,
+    "windows_checks": false,
+    "production_deployed": false
+  },
+  "source_sha256": {
+    "fitgoin-ai-progress.mjs": "a6a2fbd2733fc2439c76de63908201e3c73867e20b811b1a627fd31547a5aa88",
+    "fitgoin-ai.js": "7ea6ae5d5f54e174b7807ca61236707d9b0e9a18405da15de596cfaa5e2c5cee",
+    "supabase/functions/fitgoin-ai/index.mjs": "34bcd5b400f4dfb9e19817af489363abfebc6ebde1df33bfbb9a396ba1af674c",
+    "supabase/migrations/20261010101602_ai_progress_history.sql": "685b87e96f2d1702d0dfedc5f0d09a57df752a3ff3b2b20afe0c9dd2b8a905d7",
+    "scripts/ai-progress.test.mjs": "379ebb8f9b2734edf1b7d21804f1773e06c479394eb8e4da152b2e13704eac3c",
+    "scripts/ai-progress-rls.test.sql": "fbf355fa60d33d858e16529e1353e4106c4e275fa97083184168b51cf79bff35",
+    "scripts/ai-progress-ui-smoke.cjs": "e021d50dd18e5d9d434a732a552b0e8d16abebc0f6d8df76cb22cc95b425d1ed",
+    "scripts/ai.test.mjs": "f386b1e33400e13460558d801a6696f7687722d751c4ecab8f5551a4f3d59683",
+    "scripts/safe-deploy.mjs": "407369c99547eed92b915d95d8975eb0388c333479d24c42cbfe6fc24c96d30d",
+    "package.json": "a122e9c97f4da9542faa44c09a343df3685277ba2664a3e0455700b804c7dccc"
+  }
+}
