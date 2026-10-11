@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-10T09:06:50.876507+00:00",
+  "base": "6825f7a53d1862d16434aabccdff2b32588267b6",
+  "production_commit": "d87ab9759a9573a1d6d62405c0846bf114ff8aaa",
+  "node": "v24.19.0",
+  "platform": "Linux",
+  "check": {
+    "passed": true,
+    "tests": 168,
+    "failed": 0
+  },
+  "deploy_dry": {
+    "passed": true,
+    "exit_code": 0,
+    "final_marker": "--dry-run: exiting now.",
+    "built_files": 33
+  },
+  "windows_check": "not run; Desktop Commander device offline",
+  "production_3c": "not deployed",
+  "source_sha256": {
+    "fitgoin-ai-workout-log.mjs": "42f65338ec52b6701ae4d911043a6d553118d24f66d8e4cb53542edb52980f90",
+    "fitgoin-ai.js": "dca073b4c19b27481e05da79a0d3b1d28462e06ac0207b3fb5d31b093dee68c7",
+    "supabase/functions/fitgoin-ai/index.mjs": "af6ad6a25ea1a2b06bbd1a89e454d7dea4891f7949494cb1641c83db7bc97b22",
+    "supabase/migrations/20261010083455_ai_workout_completion_log.sql": "8accab37c2227067d20b71022fd7fd28fecfddc48d7573182df7f4a5bf064ace",
+    "scripts/ai-workout-log.test.mjs": "a59b45e70cdb23fb4094ab4edf48dccc6161a30ce8178b64b12caaf426b6a59e",
+    "scripts/ai-workout-log-rls.test.sql": "87ec67fa6cbcb89a425adda0b3f226533c29a5b96f2ad6260ccff31739da7ed2",
+    "scripts/ai-workout-log-ui-smoke.cjs": "af6ba7909f06db6eba172df691276f8502a9fb85d5817606bc98fd6b50a972e7",
+    "package.json": "658a87ea2e3e3a6c4f5f118d1827497f93b1a4401a4559210968dfae6070868e",
+    "scripts/safe-deploy.mjs": "08edbdd1fc6ccad8a01450d10174feb96ab4236afdffe92e808ed1e788f7ab3f"
+  }
+}
