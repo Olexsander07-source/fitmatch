@@ -1,0 +1,8 @@
+{
+  "date": "2026-10-10T14:17:11.486Z",
+  "passed": true,
+  "candidate_rpc_absent": true,
+  "candidate_migrations_absent": true,
+  "fixture_users_remaining": 0,
+  "journals_rls": true
+}
