@@ -7,6 +7,7 @@ import {nutritionTurn,nutritionPreferences,NUTRITION_MEMORY_RULES} from '../../.
 import {mealIntent,mealsTurn} from '../../../fitgoin-ai-meals.mjs';
 import {validateWorkoutInput,workoutLogIntent,workoutLogTurn} from '../../../fitgoin-ai-workout-log.mjs';
 import {progressIntent,weightRecord,historyAnswer} from '../../../fitgoin-ai-progress.mjs';
+import {coachCandidate,coachTurn,searchForCoaches} from '../../../fitgoin-ai-coaches.mjs';
 import {analysisIntent,safetyNotice,progressTurn} from '../../../fitgoin-ai-analysis.mjs';
 
 export const SOURCES = ['pubmed.ncbi.nlm.nih.gov','pmc.ncbi.nlm.nih.gov','who.int','nhs.uk','acsm.org','olympics.com','bjsm.bmj.com','jissn.biomedcentral.com','link.springer.com','ods.od.nih.gov'];
@@ -138,7 +139,6 @@ export function createAIHandler({env,fetcher=fetch}={}) {
       const logAction=module==='training'&&input.action==='chat'?workoutLogIntent(message,saved.data,input.workout_payload):null;
       const requestedProgram=module==='training'&&(intent==='create'||(saved.data.program_pending===true&&input.action==='chat'&&!intent));
       const timezone=validTimezone(input.timezone);
-      if(!apiKey&&!safetyAction&&!analysisAction&&!progressAction&&!logAction&&!nutritionControl&&!mealRequest&&!['show','today','tomorrow','cancel'].includes(intent)&&!['start','next','stop','rest','technique','confirm','cancel_edit','pain'].includes(workoutAction)&&!(module==='training'&&input.action==='chat'&&explicitScheduleOnly(message))&&!(input.action==='training'&&missingSportsMemory(saved.data).length))throw new AIError('ai_not_configured',503);
       if(input.action==='training'&&!missingSportsMemory(saved.data).length&&programBlocked(saved.data))throw new AIError('professional_required',422);
       if(!transcription&&(!message||message.length>5000))throw new AIError('invalid_message');
       if(transcription&&(!['audio/webm','audio/mp4','audio/ogg','audio/wav','audio/mpeg'].includes(input.mime)||typeof input.audio!=='string'||input.audio.length>2700000||!Number.isFinite(input.duration)||input.duration<=0||input.duration>30))throw new AIError('invalid_audio');
@@ -147,8 +147,15 @@ export function createAIHandler({env,fetcher=fetch}={}) {
         const owned=await rest(`/rest/v1/fgi_ai_conversations?id=eq.${input.conversation_id}&user_id=eq.${actor}&select=id`,{token});
         if(!owned.length)throw new AIError('invalid_conversation',403);
       }
+      if(input.coach_use_memory!==undefined&&typeof input.coach_use_memory!=='boolean')throw new AIError('invalid_request');
+      let coachHistory=null,coachAction=null;
+      if(input.action==='chat'&&!safetyAction&&!analysisAction&&!progressAction&&!logAction&&(!nutritionControl||module==='training'&&coachCandidate(message))&&!mealRequest&&!workoutAction&&!intent&&!input.workout_target&&!input.workout_payload){
+        coachHistory=await rest(`/rest/v1/fgi_ai_messages?conversation_id=eq.${input.conversation_id}&user_id=eq.${actor}&module=eq.${module}&select=role,body,request_id&order=created_at.desc,request_id.desc,role.asc&limit=${CHAT_HISTORY_LIMIT}`,{token});
+        coachAction=coachTurn({message,history:[...coachHistory].reverse(),data:saved.data,useMemory:input.coach_use_memory!==false,programPending:saved.data.program_pending===true||Boolean(saved.data.nutrition_plan_pending)});
+      }
+      if(!apiKey&&!coachAction&&!safetyAction&&!analysisAction&&!progressAction&&!logAction&&!nutritionControl&&!mealRequest&&!['show','today','tomorrow','cancel'].includes(intent)&&!['start','next','stop','rest','technique','confirm','cancel_edit','pain'].includes(workoutAction)&&!(module==='training'&&input.action==='chat'&&explicitScheduleOnly(message))&&!(input.action==='training'&&missingSportsMemory(saved.data).length))throw new AIError('ai_not_configured',503);
       // Memory changes updated_at, while the delivery nonce must remain replayable.
-      const hash=await digest(JSON.stringify({action:input.action,module,live,message,conversation:input.conversation_id,audio:transcription?input.audio:null,mime:input.mime,duration:input.duration,images:media?input.images:null,timezone,program_target:input.program_target||null,nutrition_target:input.nutrition_target||null,...(input.workout_target!==undefined?{workout_target:input.workout_target}:{}),...(input.workout_payload!==undefined?{workout_payload:input.workout_payload}:{}),consent:saved.consented_at||saved.consent_version}));
+      const hash=await digest(JSON.stringify({action:input.action,module,live,message,conversation:input.conversation_id,audio:transcription?input.audio:null,mime:input.mime,duration:input.duration,images:media?input.images:null,timezone,program_target:input.program_target||null,nutrition_target:input.nutrition_target||null,...(input.workout_target!==undefined?{workout_target:input.workout_target}:{}),...(input.workout_payload!==undefined?{workout_payload:input.workout_payload}:{}),...(input.coach_use_memory!==undefined?{coach_use_memory:input.coach_use_memory}:{}),consent:saved.consented_at||saved.consent_version}));
       const claim=await rpc('fgi_ai_claim',{p_user:actor,p_id:nonce,p_hash:hash,p_search:search});
       if(claim.cached)return responseJSON(claim.cached,200,headers);
       if(claim.error)throw new AIError(claim.error,claim.error==='request_conflict'?409:429);
@@ -170,6 +177,10 @@ export function createAIHandler({env,fetcher=fetch}={}) {
           extra.workout_changes=sessions.filter(s=>s.data?.status==='active').slice(0,2).map(s=>({operation:'stop',session_id:s.id,revision:s.revision||0,stopped_for_pain:true}));
         }
         return await completeControl(safetyAction.answer,extra);
+      }
+      if(coachAction){
+        const {answer,...extra}=await searchForCoaches({turn:coachAction,url,token,publicKey,fetcher});
+        return await completeControl(answer,extra);
       }
       if(analysisAction){
         const days=analysisAction.kind==='confirm'?saved.data.program_edit_pending?.days||28:analysisAction.days;
@@ -249,7 +260,7 @@ export function createAIHandler({env,fetcher=fetch}={}) {
       let context=[],currentSports=sportsMemory(saved.data);
       if(!search&&!media){
         const [history,workouts,progress,account,plans,food]=await Promise.all([
-          rest(`/rest/v1/fgi_ai_messages?conversation_id=eq.${input.conversation_id}&user_id=eq.${actor}&module=eq.${module}&select=role,body,request_id&order=created_at.desc,request_id.desc,role.asc&limit=${CHAT_HISTORY_LIMIT}`,{token}),
+          coachHistory!==null?Promise.resolve([...coachHistory]):rest(`/rest/v1/fgi_ai_messages?conversation_id=eq.${input.conversation_id}&user_id=eq.${actor}&module=eq.${module}&select=role,body,request_id&order=created_at.desc,request_id.desc,role.asc&limit=${CHAT_HISTORY_LIMIT}`,{token}),
           module==='training'?rest(`/rest/v1/fgi_ai_workouts?user_id=eq.${actor}&completed_at=not.is.null&select=data,completed_at&order=completed_at.desc&limit=3`,{token}):Promise.resolve([]),
           rest(`/rest/v1/fgi_ai_progress?user_id=eq.${actor}&select=recorded_on,weight_kg,waist_cm,sleep_hours,energy&order=recorded_on.desc&limit=7`,{token}),
           !currentSports.name?rest(`/rest/v1/profiles?id=eq.${actor}&select=full_name`,{token}):Promise.resolve([]),

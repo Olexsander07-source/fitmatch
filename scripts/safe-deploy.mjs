@@ -37,6 +37,7 @@ if (local !== remote) throw new Error('Refusing deploy: local main differs from 
 
 run(node, ['--check', 'fitmatch.js']);
 run(node, ['--check', 'fitgoin-match-core.mjs']);
+run(node, ['--check', 'fitgoin-ai-coaches.mjs']);
 run(node, ['--check', 'supabase/functions/search_coaches/index.mjs']);
 run(node, ['--check', 'fitgoin-ai.js']);
 run(node, ['--check', 'fitgoin-premium.js']);
@@ -49,7 +50,7 @@ run(node, ['--check', 'fitgoin-ai-paid.mjs']);
 run(node, ['--check', 'fitgoin-ai-media.mjs']);
 run(node, ['--check', 'supabase/functions/fitgoin-ai-billing/index.mjs']);
 run(node, ['scripts/verify.mjs']);
-run(node, ['--test', 'scripts/voice.test.mjs', 'scripts/ai.test.mjs', 'scripts/ai-meals.test.mjs', 'scripts/ai-workout-log.test.mjs', 'scripts/ai-progress.test.mjs', 'scripts/ai-analysis.test.mjs', 'scripts/ai-paid.test.mjs', 'scripts/premium.test.mjs', 'scripts/verify-production.test.mjs', 'scripts/production-hosting.test.mjs','scripts/coach-search.test.mjs','scripts/match.test.mjs']);
+run(node, ['--test', 'scripts/voice.test.mjs', 'scripts/ai.test.mjs', 'scripts/ai-meals.test.mjs', 'scripts/ai-workout-log.test.mjs', 'scripts/ai-progress.test.mjs', 'scripts/ai-analysis.test.mjs', 'scripts/ai-paid.test.mjs', 'scripts/premium.test.mjs', 'scripts/verify-production.test.mjs', 'scripts/production-hosting.test.mjs','scripts/coach-search.test.mjs','scripts/match.test.mjs','scripts/ai-coaches.test.mjs']);
 process.env.FGI_RELEASE_COMMIT = local;
 run(node, ['scripts/build.mjs']);
 run(node, [wrangler, 'deploy', '--dry-run']);
