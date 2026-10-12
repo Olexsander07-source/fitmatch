@@ -9,6 +9,7 @@ Continues main 077bdab0321a2b463f33d38063df8d84fb3ebbda and the Stage 4A audit. 
 - scripts/coach-search.test.mjs: 26 filter/authorization/privacy/pagination tests.
 - scripts/coach-search-rls.test.sql: transaction-only hidden-owner/other-user/public-profile checks against the real existing database.
 - package.json: includes the new backend syntax/tests in npm run check.
+- scripts/coach-search-readonly-live.mjs and docs/qa/coach-search-stage4b-20261012.json: reproducible read-only live transport checks.
 - This report.
 
 ## SQL and existing architecture
@@ -22,7 +23,11 @@ No migration, new table, RPC, GRANT, policy or schema change. The only productio
 - Source change boundary: no frontend file or existing Edge Function changed. Windows device was offline; checks were performed in the Linux checkout using equivalent npm commands.
 
 ## Production acceptance
-Publication/readback/live acceptance pending at this source checkpoint. This section will be updated after backend deployment and disposal of isolated QA accounts. No production success is implied by the local tests.
+GitHub push was rejected by automatic approval review: the user authorized Stage 4B implementation but the review requires explicit permission for external publication of source/documentation to the remote. No alternate push or connector write was attempted. Remote main remains 077bdab0321a2b463f33d38063df8d84fb3ebbda; the Stage 4B branch does not exist remotely. The new endpoint has NOT been deployed. A separate Cloudflare deployment is neither performed nor needed.
+
+Eight read-only checks against the actual public Supabase Data API and Auth passed: catalogue 2 profiles; sport filtering 1; online 2; offline 1; Russian 2; strict 40 EUR/lesson budget 0 (both actual prices unknown); public projection strips private/payment fields; the local handler rejects an invalid token through actual Supabase Auth with 401. These are not successful authenticated acceptance of a deployed endpoint.
+
+Real RLS fixtures fully rolled back: zero remaining fixture users/coaches; original two published profiles remain. No live QA account was committed; unused generated test credentials were discarded. After publication is approved, deploy/read back this isolated endpoint and complete authenticated endpoint acceptance with controlled QA and verified cleanup.
 
 ## Limits
 - Current published trainer data are sparse: prices, goals and availability are missing. Strict searches may legitimately return no results. No missing data are inferred.

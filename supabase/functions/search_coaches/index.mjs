@@ -80,7 +80,7 @@ export function createCoachSearchHandler({env,fetcher=fetch}={}) {
         if(coaches.length===p.limit || rows.length<requested)break;
         if(scanned>=MAX_SCAN){hasMore=true;scanLimited=true;}
       }
-      return json({coaches,has_more:hasMore,next_cursor:hasMore?cursor:null,scan_limit_reached:scanLimited,ignored_filters:p.ignored_filters},200,headers);
+      return json({coaches,has_more:hasMore,next_cursor:hasMore?cursor:null,scan_limit_reached:scanLimited},200,headers);
     }catch(error) {
       return json({error:error instanceof SearchError?error.code:'backend_unavailable'},error instanceof SearchError?error.status:503,headers);
     }

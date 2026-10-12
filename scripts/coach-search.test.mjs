@@ -55,9 +55,10 @@ test('zero budget retains only a known free offer',async()=>{
 test('language is strict and unknown language does not match',async()=>{
   const s=setup({rows:[coach(1),coach(2,{languages:[]})]});assert.equal((await result(s,{language:'RU'})).data.coaches.length,1);assert.equal((await result(s,{language:'de'})).data.coaches.length,0);
 });
-test('online needs no location and explicitly reports ignored offline location',async()=>{
-  const s=setup({rows:[coach(1,{format:'Онлайн',city:''}),coach(2,{format:'Офлайн'})]});
-  const r=await result(s,{format:'Онлайн',city:'Paris',country:'France'});assert.deepEqual(r.data.coaches.map(x=>x.id),[id(1)]);assert.deepEqual(r.data.ignored_filters,['city','country']);
+test('online needs no location and honors an explicitly supplied location',async()=>{
+  const s=setup({rows:[coach(1,{format:'Онлайн',city:''}),coach(2,{format:'Офлайн'}),coach(3,{format:'Онлайн',city:'Paris'})]});
+  const broad=await result(s,{format:'Онлайн'});assert.deepEqual(broad.data.coaches.map(x=>x.id),[id(1),id(3)]);
+  const strict=await result(s,{format:'Онлайн',city:'Paris',country:'France'});assert.deepEqual(strict.data.coaches.map(x=>x.id),[id(3)]);
 });
 test('offline includes dual mode, excludes online, and matches city/country exactly',async()=>{
   const s=setup({rows:[coach(1),coach(2,{format:'Онлайн'}),coach(3,{city:'Paris'}),coach(4,{country:'Other'}),coach(5,{city:''})]});

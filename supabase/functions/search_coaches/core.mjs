@@ -44,9 +44,6 @@ export function validateSearch(input) {
   const limit=input.limit??3;
   if(!Number.isInteger(limit) || limit<1 || limit>20)throw new SearchError('invalid_limit');
   out.limit=limit;
-  // Location is an offline preference; make its omission explicit in metadata.
-  out.ignored_filters=[];
-  if(out.format==='Онлайн')for(const key of ['city','country'])if(out[key]){delete out[key];out.ignored_filters.push(key);}
   return out;
 }
 export function resolveSport(value,sports) {
@@ -59,7 +56,7 @@ export function fitsCoach(c,p,actor,sport) {
   if(!c || !UUID.test(c.id) || c.id.toLowerCase()===actor.toLowerCase() || c.published!==true)return false;
   if(sport && norm(c.sport)!==norm(sport.id))return false;
   if(p.format && c.format!==p.format && c.format!=='Онлайн и офлайн')return false;
-  if((p.city || p.country) && c.format!=='Офлайн' && c.format!=='Онлайн и офлайн')return false;
+  if((p.city || p.country) && p.format!=='Онлайн' && c.format!=='Офлайн' && c.format!=='Онлайн и офлайн')return false;
   if(p.city && norm(c.city)!==norm(p.city))return false;
   if(p.country && norm(c.country)!==norm(p.country))return false;
   const goals=tokens(c.goal);

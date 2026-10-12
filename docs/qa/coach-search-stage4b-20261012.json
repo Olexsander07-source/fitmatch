@@ -1,0 +1,44 @@
+{
+  "time": "2026-10-12T01:42:31.808Z",
+  "scope": "Read-only public Data API and actual Auth rejection; NOT a deployed endpoint or successful authenticated endpoint acceptance",
+  "checks": [
+    {
+      "name": "existing public catalogue through actual Data API",
+      "status": "passed",
+      "count": 2
+    },
+    {
+      "name": "actual sport filtering",
+      "status": "passed",
+      "count": 1
+    },
+    {
+      "name": "actual online filtering",
+      "status": "passed",
+      "count": 2
+    },
+    {
+      "name": "actual offline filtering",
+      "status": "passed",
+      "count": 1
+    },
+    {
+      "name": "actual language filtering",
+      "status": "passed",
+      "count": 2
+    },
+    {
+      "name": "actual strict budget and unit; unknown prices excluded",
+      "status": "passed",
+      "count": 0
+    },
+    {
+      "name": "public projection on actual rows",
+      "status": "passed"
+    },
+    {
+      "name": "local handler rejects invalid token through actual Supabase Auth",
+      "status": "passed"
+    }
+  ]
+}
