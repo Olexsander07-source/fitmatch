@@ -1,0 +1,168 @@
+{
+  "time": "2026-10-12T02:47:57.066Z",
+  "source": "actual published coach rows and sport dictionary; calculated locally",
+  "examples": [
+    {
+      "name": "Артур",
+      "sport": "Единоборства",
+      "onlySport": {
+        "percent": 100,
+        "reasons": [
+          "✓ Спорт совпадает"
+        ],
+        "criteria": [
+          {
+            "key": "sport",
+            "label": "Спорт",
+            "weight": 30,
+            "earned": 30,
+            "status": "matched",
+            "requested": "44c6898c-cf83-4057-87dd-6dba4bc732b8",
+            "actual": "44c6898c-cf83-4057-87dd-6dba4bc732b8"
+          }
+        ],
+        "earned": 30,
+        "total": 30,
+        "version": "2026-10-12"
+      },
+      "goalOnlineRussian": {
+        "percent": 71,
+        "reasons": [
+          "✓ Спорт совпадает",
+          "— Цель: недостаточно данных",
+          "✓ Формат совпадает",
+          "✓ Язык совпадает"
+        ],
+        "criteria": [
+          {
+            "key": "sport",
+            "label": "Спорт",
+            "weight": 30,
+            "earned": 30,
+            "status": "matched",
+            "requested": "44c6898c-cf83-4057-87dd-6dba4bc732b8",
+            "actual": "44c6898c-cf83-4057-87dd-6dba4bc732b8"
+          },
+          {
+            "key": "goal",
+            "label": "Цель",
+            "weight": 20,
+            "earned": 0,
+            "status": "unknown",
+            "requested": [
+              "Сила"
+            ],
+            "actual": null
+          },
+          {
+            "key": "format",
+            "label": "Формат",
+            "weight": 15,
+            "earned": 15,
+            "status": "matched",
+            "requested": "Онлайн",
+            "actual": "Онлайн"
+          },
+          {
+            "key": "language",
+            "label": "Язык",
+            "weight": 5,
+            "earned": 5,
+            "status": "matched",
+            "requested": "ru",
+            "actual": [
+              "uk",
+              "ru"
+            ]
+          }
+        ],
+        "earned": 50,
+        "total": 70,
+        "version": "2026-10-12"
+      },
+      "strictBudgetCount": 0
+    },
+    {
+      "name": "Olexander Yartcev",
+      "sport": "Бодибилдинг",
+      "onlySport": {
+        "percent": 100,
+        "reasons": [
+          "✓ Спорт совпадает"
+        ],
+        "criteria": [
+          {
+            "key": "sport",
+            "label": "Спорт",
+            "weight": 30,
+            "earned": 30,
+            "status": "matched",
+            "requested": "e491544f-df5f-4944-bf8d-0cd304b1935b",
+            "actual": "e491544f-df5f-4944-bf8d-0cd304b1935b"
+          }
+        ],
+        "earned": 30,
+        "total": 30,
+        "version": "2026-10-12"
+      },
+      "goalOnlineRussian": {
+        "percent": 71,
+        "reasons": [
+          "✓ Спорт совпадает",
+          "— Цель: недостаточно данных",
+          "✓ Формат совпадает",
+          "✓ Язык совпадает"
+        ],
+        "criteria": [
+          {
+            "key": "sport",
+            "label": "Спорт",
+            "weight": 30,
+            "earned": 30,
+            "status": "matched",
+            "requested": "e491544f-df5f-4944-bf8d-0cd304b1935b",
+            "actual": "e491544f-df5f-4944-bf8d-0cd304b1935b"
+          },
+          {
+            "key": "goal",
+            "label": "Цель",
+            "weight": 20,
+            "earned": 0,
+            "status": "unknown",
+            "requested": [
+              "Сила"
+            ],
+            "actual": null
+          },
+          {
+            "key": "format",
+            "label": "Формат",
+            "weight": 15,
+            "earned": 15,
+            "status": "matched",
+            "requested": "Онлайн",
+            "actual": "Онлайн и офлайн"
+          },
+          {
+            "key": "language",
+            "label": "Язык",
+            "weight": 5,
+            "earned": 5,
+            "status": "matched",
+            "requested": "ru",
+            "actual": [
+              "en",
+              "fr",
+              "uk",
+              "ru"
+            ]
+          }
+        ],
+        "earned": 50,
+        "total": 70,
+        "version": "2026-10-12"
+      },
+      "strictBudgetCount": 0
+    }
+  ]
+}

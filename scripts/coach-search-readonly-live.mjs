@@ -28,6 +28,6 @@ const handler=createCoachSearchHandler({env:{SUPABASE_URL:base,SUPABASE_ANON_KEY
 const denied=await handler(new Request(base+'/functions/v1/search_coaches',{method:'POST',headers:{Authorization:'Bearer invalid-stage4b-session','Content-Type':'application/json'},body:'{}'}));assert.equal(denied.status,401);assert.deepEqual(await denied.json(),{error:'authentication_required'});
 checks.push({name:'local handler rejects invalid token through actual Supabase Auth',status:'passed'});
 const report={time:new Date().toISOString(),scope:'Read-only public Data API and actual Auth rejection; NOT a deployed endpoint or successful authenticated endpoint acceptance',checks};
-await mkdir(new URL('../docs/qa/',import.meta.url),{recursive:true});await writeFile(new URL('../docs/qa/coach-search-stage4b-20261012.json',import.meta.url),JSON.stringify(report,null,2)+'\n');
+await mkdir(new URL('../docs/qa/',import.meta.url),{recursive:true});await writeFile(process.env.FGI_SEARCH_QA_REPORT||new URL('../docs/qa/coach-search-stage4b-20261012.json',import.meta.url),JSON.stringify(report,null,2)+'\n');
 console.log(JSON.stringify(report,null,2));
 

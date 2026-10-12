@@ -1,3 +1,4 @@
+import {MATCH_WEIGHTS} from '../fitgoin-match-core.mjs';
 import { access, readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 
@@ -83,7 +84,7 @@ if (!js.includes("call.kind==='video'")) throw new Error('Incoming video call ha
 if (!html.includes('id="matchStepText"') || !html.includes('data-match-step="6"')) throw new Error('Seven-step MATCH wizard is missing');
 if (!html.includes('id="matchAvailability"') || !html.includes('id="coachAvailability"')) throw new Error('MATCH availability controls are missing');
 if (!js.includes("payload.availability=f.getAll('availability')")) throw new Error('Coach availability persistence is missing');
-if (!js.includes("[Boolean(p.availability),5")) throw new Error('Availability weight is missing from MATCH');
+if(MATCH_WEIGHTS.availability!==5 || !js.includes("from './fitgoin-match-core.mjs'"))throw new Error('Shared MATCH availability weight is missing');
 if (!js.includes('.slice(0,3)')) throw new Error('MATCH top-three result limit is missing');
 if (!html.includes('id="clientSignupOpen"') || !html.includes('id="clientForm"') || !html.includes('id="clientCoachStart"') || !html.includes('id="becomeCoach"')) throw new Error('Client registration/account UI is missing');
 if (!js.includes("db.from('profiles').update({full_name,phone:phone || null})")) throw new Error('Client profile save flow is missing');

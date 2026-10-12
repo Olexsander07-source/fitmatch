@@ -112,10 +112,9 @@ test('scans later pages for strict text filters instead of truncating at first b
   const rows=Array.from({length:251},(_,i)=>coach(i+1,{city:i===250?'Nice':'Other'}));
   const s=setup({rows});assert.equal((await result(s,{city:'Nice'})).data.coaches[0].id,id(251));assert.equal(s.calls.filter(x=>x.url.pathname==='/rest/v1/fgi_coaches').length,2);
 });
-test('bounded scan returns continuation, never false completeness',async()=>{
+test('global ranking refuses incomplete broad scans rather than claiming best matches',async()=>{
   const rows=Array.from({length:1001},(_,i)=>coach(i+1,{city:i===1000?'Nice':'Other'}));const s=setup({rows});
-  const first=(await result(s,{city:'Nice'})).data;assert.equal(first.scan_limit_reached,true);assert.equal(first.has_more,true);assert.equal(first.next_cursor,id(1000));
-  assert.equal((await result(s,{city:'Nice',cursor:first.next_cursor})).data.coaches[0].id,id(1001));
+  const r=await result(s,{city:'Nice'});assert.equal(r.status,422);assert.equal(r.data.error,'search_too_broad');assert.ok(!Object.hasOwn(r.data,'coaches'));
 });
 test('validation rejects type confusion, SQL/select injection and arbitrary query controls',async()=>{
   for(const input of [{budget:'40'},{budget:Infinity},{budget:-1},{budget:101},{format:'online'},{language:'ru},id.neq.x'},{cursor:'x'},{limit:21},{limit:0},{select:'*'},{sql:'select *'},{goal:['Сила']},{min_experience_years:1.5}])assert.throws(()=>validateSearch(input));
@@ -145,3 +144,21 @@ test('strict predicates resist upstream data that violate any selected filter',(
   for(const change of [{sport:SPORT2},{goal:''},{format:'Онлайн'},{city:''},{country:''},{price:null},{price:'bad'},{price:41},{period:'месяц'},{languages:[]},{availability:[]},{experience_years:null}])assert.equal(fitsCoach(coach(1,change),p,USER,sports[0]),false);
 });
 
+
+test('backend ranks across all pages before applying the default top three',async()=>{
+  const rows=Array.from({length:251},(_,i)=>coach(i+1,{goal:i===250?'Сила':''}));
+  const r=await result(setup({rows}),{sport:SPORT,goal:'Сила',soft_fields:['goal']});
+  assert.equal(r.status,200);assert.equal(r.data.coaches.length,3);assert.equal(r.data.coaches[0].id,id(251));assert.equal(r.data.coaches[0].match.percent,100);assert.equal(r.data.coaches[1].match.percent,60);
+});
+test('soft preferences cannot waive mandatory budget, mode or language',async()=>{
+  for(const soft_fields of [['budget'],['format'],['language'],['city']])assert.equal((await result(setup(),{soft_fields})).data.error,'invalid_soft_fields');
+});
+test('backend provides verifiable explanations from the shared calculation',async()=>{
+  const r=await result(setup(),{sport:SPORT,goal:'Сила',soft_fields:['goal']});const m=r.data.coaches[0].match;
+  assert.equal(m.percent,100);assert.equal(m.earned,50);assert.equal(m.total,50);assert.equal(m.criteria.reduce((n,c)=>n+c.earned,0),m.earned);assert.ok(m.reasons.every(x=>x.includes('совпадает')));
+});
+
+test('exactly 1000 candidates are ranked after a one-row completion probe',async()=>{
+ const rows=Array.from({length:1000},(_,i)=>coach(i+1,{goal:i===999?'Сила':''}));
+ const r=await result(setup({rows}),{sport:SPORT,goal:'Сила',soft_fields:['goal']});assert.equal(r.status,200);assert.equal(r.data.coaches[0].id,id(1000));
+});

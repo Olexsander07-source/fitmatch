@@ -4,6 +4,7 @@ import {mountFitGoInAI} from './fitgoin-ai.js?v=20261004-premium';
 import {mountPremium} from './fitgoin-premium.js';
 import {workspaceRole,BRAND_IMAGES} from './fitgoin-premium-core.mjs';
 import {t} from './fitgoin-i18n.mjs';
+import {matchSportKey,formatFits,formMatchPreferences,rankCoaches} from './fitgoin-match-core.mjs';
 let aiAssistant=null;
 let premium=null;
 const CONFIG = Object.freeze({
@@ -49,11 +50,8 @@ let phoneMode = 'login', pendingPhone = '', pendingPhoneName = '', phoneResendUn
 let catalogueError = '', setupReady = false, visibleProfile = '', galleryEpoch = 0, accountVersion = 0, matchStep = 0;
 const publicOnly = c => c.published !== false;
 const sportName = id => sports.find(s => String(s.id) === String(id))?.name || String(id || 'Спорт не указан');
-function sportKey(id) {
-  const value = norm(sportName(id));
-  const aliases = {'бокс':'combat','boxing':'combat','mma':'combat','велосипед':'cycling'};
-  return aliases[value] || directions.find(d => d.slice(0,3).some(v => norm(v) === value))?.[0] || norm(id);
-}
+const sportKey=id=>matchSportKey(id,sports);
+
 function sportImage(id) {
   const name=sportKey(id)==='combat'?'boxing':sportKey(id)==='yoga'?'online':'coaching';
   return `./assets/brand/${name}-${matchMedia('(max-width:650px)').matches?800:1600}.webp`;
@@ -245,7 +243,6 @@ async function loadCatalogue() {
   opt($('matchGoal'),allGoals.map(g=>[g,g]),'Пока не решил');
   if(catalogueError) notice(catalogueError); else notice('');
 }
-function formatFits(c, wanted) { return !wanted || c.format === wanted || c.format === 'Онлайн и офлайн'; }
 function card(c, match) {
   return `<article class="coach-card">${photoHTML(c)}${match?`<div class="match-badge">${match.percent}% MATCH</div>`:''}<div class="card-body"><h3>${esc(c.name || 'Тренер')}</h3><p>${esc(sportName(c.sport))} · ${esc(c.city || c.format || '')}</p><div class="tags">${[c.goal,c.format,c.verified?'✓ Проверен':null,Number(c.score)>0?'Баллы профиля: '+Number(c.score):null].filter(Boolean).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div><div class="card-bottom"><span>${Number(c.rating)>0?`★ ${Number(c.rating).toFixed(1)}`:'Пока без рейтинга'}</span><span>${esc(priceText(c))}</span></div>${match?`<ul class="match-reasons">${match.reasons.map(r=>`<li>${esc(r)}</li>`).join('')}</ul>`:''}<div class="match-card-actions">${match && !c.legacy?`<button class="btn primary" data-contact="${esc(c.id)}">Написать ↗</button>`:''}<button class="btn" data-profile="${esc(c.id)}">Открыть профиль ↗</button></div></div></article>`;
 }
@@ -279,26 +276,7 @@ function resetMatchWizard(clear=false) {
   if($('matchSummary'))$('matchSummary').hidden=true;if($('matchResults'))$('matchResults').replaceChildren();
   updateMatchWizard();
 }
-function calculateMatch(c, p) {
-  if(sportKey(c.sport)!==sportKey(p.sport)) return null;
-  let earned=30,total=30; const reasons=['✓ Спорт совпадает'];
-  const citySelected=Boolean(p.city && p.format!=='Онлайн');
-  const budgetSelected=p.budget!=='';
-  const criteria=[
-    [Boolean(p.goal),20,parts(c.goal).includes(norm(p.goal)),'Цель'],
-    [Boolean(p.format),15,formatFits(c,p.format),'Формат'],
-    [citySelected,15,norm(c.city)===norm(p.city) && c.format!=='Онлайн','Город / очные занятия'],
-    [budgetSelected,10,c.price!=null && c.period===p.period && c.price<=Number(p.budget),'Бюджет'],
-    [Boolean(p.language),5,c.languages.includes(p.language),'Язык'],
-    [Boolean(p.availability),5,c.availability.includes(p.availability),'Удобное время']
-  ];
-  for(const [selected,weight,ok,label] of criteria){
-    if(!selected)continue;
-    total+=weight;if(ok)earned+=weight;
-    reasons.push(`${ok?'✓':'—'} ${label}${ok?' совпадает':' не совпадает или не указан'}`);
-  }
-  return {percent:Math.min(100,Math.round(earned/total*100)),reasons};
-}
+
 function matchPreferenceSummary(p) {
   const items=[
     sportName(p.sport),p.goal,p.format,
@@ -315,9 +293,7 @@ async function findMatch(form) {
   await new Promise(resolve=>setTimeout(resolve,backgroundMotion.matches?0:650));
   if(epoch!==authEpoch||currentPage!=='searching')return;
   const p=Object.fromEntries(new FormData(form));notice('');
-  const ranked=coaches.filter(publicOnly).filter(c=>c.id!==user?.id).map(c=>({c,m:calculateMatch(c,p)})).filter(x=>x.m)
-    .sort((a,b)=>b.m.percent-a.m.percent || Number(b.c.rating||0)-Number(a.c.rating||0) || Number(b.c.score||0)-Number(a.c.score||0))
-    .slice(0,3);
+  const ranked=rankCoaches(coaches,formMatchPreferences(p),{sports,actor:user?.id}).map(({coach,match})=>({c:coach,m:match}));
   const summary=$('matchSummary');summary.hidden=false;
   summary.innerHTML=`<p class="eyebrow">ТВОЙ MATCH</p><h2>${ranked.length?`Нашли ${ranked.length} ${ranked.length===1?'подходящего тренера':'лучших совпадения'}`:'Пока нет точного совпадения'}</h2><div class="tags">${matchPreferenceSummary(p)}</div><p class="muted">Процент рассчитан только по выбранным тобой параметрам. Он показывает совпадение анкет, а не гарантирует результат тренировок.</p>`;
   $('matchResults').innerHTML=ranked.map(x=>card(x.c,x.m)).join('') || `<p class="empty">${esc(catalogueError || 'Тренеров по этому спорту пока нет. Попробуй другой вид спорта или вернись позже.')}</p>`;
@@ -1527,8 +1503,7 @@ async function init() {
       login:()=>requireUser('ai'),navigate:page,prepareImage,openCoach:openProfile,contact,
       savedIds:()=>premium.savedIds(),toggleSaved:id=>premium.toggleSaved(id),clearSaved:()=>premium.clearSaved(),
       sports:()=>directions.map(([key,name])=>[key,name]),coachName:id=>coaches.find(c=>c.id===id)?.name||'Тренер',
-      matches:p=>coaches.filter(publicOnly).filter(c=>c.id!==user?.id).map(coach=>({coach,match:calculateMatch(coach,{...p,budget:p.budget??''})})).filter(x=>x.match)
-        .sort((a,b)=>b.match.percent-a.match.percent||Number(b.coach.rating||0)-Number(a.coach.rating||0)||Number(b.coach.score||0)-Number(a.coach.score||0)).slice(0,3)
+      matches:p=>rankCoaches(coaches,formMatchPreferences(p),{sports,actor:user?.id})
     });
     db.auth.onAuthStateChange(authChanged); // Callback синхронный: никаких вложенных вызовов Supabase Auth.
     const data=unwrap(await db.auth.getSession());user=data.session?.user || null;premium.setSession(user);authUI();aiAssistant.setSession(user);if(user)startPresenceHeartbeat();

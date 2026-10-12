@@ -1,15 +1,15 @@
-// Strict candidate retrieval only. The existing frontend MATCH is unchanged.
+import {matchNorm,SOFT_FIELDS,strictCoachFits} from '../../../fitgoin-match-core.mjs';
+// Existing data contract and public projection for the shared MATCH pipeline.
 export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-export const PUBLIC_COLUMNS = Object.freeze(['id','name','sport','goal','format','price','period','bio','city','country','languages','experience_years','education','titles','achievements','avatar_path','rating','reviews_count','verified','availability','published']);
-const INPUT_KEYS = new Set(['sport','specialization','goal','format','budget','period','language','city','country','availability','min_experience_years','limit','cursor']);
+export const PUBLIC_COLUMNS = Object.freeze(['id','name','sport','goal','format','price','period','bio','city','country','languages','experience_years','education','titles','achievements','avatar_path','rating','reviews_count','verified','availability','score','published']);
+const INPUT_KEYS = new Set(['sport','specialization','goal','format','budget','period','language','city','country','availability','min_experience_years','limit','cursor','soft_fields']);
 const FORMATS = ['Онлайн','Офлайн'];
 const PERIODS = ['занятие','месяц','программа'];
 const TIMES = ['morning','day','evening','weekend'];
 export class SearchError extends Error {
   constructor(code,status=400) { super(code); this.code=code; this.status=status; }
 }
-export const norm = value => String(value ?? '').normalize('NFC').trim().toLocaleLowerCase('ru').replace(/ё/g,'е');
-const tokens = value => String(value ?? '').split(/[,;\n]/).map(norm).filter(Boolean);
+export const norm=matchNorm;
 export function validateSearch(input) {
   if(!input || typeof input!=='object' || Array.isArray(input))throw new SearchError('invalid_request');
   for(const key of Object.keys(input)) {
@@ -17,6 +17,10 @@ export function validateSearch(input) {
     if(!INPUT_KEYS.has(key))throw new SearchError('unknown_filter');
   }
   const out={};
+  if(input.soft_fields!==undefined){
+    if(!Array.isArray(input.soft_fields) || input.soft_fields.length>3 || input.soft_fields.some(key=>!SOFT_FIELDS.includes(key)))throw new SearchError('invalid_soft_fields');
+    out.soft_fields=[...new Set(input.soft_fields)];
+  }
   for(const key of ['sport','specialization','goal','format','period','language','city','country','availability','cursor']) {
     const value=input[key];
     if(value===undefined || value===null || value==='')continue;
@@ -53,21 +57,7 @@ export function resolveSport(value,sports) {
   return candidates[0];
 }
 export function fitsCoach(c,p,actor,sport) {
-  if(!c || !UUID.test(c.id) || c.id.toLowerCase()===actor.toLowerCase() || c.published!==true)return false;
-  if(sport && norm(c.sport)!==norm(sport.id))return false;
-  if(p.format && c.format!==p.format && c.format!=='Онлайн и офлайн')return false;
-  if((p.city || p.country) && p.format!=='Онлайн' && c.format!=='Офлайн' && c.format!=='Онлайн и офлайн')return false;
-  if(p.city && norm(c.city)!==norm(p.city))return false;
-  if(p.country && norm(c.country)!==norm(p.country))return false;
-  const goals=tokens(c.goal);
-  if(p.goal && !goals.includes(norm(p.goal)))return false;
-  if(p.specialization && !goals.includes(norm(p.specialization)))return false;
-  if(p.language && (!Array.isArray(c.languages) || !c.languages.some(l=>norm(l)===p.language)))return false;
-  if(p.availability && (!Array.isArray(c.availability) || !c.availability.includes(p.availability)))return false;
-  if(p.period && c.period!==p.period)return false;
-  if(p.budget!==undefined && (c.price===null || c.price===undefined || c.price==='' || !Number.isFinite(Number(c.price)) || Number(c.price)<0 || Number(c.price)>p.budget))return false;
-  if(p.min_experience_years!==undefined && (!Number.isInteger(c.experience_years) || c.experience_years<p.min_experience_years))return false;
-  return true;
+  return Boolean(c && UUID.test(c.id)) && strictCoachFits(c,p,{actor,sports:sport?[sport]:[]});
 }
 export function publicCoach(c,sports) {
   const out={};

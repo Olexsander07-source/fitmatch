@@ -1,3 +1,4 @@
+import {rankCoaches} from '../../../fitgoin-match-core.mjs';
 import {UUID,PUBLIC_COLUMNS,SearchError,validateSearch,resolveSport,fitsCoach,publicCoach} from './core.mjs';
 
 const PAGE_SIZE=250,MAX_SCAN=1000,MAX_BODY=4096;
@@ -52,7 +53,7 @@ export function createCoachSearchHandler({env,fetcher=fetch}={}) {
       const sports=await read('/rest/v1/fgi_sports?'+dictionary);
       if(!Array.isArray(sports) || sports.length>=500)throw new SearchError('backend_unavailable',503);
       const sport=resolveSport(p.sport,sports);
-      const coaches=[];let cursor=p.cursor||'',scanned=0,hasMore=false,scanLimited=false;
+      const candidates=[];let cursor='',scanned=0,complete=false,lastParams;
       while(scanned<MAX_SCAN) {
         if(Date.now()>=deadline)throw new SearchError('backend_unavailable',503);
         const params=new URLSearchParams({select:PUBLIC_COLUMNS.join(','),published:'eq.true',order:'id.asc',limit:String(Math.min(PAGE_SIZE,MAX_SCAN-scanned))});
@@ -63,9 +64,10 @@ export function createCoachSearchHandler({env,fetcher=fetch}={}) {
         if(p.period)params.set('period','eq.'+p.period);
         if(p.budget!==undefined){params.set('price','lte.'+p.budget);params.append('price','not.is.null');}
         if(p.language)params.set('languages','cs.{'+p.language+'}');
-        if(p.availability)params.set('availability','cs.{'+p.availability+'}');
+        if(p.availability && !p.soft_fields?.includes('availability'))params.set('availability','cs.{'+p.availability+'}');
         if(p.min_experience_years!==undefined)params.set('experience_years','gte.'+p.min_experience_years);
         const requested=Math.min(PAGE_SIZE,MAX_SCAN-scanned);
+        lastParams=params;
         const rows=await read('/rest/v1/fgi_coaches?'+params);
         if(!Array.isArray(rows) || rows.length>requested)throw new SearchError('backend_unavailable',503);
         let previous=cursor;
@@ -74,13 +76,23 @@ export function createCoachSearchHandler({env,fetcher=fetch}={}) {
           if(!UUID.test(row?.id||'') || previous && row.id.toLowerCase()<=previous.toLowerCase())throw new SearchError('backend_unavailable',503);
           previous=cursor=row.id;scanned++;
           // Recheck strict filters and publication even if the upstream response is unexpected.
-          if(fitsCoach(row,p,actor,sport))coaches.push(publicCoach(row,sports));
-          if(coaches.length===p.limit){hasMore=i<rows.length-1 || rows.length===requested;break;}
+          if(fitsCoach(row,p,actor,sport))candidates.push(row);
         }
-        if(coaches.length===p.limit || rows.length<requested)break;
-        if(scanned>=MAX_SCAN){hasMore=true;scanLimited=true;}
+        if(rows.length<requested){complete=true;break;}
       }
-      return json({coaches,has_more:hasMore,next_cursor:hasMore?cursor:null,scan_limit_reached:scanLimited},200,headers);
+      if(!complete){
+        const probe=new URLSearchParams(lastParams);probe.set('limit','1');probe.delete('id');probe.append('id','neq.'+actor);probe.append('id','gt.'+cursor);
+        const remaining=await read('/rest/v1/fgi_coaches?'+probe);
+        if(!Array.isArray(remaining))throw new SearchError('backend_unavailable',503);
+        if(remaining.length)throw new SearchError('search_too_broad',422);
+      }
+      const ranked=rankCoaches(candidates,p,{sports,actor,limit:candidates.length});
+      const after=p.cursor?ranked.findIndex(x=>x.coach.id.toLowerCase()===p.cursor.toLowerCase()):-1;
+      if(p.cursor && after<0)throw new SearchError('invalid_cursor',422);
+      const page=ranked.slice(after+1,after+1+p.limit);
+      const hasMore=ranked.length>after+1+page.length;
+      const coaches=page.map(({coach,match})=>({...publicCoach(coach,sports),match}));
+      return json({coaches,has_more:hasMore,next_cursor:hasMore?page.at(-1).coach.id:null,scan_limit_reached:false},200,headers);
     }catch(error) {
       return json({error:error instanceof SearchError?error.code:'backend_unavailable'},error instanceof SearchError?error.status:503,headers);
     }
