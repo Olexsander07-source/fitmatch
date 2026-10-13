@@ -94,6 +94,8 @@ export function coachTurn({message,history=[],data={},useMemory=true,programPend
   let pending=state.latest&&!reset?state.latest.pending:null;
   let memoryFields=state.latest&&!reset?[...state.latest.memoryFields]:[];
   let soft=[...(draft.soft_fields||[])];delete draft.soft_fields;delete draft.limit;
+  // Apply a current refusal before every branch, including comparison and clarification.
+  if(!allowMemory){for(const k of new Set([...soft,...memoryFields]))delete draft[k];soft=[];memoryFields=[];}
   const finish=(turn,p=draft)=>({...turn,parameters:{...p,soft_fields:soft,limit:3},useMemory:allowMemory,memoryFields,resetContext:reset||!state.latest,pending:turn.status==='needs_clarification'?turn.question:null});
   const ask=key=>{const turn=question(key);if(!allowMemory)turn.answer+=MEMORY_OFF;return finish(turn);};
   if(cancelled(message))return explicit||replyKey||state.latest?finish({answer:PREFIX+'поиск отменён.',status:'cancelled'}):null;
@@ -101,12 +103,13 @@ export function coachTurn({message,history=[],data={},useMemory=true,programPend
     if(!state.result)return finish({answer:'В этом разговоре нет сохранённых результатов с условиями поиска. Сначала найдите тренеров; сравню только найденные профили.',status:'needs_clarification'});
     if(pending&&Object.hasOwn(QUESTIONS,pending))return ask(pending);
     if(state.result.coaches.length<2)return finish({answer:'В последнем поиске найдено меньше двух тренеров. Для сравнения нужны два реальных результата; можно изменить условия поиска.',status:'needs_clarification'});
-    return finish({status:'compare',ids:state.result.coaches.slice(0,2).map(c=>c.id)},state.latest?.parameters||state.result.parameters);
+    if(!draft.sport)return ask('sport');
+    return finish({status:'compare',ids:state.result.coaches.slice(0,2).map(c=>c.id)});
   }
   if(!explicit&&!goal&&!replyKey&&!refine)return null;
   if(!explicit&&!goal&&!refine&&/^(?:как|почему|что|расскажи|объясни|how|why|what)(?:\s|[?!.,]|$)/iu.test(message.trim()))return null;
   if(refine&&!explicit&&!state.latest&&!replyKey)return {answer:'Нет условий предыдущего поиска в этом разговоре. Укажите вид спорта или попросите найти тренера.',status:'needs_clarification',question:'sport'};
-  if(goal&&!explicit&&!state.latest)return ask('choice');
+  if(goal&&!explicit&&!state.latest){draft=parse(message,draft).p;return ask('choice');}
   if(replyKey==='choice'&&!explicit){
     if(/программ|\bai\b|\bии\b/iu.test(message))return null;
     if(!/живой|человек|тренер|coach|human/iu.test(message))return ask('choice');
@@ -144,7 +147,6 @@ export function coachTurn({message,history=[],data={},useMemory=true,programPend
   }
   const knownRefinement=/онлайн|офлайн|дистанцион|франкоязыч|русскоязыч|украиноязыч|англоязыч|немецкоязыч|испаноязыч|дешевле|без памяти|не используй память|до\s*\d|€|евро|город\s*[:—-]|попробуй ещ[её] раз|повтори поиск/iu.test(message)||Object.values(PATTERNS).some(pattern=>pattern.test(message));
   if(refine&&!explicit&&!removePrice&&!removeUnsupported&&!knownRefinement)return ask('unsupported');
-  if(!allowMemory){for(const k of new Set([...soft,...memoryFields]))delete draft[k];soft=[];memoryFields=[];}
   if(allowMemory){
     if(!draft.sport){const values=data.preferred_sports;const value=Array.isArray(values)&&values.length===1?values[0]:data.sport;const key=matchSportKey(value);if(SPORTS[key]){draft.sport=SPORTS[key];memoryFields.push('sport');}}
     if(!draft.goal&&typeof data.goal==='string'&&data.goal.trim()){draft.goal=data.goal.trim();soft.push('goal');memoryFields.push('goal');}

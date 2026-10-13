@@ -44,13 +44,13 @@ Snapshots additionally retain bounded, validated criterion proof and public lang
 - `supabase/functions/fitgoin-ai/index.mjs`: read owner-scoped coach metadata; distinguish coach-search cancellation from program cancellation.
 - `fitgoin-coach-card-core.mjs`: public bounded MATCH proof and language/location snapshots.
 - `fitgoin-ai.js`: keep the full comparison explanation above result cards.
-- `scripts/ai-coach-context.test.mjs`: 36 new production-handler/renderer scenarios with controlled network boundaries.
+- `scripts/ai-coach-context.test.mjs`: 39 new production-handler/renderer scenarios with controlled network boundaries.
 - `scripts/ai-coaches.test.mjs`: existing completion fixture now persists coach metadata like the database.
 - `package.json`, `scripts/safe-deploy.mjs`: include the new suite in checks and the existing safe deployment.
 
 ## Validation and limits
 
-`npm run check`: 352 passed (216 existing AI/site tests, 100 existing coach-search/MATCH/card tests and 36 new 4F tests). `npm run deploy:dry`: production asset build and Wrangler dry run passed. Isolated real Postgres completion/RLS regression: 10 passed. Chromium/actual mounted chat regression: 20 passed, including mobile comparison text, cards, photographs, callbacks, history, empty state and existing anonymous production profile routes. Browser DB/session/provider boundaries are fixtures; no messages were sent to coaches. Live anonymous public catalogue read plus production-code replay with Auth/DB boundaries stubbed: 10 passed.
+`npm run check`: 355 passed (216 existing AI/site tests, 100 existing coach-search/MATCH/card tests and 39 new 4F tests). `npm run deploy:dry`: production asset build and Wrangler dry run passed. Isolated real Postgres completion/RLS regression: 10 passed. Chromium/actual mounted chat regression: 20 passed, including mobile comparison text, cards, photographs, callbacks, history, empty state and existing anonymous production profile routes. Browser DB/session/provider boundaries are fixtures; no messages were sent to coaches. Live anonymous public catalogue read plus production-code replay with Auth/DB boundaries stubbed: 10 passed.
 
 The production catalogue has two public coaches in different sports, both without price. Strict budget searches correctly exclude them; a positive two-coach comparison in one sport is tested with explicit test fixtures, not claimed as a live catalogue result. A full paid authenticated AI conversation is not tested with an actual customer account. Old 4E result snapshots without search parameters cannot safely supply a 4F comparison; start a new search. Context is bounded to 40 recent messages. Natural-language parsing is controlled for the supported search phrases and filters, not arbitrary unrestricted model-generated queries.
 
