@@ -11,7 +11,7 @@ export function explicitCoachRequest(text) {
   return /тренер|тренувальник|coach|trainer/iu.test(text)&&/най[дт]|ищ[уеи]|нуж[ен]|хочу|хотел|подбер|подобра|find|need|want|looking|шука|знай/iu.test(text);
 }
 const bareGoal=text=>/^(?:я\s+)?(?:хочу|хотел(?:а)? бы|want to)\s+(?:набрать\s+мышечн\S*\s+масс\S*|нарастить\s+мышц\S*|gain muscle)[.!\s]*$/iu.test(text.trim());
-const comparison=text=>/^(?:сравни(?:те)?\s+(?:первого\s+и\s+второго|этих\s+двух)|кто\s+из\s+этих\s+двух\s+лучше\s+подходит|почему\s+у\s+первого\s+match\s+выше)[?!.\s]*$/iu.test(text.trim());
+const comparison=text=>/^(?:сравни(?:те)?\s+(?:первого\s+и\s+второго|этих\s+двух)(?:\s+тренеров)?|кто\s+из\s+этих\s+двух(?:\s+тренеров)?\s+лучше\s+подходит|почему\s+у\s+первого\s+match\s+выше)(?:\s+без памяти)?[?!.\s]*$/iu.test(text.trim());
 export const coachCancelRequest=text=>/^(?:отмени|отменить|отмена|cancel)\s+(?:поиск(?:\s+тренер\S*)?|coach search)[.!\s]*$/iu.test(text.trim());
 const refinement=text=>!/(?:как|почему|зачем|упражнени|программ|питани|белк)/iu.test(text)&&/^(?:покажи|только|до\s*\d|убери|сними|хочу\s+(?:женщину|мужчину)|онлайн|офлайн|город\s*[:—-]|без памяти|не используй память|попробуй ещ[её] раз|повтори поиск)/iu.test(text.trim());
 export const coachCandidate=text=>explicitCoachRequest(text)||bareGoal(text)||comparison(text)||refinement(text)||coachCancelRequest(text);
