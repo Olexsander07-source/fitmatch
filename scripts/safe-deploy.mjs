@@ -52,7 +52,7 @@ run(node, ['--check', 'fitgoin-ai-paid.mjs']);
 run(node, ['--check', 'fitgoin-ai-media.mjs']);
 run(node, ['--check', 'supabase/functions/fitgoin-ai-billing/index.mjs']);
 run(node, ['scripts/verify.mjs']);
-run(node, ['--test', 'scripts/voice.test.mjs', 'scripts/ai.test.mjs', 'scripts/ai-meals.test.mjs', 'scripts/ai-workout-log.test.mjs', 'scripts/ai-progress.test.mjs', 'scripts/ai-analysis.test.mjs', 'scripts/ai-paid.test.mjs', 'scripts/premium.test.mjs', 'scripts/verify-production.test.mjs', 'scripts/production-hosting.test.mjs','scripts/coach-search.test.mjs','scripts/match.test.mjs','scripts/ai-coaches.test.mjs','scripts/ai-coach-cards.test.mjs']);
+run(node, ['--test', 'scripts/voice.test.mjs', 'scripts/ai.test.mjs', 'scripts/ai-meals.test.mjs', 'scripts/ai-workout-log.test.mjs', 'scripts/ai-progress.test.mjs', 'scripts/ai-analysis.test.mjs', 'scripts/ai-paid.test.mjs', 'scripts/premium.test.mjs', 'scripts/verify-production.test.mjs', 'scripts/production-hosting.test.mjs','scripts/coach-search.test.mjs','scripts/match.test.mjs','scripts/ai-coaches.test.mjs','scripts/ai-coach-cards.test.mjs','scripts/ai-coach-context.test.mjs']);
 process.env.FGI_RELEASE_COMMIT = local;
 run(node, ['scripts/build.mjs']);
 run(node, [wrangler, 'deploy', '--dry-run']);

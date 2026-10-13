@@ -7,7 +7,7 @@ import {nutritionTurn,nutritionPreferences,NUTRITION_MEMORY_RULES} from '../../.
 import {mealIntent,mealsTurn} from '../../../fitgoin-ai-meals.mjs';
 import {validateWorkoutInput,workoutLogIntent,workoutLogTurn} from '../../../fitgoin-ai-workout-log.mjs';
 import {progressIntent,weightRecord,historyAnswer} from '../../../fitgoin-ai-progress.mjs';
-import {coachCandidate,coachTurn,searchForCoaches} from '../../../fitgoin-ai-coaches.mjs';
+import {coachCandidate,coachCancelRequest,coachTurn,searchForCoaches} from '../../../fitgoin-ai-coaches.mjs';
 import {analysisIntent,safetyNotice,progressTurn} from '../../../fitgoin-ai-analysis.mjs';
 
 export const SOURCES = ['pubmed.ncbi.nlm.nih.gov','pmc.ncbi.nlm.nih.gov','who.int','nhs.uk','acsm.org','olympics.com','bjsm.bmj.com','jissn.biomedcentral.com','link.springer.com','ods.od.nih.gov'];
@@ -132,7 +132,7 @@ export function createAIHandler({env,fetcher=fetch}={}) {
       const nutritionControl=input.action==='chat'?nutritionTurn(saved.data,message,module):null;
       const mealRequest=module==='nutrition'&&(input.action==='nutrition'||input.action==='chat'&&(mealIntent(message)||saved.data.nutrition_plan_pending?.mode==='request'));
       if(input.nutrition_target!==undefined&&(!input.nutrition_target||typeof input.nutrition_target!=='object'||Array.isArray(input.nutrition_target)||Object.keys(input.nutrition_target).some(k=>!['plan_id','draft_id','meal_id','item_id'].includes(k))||['plan_id','draft_id'].some(k=>input.nutrition_target[k]!==undefined&&input.nutrition_target[k]!==null&&!UUID.test(input.nutrition_target[k]))||['meal_id','item_id'].some(k=>input.nutrition_target[k]!==undefined&&(typeof input.nutrition_target[k]!=='string'||input.nutrition_target[k].length>40))))throw new AIError('invalid_nutrition_plan',422);
-      const intent=module==='training'?(input.action==='training'?'create':input.action==='chat'?programIntent(message):null):null;
+      const intent=module==='training'?(input.action==='training'?'create':input.action==='chat'&&!coachCancelRequest(message)?programIntent(message):null):null;
       const workoutAction=module==='training'&&input.action==='chat'?workoutIntent(message):null;
       validateWorkoutInput(input.workout_target,input.workout_payload);
       if((input.workout_target||input.workout_payload)&&!(module==='training'&&input.action==='chat'))throw new AIError('invalid_workout_result',422);
@@ -150,7 +150,7 @@ export function createAIHandler({env,fetcher=fetch}={}) {
       if(input.coach_use_memory!==undefined&&typeof input.coach_use_memory!=='boolean')throw new AIError('invalid_request');
       let coachHistory=null,coachAction=null;
       if(input.action==='chat'&&!safetyAction&&!analysisAction&&!progressAction&&!logAction&&(!nutritionControl||module==='training'&&coachCandidate(message))&&!mealRequest&&!workoutAction&&!intent&&!input.workout_target&&!input.workout_payload){
-        coachHistory=await rest(`/rest/v1/fgi_ai_messages?conversation_id=eq.${input.conversation_id}&user_id=eq.${actor}&module=eq.${module}&select=role,body,request_id&order=created_at.desc,request_id.desc,role.asc&limit=${CHAT_HISTORY_LIMIT}`,{token});
+        coachHistory=await rest(`/rest/v1/fgi_ai_messages?conversation_id=eq.${input.conversation_id}&user_id=eq.${actor}&module=eq.${module}&select=role,body,request_id,coach_search&order=created_at.desc,request_id.desc,role.asc&limit=${CHAT_HISTORY_LIMIT}`,{token});
         coachAction=coachTurn({message,history:[...coachHistory].reverse(),data:saved.data,useMemory:input.coach_use_memory!==false,programPending:saved.data.program_pending===true||Boolean(saved.data.nutrition_plan_pending)});
       }
       if(!apiKey&&!coachAction&&!safetyAction&&!analysisAction&&!progressAction&&!logAction&&!nutritionControl&&!mealRequest&&!['show','today','tomorrow','cancel'].includes(intent)&&!['start','next','stop','rest','technique','confirm','cancel_edit','pain'].includes(workoutAction)&&!(module==='training'&&input.action==='chat'&&explicitScheduleOnly(message))&&!(input.action==='training'&&missingSportsMemory(saved.data).length))throw new AIError('ai_not_configured',503);

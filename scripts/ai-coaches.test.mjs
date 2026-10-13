@@ -21,7 +21,7 @@ function setup(options={}) {
     if(url.includes('/fgi_ai_plans?'))return json([]);
     if(url.endsWith('/rpc/fgi_ai_access'))return json({friend:true,modules:['training','nutrition']});
     if(url.endsWith('/rpc/fgi_ai_claim'))return json(options.cached?{cached:lastResult||{answer:'Cached'}}:{remaining:29,search_remaining:3});
-    if(url.endsWith('/rpc/fgi_ai_complete')){history.push({role:'user',body:body.p_input},{role:'assistant',body:body.p_output});lastResult=body.p_result;return json(null);}
+    if(url.endsWith('/rpc/fgi_ai_complete')){history.push({role:'user',body:body.p_input},{role:'assistant',body:body.p_output,coach_search:body.p_result.coach_search});lastResult=body.p_result;return json(null);}
     if(url.includes('/rpc/'))return json(null);
     if(url.endsWith('/functions/v1/search_coaches'))return options.backendFail?json({error:'backend_unavailable'},503):search(new Request(url,o));
     if(url.includes('/fgi_sports?'))return json([{id:SPORT,name:'Фитнес'},{id:'40000000-0000-4000-8000-000000000002',name:'Единоборства'}]);
