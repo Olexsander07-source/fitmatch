@@ -287,6 +287,14 @@ function matchPreferenceSummary(p) {
   ].filter(Boolean);
   return items.map(v=>`<span class="tag">${esc(v)}</span>`).join('');
 }
+// AI results may be newer than the initially loaded catalogue. Reuse its loader
+// and existing profile/inbox routes, with a fresh publication check on clicks.
+async function freshAICoach(id) {
+  const actor=user?.id;await loadCatalogue();
+  if(user?.id!==actor)throw Error('session_changed');
+  if(catalogueError)throw Error('backend_unavailable');
+  if(!coaches.some(c=>c.id===id&&publicOnly(c)&&!c.legacy))throw Error('coach_not_public');
+}
 async function findMatch(form) {
   if(!requireUser('match'))return;
   const epoch=authEpoch;premium?.saveMatch(matchStep);page('searching');
@@ -1500,7 +1508,8 @@ async function init() {
     db=createClient(CONFIG.url,CONFIG.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'implicit'},global:{fetch:timedFetch}});
     aiAssistant=mountFitGoInAI($('fitgoinAI'),{
       getDB:()=>db,getUser:()=>user,endpoint:CONFIG.url+'/functions/v1/fitgoin-ai',
-      login:()=>requireUser('ai'),navigate:page,prepareImage,openCoach:openProfile,contact,
+      login:()=>requireUser('ai'),navigate:page,prepareImage,coachPhotoURL:c=>mediaURL(c.avatar_path),
+      openCoach:async id=>{await freshAICoach(id);return openProfile(id);},contact:async id=>{await freshAICoach(id);return contact(id);},
       savedIds:()=>premium.savedIds(),toggleSaved:id=>premium.toggleSaved(id),clearSaved:()=>premium.clearSaved(),
       sports:()=>directions.map(([key,name])=>[key,name]),coachName:id=>coaches.find(c=>c.id===id)?.name||'Тренер',
       matches:p=>rankCoaches(coaches,formMatchPreferences(p),{sports,actor:user?.id})

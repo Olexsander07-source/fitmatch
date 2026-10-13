@@ -1,3 +1,4 @@
+import {coachCardsHTML,hideFailedCoachPhoto} from './fitgoin-ai-coach-cards.mjs';
 import {CONSENT_VERSION,LANGUAGES,GOALS,ALLERGENS,ALLERGEN_LABELS,normalizeProfile,missingProfile,limitedProfile,adaptWorkout,cleanCitations,achievements,coachQuestions,weeklyReview} from './fitgoin-ai-core.mjs';
 import {PLANS,MEDIA_CONSENT,hasAccess,actionModule,analysisText,normalizeFood,trainingCalendar} from './fitgoin-ai-paid.mjs';
 import {imageForAI,videoForAI} from './fitgoin-ai-media.mjs';
@@ -16,6 +17,7 @@ Object.assign(ERRORS,{workout_changed:'Тренировка или резуль�
 Object.assign(ERRORS,{program_changed:'Программа уже изменилась. Обнови историю и выбери упражнение из активной версии.',invalid_workout:'Не удалось найти тренировку или упражнение в активной программе. Выбери его из карточки.'});
 Object.assign(ERRORS,{progress_proposal_changed:'Предложение или данные уже изменились. Обнови разбор прогресса перед подтверждением; программа не изменена.'});
 Object.assign(ERRORS,{nutrition_plan_changed:'Рацион или данные профиля уже изменились. Обнови историю; при изменении цели или числа приёмов пищи составь новый черновик.',invalid_nutrition_plan:'Рацион не прошёл проверку порций и БЖУ. Он не был сохранён.',nutrition_preferences_conflict:'Не удалось составить сбалансированный базовый рацион с этими ограничениями. Уточни доступные продукты.'});
+Object.assign(ERRORS,{coach_not_public:'Этот профиль больше не доступен для публичного поиска. Попробуй новый подбор.'});
 const field=(title,input)=>`<label>${title}${input}</label>`;
 const options=(values,current)=>values.map(v=>{const [key,label]=Array.isArray(v)?v:[v,v];return `<option value="${esc(key)}"${key===current?' selected':''}>${esc(label)}</option>`;}).join('');
 const select=(name,values,current)=>`<select name="${name}">${options(values,current)}</select>`;
@@ -130,7 +132,9 @@ export function mountFitGoInAI(root,opts) {
   }
   function messageHTML(m) {
     const citations=cleanCitations(m.citations),isAssistant=m.role==='assistant';
-    return `<article class="fgi-ai-message ${isAssistant?'':'from-user'}"><strong>${isAssistant?'✧ FitGoIn AI':'Ты'}</strong><p dir="auto">${esc(m.body)}</p>${citations.length?`<ol class="fgi-ai-sources" aria-label="${t('source')}">${citations.map(c=>`<li><a href="${esc(c.url)}" target="_blank" rel="noopener noreferrer">${esc(c.title)}</a></li>`).join('')}</ol>`:''}${isAssistant?`<div class="ai-message-actions">${button('copy',t('copy'),false,`data-message-id="${esc(m.id)}"`)}${button('save',savedIds.includes(m.id)?t('removeSaved'):t('save'),false,`data-message-id="${esc(m.id)}" aria-pressed="${savedIds.includes(m.id)}"${!opts.toggleSaved?' disabled':''}`)}${button('speak','Прослушать',false,`data-message-id="${esc(m.id)}"`)}${m.id===messages.filter(x=>x.role==='assistant').at(-1)?.id?button('regenerate',t('regenerate'),false,`data-message-id="${esc(m.id)}" title="Новый запрос расходует лимит AI"`):''}${[['account','Мой кабинет'],['inbox','Сообщения'],['match','MATCH'],['coaches','Тренеры']].filter(([id])=>new RegExp('#'+id+'\b').test(m.body)).map(([id,label])=>button('platform-link',label,false,`data-destination="${id}"`)).join('')}${button('feedback','Полезно',false,`data-message-id="${esc(m.id)}" data-useful="true"`)}${button('feedback','Есть проблема',false,`data-message-id="${esc(m.id)}" data-useful="false"`)}</div>`:''}</article>`;
+    const cards=isAssistant?coachCardsHTML(m.coach_search,{actor,photoURLFor:opts.coachPhotoURL}):'';
+    const body=cards&&m.coach_search?.status==='no_results'?'':cards&&m.coach_search?.status==='results'?m.body.split('\n\n')[0]:m.body;
+    return `<article class="fgi-ai-message ${isAssistant?'':'from-user'}"><strong>${isAssistant?'✧ FitGoIn AI':'Ты'}</strong>${body?`<p dir="auto">${esc(body)}</p>`:''}${cards}${citations.length?`<ol class="fgi-ai-sources" aria-label="${t('source')}">${citations.map(c=>`<li><a href="${esc(c.url)}" target="_blank" rel="noopener noreferrer">${esc(c.title)}</a></li>`).join('')}</ol>`:''}${isAssistant?`<div class="ai-message-actions">${button('copy',t('copy'),false,`data-message-id="${esc(m.id)}"`)}${button('save',savedIds.includes(m.id)?t('removeSaved'):t('save'),false,`data-message-id="${esc(m.id)}" aria-pressed="${savedIds.includes(m.id)}"${!opts.toggleSaved?' disabled':''}`)}${button('speak','Прослушать',false,`data-message-id="${esc(m.id)}"`)}${m.id===messages.filter(x=>x.role==='assistant').at(-1)?.id?button('regenerate',t('regenerate'),false,`data-message-id="${esc(m.id)}" title="Новый запрос расходует лимит AI"`):''}${[['account','Мой кабинет'],['inbox','Сообщения'],['match','MATCH'],['coaches','Тренеры']].filter(([id])=>new RegExp('#'+id+'\b').test(m.body)).map(([id,label])=>button('platform-link',label,false,`data-destination="${id}"`)).join('')}${button('feedback','Полезно',false,`data-message-id="${esc(m.id)}" data-useful="true"`)}${button('feedback','Есть проблема',false,`data-message-id="${esc(m.id)}" data-useful="false"`)}</div>`:''}</article>`;
   }
   function chatView() {
     if(!profile)return `<div class="fgi-ai-chat panel"><h2>Познакомимся в разговоре</h2><p>Расскажи о цели и привычных тренировках. AI сохранит только нужные спортивные данные; их можно изменить следующим сообщением.</p><form data-ai-form="memory-consent"><label class="fgi-ai-check"><input type="checkbox" name="consent" required>Разрешаю сохранять спортивный профиль и историю в FitGoIn и передавать необходимый контекст OpenAI. Ограничения и травмы сообщаю добровольно. <a href="./privacy.html#ai" target="_blank" rel="noopener">Как используются данные</a></label><button type="submit" class="btn primary"${busy?' disabled':''}>Начать диалог</button></form></div>`;
@@ -464,6 +468,7 @@ export function mountFitGoInAI(root,opts) {
       }
     });
   });
+  root.addEventListener('error',hideFailedCoachPhoto,true);
   root.addEventListener('click',event=>{
     const quick=event.target.closest('[data-ai-quick]');if(quick&&!busy){const action=quick.dataset.aiQuick;if(action==='nutrition'){module='nutrition';view='nutrition';persistChat();render();return;}if(action==='today'||action==='coach'){view=action==='today'?'today':'coaches';render();return;}if(action==='question'){view='ask';render();q('[name=message]')?.focus();return;}if(draft.trim()){notice('Сначала отправь или измени уже набранный вопрос.');q('[name=message]')?.focus();return;}draft=action==='training'?'Создай недельную программу тренировок по моему профилю.':'Помоги с питанием: ';searchDraft=false;module=action==='nutrition'?'nutrition':'training';persistChat();render();q('[name=message]')?.focus();return;}
     const history=event.target.closest('[data-ai-history]');if(history&&!busy){conversation=conversations.find(x=>x.id===history.dataset.aiHistory)||null;historyLimit=80;persistChat();view='ask';menu(false);work(e=>load(e));return;}
@@ -574,6 +579,6 @@ export function mountFitGoInAI(root,opts) {
     open(){if(actor&&(!loaded||Date.now()-lastLoad>60000))work(e=>load(e));else render();},
     leave(){stopVoice();menu(false);if(window.speechSynthesis)window.speechSynthesis.cancel();},
     // Inspectable state contains the current user's public UI only; no auth tokens.
-    destroy(){destroyed=true;document.removeEventListener('visibilitychange',stopHiddenVoice);reset();root.replaceChildren();}
+    destroy(){destroyed=true;root.removeEventListener('error',hideFailedCoachPhoto,true);document.removeEventListener('visibilitychange',stopHiddenVoice);reset();root.replaceChildren();}
   };
 }

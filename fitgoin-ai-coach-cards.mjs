@@ -1,0 +1,15 @@
+import {readCoachCards} from './fitgoin-coach-card-core.mjs';
+const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function photoURL(value,id) {
+  try{const u=new URL(value);return u.protocol==='https:'&&u.hostname==='ypbhcgcwkpiujcakvaji.supabase.co'&&u.pathname.startsWith('/storage/v1/object/public/fgi-media/'+id+'/')&&!u.search&&!u.hash?u.href:'';}catch{return '';}
+}
+export function coachCardsHTML(metadata,{actor='',photoURLFor=()=>''}={}) {
+  const cards=readCoachCards(metadata,actor);
+  if(!cards.length){return metadata?.schema_version===1&&metadata.status==='no_results'?'<div class="fgi-ai-coach-empty" role="status"><strong>Подходящих тренеров пока нет</strong><p>Можно изменить условия поиска. Обязательные ограничения сохраняются, пока вы сами их не измените.</p></div>':'';}
+  return `<section class="fgi-ai-coach-results" aria-label="Тренеры из поиска FitGoIn">${cards.map(c=>{
+    const url=c.avatar_path?photoURL(photoURLFor(c),c.id):'',initials=c.name.split(/\s+/).slice(0,2).map(s=>s[0]).join('').toUpperCase();
+    const price=c.price_known?`${c.price.toLocaleString('fr-FR')} € / ${c.period}`:'Цена не указана';
+    return `<article class="coach-card fgi-ai-coach-card" data-ai-coach-id="${esc(c.id)}"><div class="card-body"><div class="fgi-ai-coach-top"><div class="fgi-ai-coach-avatar" aria-label="${url?'Фото тренера':'Фото не добавлено'}"><span aria-hidden="true">${esc(initials)}</span>${url?`<img data-ai-coach-photo src="${esc(url)}" alt="${esc(c.name)}" loading="lazy" decoding="async">`:''}</div><span class="match-badge fgi-ai-coach-match" aria-label="Совместимость ${c.match.percent} процентов"><strong>${c.match.percent}%</strong><small>MATCH</small></span></div><h3>${esc(c.name)}</h3><p class="fgi-ai-coach-sport">${esc(c.sport_name||'Спорт не указан')}</p><p class="fgi-ai-coach-specialization">${esc(c.specialization||'Специализация не указана')}</p><div class="tags">${c.format?`<span class="tag">${esc(c.format)}</span>`:''}${c.experience_years!==null?`<span class="tag">Опыт: ${c.experience_years} лет</span>`:''}</div><p class="fgi-ai-coach-price">${esc(price)}</p>${c.rating?`<p class="fgi-ai-coach-rating">★ ${c.rating.toLocaleString('fr-FR')} <span>· отзывов: ${c.reviews_count}</span></p>`:''}<ul class="match-reasons fgi-ai-coach-reasons">${c.match.reasons.map(r=>`<li>${esc(r)}</li>`).join('')}</ul><div class="match-card-actions"><button type="button" class="btn" data-ai-action="coach-profile" data-coach="${esc(c.id)}">Посмотреть профиль</button><button type="button" class="btn primary" data-ai-action="coach-contact" data-coach="${esc(c.id)}">Написать тренеру</button></div></div></article>`;
+  }).join('')}</section><p class="fgi-ai-coach-note">Данные и MATCH сохранены на момент подбора. Актуальные условия уточняйте в профиле тренера.</p>`;
+}
+export function hideFailedCoachPhoto(event) {const image=event.target;if(image?.matches?.('img[data-ai-coach-photo]')){image.hidden=true;image.parentElement?.setAttribute('aria-label','Фото недоступно');}}

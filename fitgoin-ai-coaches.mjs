@@ -1,3 +1,4 @@
+import {coachCardResults} from './fitgoin-coach-card-core.mjs';
 // Controlled natural-language adapter; coach facts and MATCH come only from search_coaches.
 import {matchSportKey,matchNorm,trustedRating} from './fitgoin-match-core.mjs';
 const SPORTS={fitness:'Фитнес',bodybuilding:'Бодибилдинг',crossfit:'Кроссфит',running:'Бег',yoga:'Йога',swimming:'Плавание',cycling:'Велоспорт',tennis:'Теннис',combat:'Единоборства',football:'Футбол'};
@@ -103,11 +104,11 @@ export function coachAnswer(payload) {
   return {answer:items.length?'Нашёл тренеров в FitGoIn. MATCH рассчитан по известным условиям; неизвестные данные не подтверждают совпадение.\n\n'+items.join('\n\n'):'Подходящих публичных тренеров по этим условиям в FitGoIn не найдено. Можно расширить вид спорта, формат или бюджет — только после вашего согласия изменить ограничения.',status:items.length?'results':'no_results',ids};
 }
 export async function searchForCoaches({turn,url,token,publicKey,fetcher=fetch}={}) {
-  if(turn.status!=='search')return {answer:turn.answer,coach_search:{status:turn.status,question:turn.question||null}};
+  if(turn.status!=='search')return {answer:turn.answer,coach_search:{schema_version:1,status:turn.status,question:turn.question||null}};
   try {
     const response=await fetcher(url+'/functions/v1/search_coaches',{method:'POST',headers:{apikey:publicKey,Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(turn.parameters),signal:AbortSignal.timeout(25000)});
     const payload=await response.json();
-    if(!response.ok)return {answer:'Поиск тренеров сейчас не удалось выполнить. Условия не изменены; попробуйте ещё раз.',coach_search:{status:'unavailable'}};
-    const result=coachAnswer(payload);return {answer:result.answer,coach_search:{status:result.status,ids:result.ids}};
-  }catch{return {answer:'Поиск тренеров сейчас недоступен. Попробуйте ещё раз позже.',coach_search:{status:'unavailable'}};}
+    if(!response.ok)return {answer:'Поиск тренеров сейчас не удалось выполнить. Условия не изменены; попробуйте ещё раз.',coach_search:{schema_version:1,status:'unavailable'}};
+    const result=coachAnswer(payload),coaches=coachCardResults(payload);return {answer:result.answer,coach_search:{schema_version:1,status:result.status,ids:result.ids,coaches}};
+  }catch{return {answer:'Поиск тренеров сейчас недоступен. Попробуйте ещё раз позже.',coach_search:{schema_version:1,status:'unavailable'}};}
 }
