@@ -57,3 +57,10 @@ h1,h2,h3,.muted{overflow-wrap:anywhere}
 
 .client-account .account-actions .btn.primary{background:var(--accent);border-color:var(--accent);color:#18210e}
 @media(max-width:650px){.client-account .workspace-content{grid-row:1}.client-account #clientSidebar{grid-row:2}}
+
+/* FitGoIn language selector: compact across guest and signed-in headers. */
+.fgi-language{display:flex;align-items:center;flex:0 0 auto;z-index:2}
+.fgi-language select{appearance:auto;border:1px solid rgba(255,255,255,.28);border-radius:9px;background:#142219;color:#f4f7ef;font-family:inherit;font-size:12px;font-weight:600;line-height:1.2;min-height:36px;padding:6px 7px;cursor:pointer}
+.fgi-language select:focus-visible{outline:2px solid #b1d97d;outline-offset:2px}
+.fgi-language option{color:#1a1d1a;background:#fff}
+@media(max-width:650px){.fgi-language select{min-height:34px;padding:4px;font-size:11px}.header:has(.guest-nav) .fgi-language{margin-left:auto}.header:has(.guest-nav) .header-actions{order:3}}

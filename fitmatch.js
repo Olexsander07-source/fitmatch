@@ -3,7 +3,7 @@
 import {mountFitGoInAI} from './fitgoin-ai.js?v=20261004-premium';
 import {mountPremium} from './fitgoin-premium.js';
 import {workspaceRole,BRAND_IMAGES} from './fitgoin-premium-core.mjs';
-import {t} from './fitgoin-i18n.mjs';
+import {t,initLocale,getLocale} from './fitgoin-i18n.mjs';
 import {matchSportKey,formatFits,formMatchPreferences,rankCoaches} from './fitgoin-match-core.mjs';
 let aiAssistant=null;
 let premium=null;
@@ -127,7 +127,12 @@ function photoHTML(c, cls = 'coach-photo') {
   const initials = String(c.name || '?').trim().split(/\s+/).slice(0,2).map(s=>s[0]).join('').toUpperCase();
   return url ? `<img class="${cls}" src="${esc(url)}" alt="${esc(c.name)}" loading="lazy" decoding="async">` : `<div class="initials" aria-label="Фото не добавлено">${esc(initials)}</div>`;
 }
-function priceText(c) { return c.price == null || c.price === '' ? 'Цена по запросу' : `${Number(c.price).toLocaleString('fr-FR')} € / ${c.period || 'занятие'}`; }
+function priceText(c) {
+  const locale=getLocale(),labels={fr:{'занятие':'séance','месяц':'mois','программа':'programme'},en:{'занятие':'session','месяц':'month','программа':'program'}};
+  if(c.price == null || c.price === '')return locale==='fr'?'Prix sur demande':locale==='en'?'Price on request':'Цена по запросу';
+  const unit=labels[locale]?.[c.period] || c.period || (locale==='fr'?'séance':locale==='en'?'session':'занятие');
+  return `${Number(c.price).toLocaleString(locale==='ru'?'ru-RU':locale==='en'?'en-GB':'fr-FR')} € / ${unit}`;
+}
 function message(id, value = '', error = false) { $(id).textContent = value; $(id).className = error ? 'error' : 'success'; }
 function notice(value = '') { $('notice').textContent = value; $('notice').hidden = !value; }
 function explain(e) {
@@ -261,8 +266,11 @@ function updateMatchWizard() {
   matchStep=Math.max(0,Math.min(matchStep,steps.length-1));
   steps.forEach((step,i)=>step.classList.toggle('active',i===matchStep));
   $('matchPrev').hidden=matchStep===0;$('matchNext').hidden=matchStep===steps.length-1;$('matchSubmit').hidden=matchStep!==steps.length-1;
-  $('matchStepText').textContent=`Вопрос ${matchStep+1} из ${steps.length}`;
-  $('matchStepLabel').textContent=steps[matchStep].dataset.stepLabel || '';
+  const language=getLocale();
+  $('matchStepText').textContent=language==='fr'?`Question ${matchStep+1} sur ${steps.length}`:language==='en'?`Question ${matchStep+1} of ${steps.length}`:`Вопрос ${matchStep+1} из ${steps.length}`;
+  const stepLabelsFr=['Ton sport','Ton objectif','Format','Ville','Budget','Langue','Disponibilités'];
+  const stepLabelsEn=['Your sport','Your goal','Format','Location','Budget','Language','Availability'];
+  $('matchStepLabel').textContent=language==='fr'?stepLabelsFr[matchStep]:language==='en'?stepLabelsEn[matchStep]:steps[matchStep].dataset.stepLabel || '';
   $('matchProgressFill').style.width=`${((matchStep+1)/steps.length)*100}%`;
 }
 function moveMatchStep(direction) {
@@ -1531,6 +1539,12 @@ async function init() {
     }
   } catch(e){notice('Не удалось подключить все функции. '+explain(e));}
 }
+if(typeof initLocale==='function')initLocale();
+if(typeof document.addEventListener==='function')document.addEventListener('fitgoin:localechange',()=>{
+  premium?.decorate();
+  aiAssistant?.refreshUI?.();
+  updateMatchWizard();
+});
 init();
 
 

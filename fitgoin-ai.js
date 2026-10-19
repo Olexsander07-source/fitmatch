@@ -575,6 +575,7 @@ export function mountFitGoInAI(root,opts) {
   render();
   refreshReadiness();
   return {
+    refreshUI(){render();},
     setSession(user){if(actor===user?.id)return;reset();actor=user?.id||null;if(actor)restoreChat();render();if(actor)setTimeout(()=>work(e=>load(e)),0);},
     open(){if(actor&&(!loaded||Date.now()-lastLoad>60000))work(e=>load(e));else render();},
     leave(){stopVoice();menu(false);if(window.speechSynthesis)window.speechSynthesis.cancel();},

@@ -1,3 +1,4 @@
+import {frCatalog,staticFrench} from './fitgoin-fr.mjs';
 // One catalog for the new experience. Stable stored sports/goals remain unchanged.
 export const messages = {
   ru: {
@@ -43,10 +44,129 @@ export const messages = {
     intakeSteps:['Goal and experience','Schedule and equipment','Nutrition and preferences','Review and consent'], intakeTitle:'Let’s get to know you.', intakeCopy:'A few short steps to help personalize your answers and plans.', intakeDone:'Save and open my assistant',
   }
 };
-let locale = 'ru'; // Preserve the existing audience’s language in this release.
-export function t(key) { return messages[locale]?.[key] ?? messages.ru[key] ?? key; }
-export function setLocale(next) { locale = next in messages ? next : 'ru'; document.documentElement.lang = locale; }
-export function getLocale() { return locale; }
-export function translate(root = document) {
-  root.querySelectorAll('[data-i18n]').forEach(el => {const value=t(el.dataset.i18n); if (typeof value === 'string') el.textContent=value;});
+// Languages supported by this interface. Region selects the initial language only.
+messages.fr = frCatalog;
+const choiceKey='fitgoin_locale_preference_v1';
+const savedTexts=new WeakMap(),savedAttributes=new WeakMap();
+const ignoreContent='script,style,[data-i18n],[translate="no"],#messages,#threads,#profileContent,#coachesList,#rankingList,#matchResults,#fitgoinAI,#myGallery,#chatAttachmentPreview';
+let locale='ru', observing=false, queued=false, manuallyChosen=false;
+const validLocale=value=>['ru','en','fr'].includes(String(value).toLowerCase())?String(value).toLowerCase():null;
+
+export function chooseLocale({saved='',country='',languages=[],timeZone=''}={}) {
+  const chosen=validLocale(saved);if(chosen)return chosen;
+  const nation=String(country).toUpperCase();
+  if(nation==='FR'||nation==='MC')return 'fr';
+  if(nation==='RU'||nation==='BY')return 'ru';
+  if(['GB','US','AU','NZ','IE'].includes(nation))return 'en';
+  // Paris time zone is a regional fallback when a country header is unavailable.
+  if(!nation&&timeZone==='Europe/Paris')return 'fr';
+  const list=Array.isArray(languages)?languages:[languages];
+  for(const tag of list){
+    const value=String(tag||'').toLowerCase();
+    const region=value.match(/^[a-z]{2,3}[-_]([a-z]{2})\b/)?.[1]?.toUpperCase();
+    if(region==='FR'||region==='MC')return 'fr';
+    const lang=value.split(/[-_]/)[0];
+    if(validLocale(lang))return lang;
+  }
+  return 'en';
+}
+export function t(key) {
+  return messages[locale]?.[key] ?? (locale==='fr'?messages.en[key]:messages.ru[key]) ?? messages.ru[key] ?? key;
+}
+export function getLocale(){return locale;}
+export function setLocale(next,{persist=false}={}){
+  const resolved=validLocale(next)||'ru',changed=locale!==resolved;
+  locale=resolved;
+  if(typeof document!=='undefined'){
+    document.documentElement.lang=locale;
+    translate();
+    const select=document.getElementById('languageSelect');
+    if(select)select.value=locale;
+  }
+  if(persist){
+    manuallyChosen=true;
+    try{localStorage.setItem(choiceKey,locale);}catch{/* Private browsing may disable storage. */}
+  }
+  if(changed&&typeof document!=='undefined')
+    document.dispatchEvent(new CustomEvent('fitgoin:localechange',{detail:{locale}}));
+}
+function applyLiteralText(root){
+  if(!root)return;
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+  for(let node=walker.nextNode();node;node=walker.nextNode()){
+    if(!node.parentElement||node.parentElement.closest(ignoreContent))continue;
+    let source=savedTexts.get(node);
+    if(source===undefined){
+      source=node.nodeValue;
+      if(!staticFrench[source.trim()])continue;
+      savedTexts.set(node,source);
+    }
+    const bare=source.trim(),replacement=locale==='fr'?staticFrench[bare]:bare;
+    const transformed=source.replace(bare,replacement);
+    if(node.nodeValue!==transformed)node.nodeValue=transformed;
+  }
+}
+function applyAttributes(root){
+  if(!root?.querySelectorAll)return;
+  const targets=root.querySelectorAll('[placeholder],[aria-label],[title]');
+  for(const el of targets){
+    if(el.closest('[translate="no"],#messages,#threads,#fitgoinAI,#profileContent'))continue;
+    let attrs=savedAttributes.get(el);
+    if(!attrs){attrs=new Map();savedAttributes.set(el,attrs);}
+    for(const name of ['placeholder','aria-label','title']){
+      if(!el.hasAttribute(name))continue;
+      if(!attrs.has(name)){
+        const value=el.getAttribute(name);
+        if(!staticFrench[value])continue;
+        attrs.set(name,value);
+      }
+      if(!attrs.has(name))continue;
+      const original=attrs.get(name),value=locale==='fr'?staticFrench[original]:original;
+      if(el.getAttribute(name)!==value)el.setAttribute(name,value);
+    }
+  }
+}
+export function translate(root=document){
+  if(typeof document==='undefined'||!root)return;
+  for(const el of root.querySelectorAll('[data-i18n]')){
+    const value=t(el.dataset.i18n);
+    if(typeof value==='string'&&el.textContent!==value)el.textContent=value;
+  }
+  applyLiteralText(root.nodeType===9?root.body:root);
+  applyAttributes(root);
+}
+export function initLocale(){
+  if(typeof document==='undefined')return;
+  let saved='';
+  try{saved=localStorage.getItem(choiceKey)||'';}catch{/* No storage available. */}
+  const query=new URLSearchParams(location.search).get('lang');
+  if(validLocale(query))saved=query;
+  manuallyChosen=Boolean(validLocale(saved));
+  const languages=navigator.languages?.length?[...navigator.languages]:[navigator.language];
+  const timeZone=Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const selected=chooseLocale({saved,languages,timeZone});
+  setLocale(selected);
+  const picker=document.getElementById('languageSelect');
+  if(picker){picker.value=selected;picker.addEventListener('change',e=>setLocale(e.target.value,{persist:true}));}
+  // Cloudflare provides an approximate country on our own domain, with no third-party translator.
+  if(!manuallyChosen&&typeof fetch==='function'){
+    const traceSignal=typeof AbortSignal?.timeout==='function'?AbortSignal.timeout(3500):undefined;
+    fetch('/cdn-cgi/trace',{cache:'no-store',signal:traceSignal})
+      .then(res=>res.ok?res.text():'')
+      .then(body=>{
+        const country=body.match(/^loc=([A-Z]{2})$/m)?.[1];
+        if(country&&!manuallyChosen){
+          const next=chooseLocale({country,languages,timeZone});
+          if(next!==locale)setLocale(next);
+        }
+      }).catch(()=>{/* Keep the browser/region fallback. */});
+  }
+  if(!observing&&typeof MutationObserver!=='undefined'){
+    observing=true;
+    new MutationObserver(records=>{
+      if(!records.some(record=>record.type==='childList'&&record.addedNodes.length))return;
+      if(queued)return;queued=true;
+      queueMicrotask(()=>{queued=false;translate();});
+    }).observe(document.body,{childList:true,subtree:true});
+  }
 }
