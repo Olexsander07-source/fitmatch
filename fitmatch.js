@@ -3,7 +3,8 @@
 import {mountFitGoInAI} from './fitgoin-ai.js?v=20261004-premium';
 import {mountPremium} from './fitgoin-premium.js';
 import {workspaceRole,BRAND_IMAGES} from './fitgoin-premium-core.mjs';
-import {t,initLocale,getLocale} from './fitgoin-i18n.mjs';
+import {t,initLocale,getLocale,getRegionCountry,hasManualLocale} from './fitgoin-i18n.mjs';
+import {CHAT_LANGUAGE_NAMES,chatLanguageForRegion} from './fitgoin-chat-translation-core.mjs';
 import {matchSportKey,formatFits,formMatchPreferences,rankCoaches} from './fitgoin-match-core.mjs';
 let aiAssistant=null;
 let premium=null;
@@ -461,7 +462,7 @@ function authChanged(event, session) {
   user=next;if(changed)own=null;
   premium?.setSession(user);
   aiAssistant?.setSession(user);
-  if(changed){authEpoch++;threadEpoch++;catalogueEpoch++;own=null;profileRecord=null;activeThread=null;threads=[];chatRows=[];pendingMessage=null;visibleProfile='';presence.clear();presenceFetchedAt=0;
+  if(changed){resetChatTranslation();authEpoch++;threadEpoch++;catalogueEpoch++;own=null;profileRecord=null;activeThread=null;threads=[];chatRows=[];pendingMessage=null;visibleProfile='';presence.clear();presenceFetchedAt=0;
     cancelVoiceRecording();cleanupCallLocal();$('threads').replaceChildren();$('messages').replaceChildren();$('myGallery').replaceChildren();$('profileContent').replaceChildren();$('chatTitle').textContent='Выбери диалог';$('chatPresence').textContent='';$('messageForm').hidden=true;$('messageForm').reset();clearChatAttachment();clearChatMediaURLs();$('clientForm').reset();delete $('clientForm').dataset.dirty;$('coachForm').reset();delete $('coachForm').dataset.dirty;accountTab='profile';$('coachForm').hidden=true;$('clientCoachStart').hidden=false;$('mediaEditor').hidden=true;
     resetMatchWizard(true);stopPresenceHeartbeat();if(user)setTimeout(startPresenceHeartbeat,0);
     if(!user){coaches=coaches.filter(publicOnly);if(currentPage!=='home'&&currentPage!=='signup') page('home');}
@@ -1371,6 +1372,67 @@ async function openThread(t) {
   try{await loadPresence(true);}catch{} updateActivePresence();
   $('olderMessages').hidden=true;await pollMessages(true);await loadThreads();
 }
+const chatTranslations=new Map(),translationFailures=new Set(),originalMessages=new Set();
+let translatingChat=false,chatLanguageOverride='';
+const chatLanguageKey='fitgoin_chat_language_v1';
+function chatLanguage(){
+  return chatLanguageForRegion({country:getRegionCountry(),browserLanguage:navigator.languages?.[0]||navigator.language,
+    siteLanguage:getLocale(),manualSite:hasManualLocale(),chatChoice:chatLanguageOverride});
+}
+function refreshChatLanguage(){
+  const language=chatLanguage(),display=getLocale(),select=$('chatLanguage');
+  if(select)select.value=language;
+  const label=$('chatLanguageLabel'),note=$('chatTranslationNote');
+  if(label)label.textContent=display==='fr'?'Langue des messages':display==='en'?'Message language':'Язык сообщений';
+  if(note)note.textContent=display==='fr'?'Les messages reçus sont traduits automatiquement avec l’IA. Leur version originale reste accessible.':display==='en'?'Received messages are translated automatically with AI. The original is always available.':'Полученные сообщения автоматически переводятся с помощью AI. Оригинал всегда доступен.';
+}
+function translationKey(row,lang=chatLanguage()){return String(user?.id||'')+':'+row.id+':'+lang;}
+function showTranslatedMessage(node,row){
+  const language=chatLanguage(),key=translationKey(row,language);
+  const incoming=row.sender_id!==user?.id && Boolean(row.body?.trim());
+  const translated=incoming?chatTranslations.get(key):null;
+  const showingOriginal=originalMessages.has(key),displayed=translated&&!showingOriginal?translated:row.body;
+  const body=node.querySelector('.message-body');
+  if(body && body.textContent!==displayed)body.textContent=displayed;
+  let toggle=node.querySelector('[data-chat-translation-toggle]');
+  if(translated){
+    if(!toggle){toggle=document.createElement('button');toggle.type='button';toggle.className='chat-translation-toggle';toggle.dataset.chatTranslationToggle=String(row.id);node.insertBefore(toggle,node.querySelector('time'));}
+    const display=getLocale();
+    toggle.textContent=showingOriginal?(display==='fr'?'Voir la traduction':display==='en'?'Show translation':'Показать перевод'):(display==='fr'?'Voir l’original':display==='en'?'Show original':'Показать оригинал');
+    toggle.hidden=false;
+  }else if(toggle)toggle.hidden=true;
+  let error=node.querySelector('[data-chat-translation-error]');
+  if(incoming&&translationFailures.has(key)&&!translated){
+    if(!error){error=document.createElement('span');error.className='chat-translation-failed';error.dataset.chatTranslationError='';node.insertBefore(error,node.querySelector('time'));}
+    const display=getLocale();
+    error.textContent=display==='fr'?'Traduction indisponible : texte original':display==='en'?'Translation unavailable: original shown':'Перевод недоступен — показан оригинал';
+  }else if(error)error.remove();
+}
+async function translateIncomingMessages(){
+  if(translatingChat || !user || !db || !activeThread)return;
+  translatingChat=true;
+  try{
+    for(let attempt=0;attempt<30;attempt++){
+      const actor=user?.id,epoch=threadEpoch,language=chatLanguage(),thread=activeThread?.id;
+      if(!actor||!thread)return;
+      const pending=chatRows.filter(m=>m.sender_id!==actor&&typeof m.body==='string'&&m.body.trim()&&m.body.length<=4000&&!chatTranslations.has(translationKey(m,language))&&!translationFailures.has(translationKey(m,language))).slice(-6);
+      if(!pending.length)return;
+      const ids=pending.map(m=>m.id);
+      let data,error;
+      try{({data,error}=await db.functions.invoke('fitgoin-chat-translate',{body:{message_ids:ids,target_language:language}}));}catch(e){error=e;}
+      if(epoch!==threadEpoch||actor!==user?.id||thread!==activeThread?.id)continue;
+      if(error||!Array.isArray(data?.translations)){
+        pending.forEach(m=>translationFailures.add(translationKey(m,language)));
+        drawMessages();return;
+      }
+      const translated=new Map(data.translations.filter(x=>ids.includes(x.id)&&typeof x.body==='string').map(x=>[x.id,x.body]));
+      pending.forEach(m=>{const key=translationKey(m,language),text=translated.get(m.id);if(text)chatTranslations.set(key,text);else translationFailures.add(key);});
+      drawMessages();
+    }
+  }finally{translatingChat=false;}
+}
+function resetChatTranslation(){chatTranslations.clear();translationFailures.clear();originalMessages.clear();translatingChat=false;}
+
 function drawMessages(stick = false) {
   const box=$('messages'),atBottom=box.scrollHeight-box.scrollTop-box.clientHeight<70;
   const existing=new Map([...box.children].map(node=>[node.dataset.messageId,node]));let cursor=box.firstElementChild;
@@ -1381,6 +1443,7 @@ function drawMessages(stick = false) {
     if(!node.childElementCount || node.querySelector('.chat-media-loading') && !node.querySelector('[data-audio-status]')){
       node.innerHTML=`${chatMediaHTML(m)}${body}<time datetime="${esc(m.created_at)}">${esc(new Date(m.created_at).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}))}</time>`;
     }
+    showTranslatedMessage(node,m);
     if(node!==cursor)box.insertBefore(node,cursor);cursor=node.nextElementSibling;
     const audio=node.querySelector('audio');if(audio){bindChatAudio(audio,m);syncChatAudioSource(audio,m);}
   }
@@ -1402,7 +1465,7 @@ async function pollMessages(initial = false, older = false) {
     let mediaChanged=false;
     try{mediaChanged=await ensureChatMediaURLs(chatRows);}catch(e){message('chatMessage','Не удалось загрузить одно из вложений. '+explain(e),true);}
     if(epoch!==threadEpoch || actor!==user?.id)return;
-    if(rows.length || initial || mediaChanged)drawMessages(initial);
+    if(rows.length || initial || mediaChanged){drawMessages(initial);void translateIncomingMessages();}
     if(older)box.scrollTop=top+(box.scrollHeight-height);
     if(initial || older)$('olderMessages').hidden=rows.length<50;
     if($('chatMessage').dataset.pollError){message('chatMessage','');delete $('chatMessage').dataset.pollError;}
@@ -1410,6 +1473,13 @@ async function pollMessages(initial = false, older = false) {
   finally {chatBusy=false;}
 }
 function bindChat() {
+  try{chatLanguageOverride=localStorage.getItem(chatLanguageKey)||'';}catch{}
+  if(typeof CHAT_LANGUAGE_NAMES==='object' && typeof chatLanguageForRegion==='function'){
+    $('chatLanguage').innerHTML=Object.entries(CHAT_LANGUAGE_NAMES).map(([code,label])=>'<option value="'+esc(code)+'">'+esc(label)+'</option>').join('');
+    refreshChatLanguage();
+    $('chatLanguage').onchange=e=>{chatLanguageOverride=e.target.value;try{localStorage.setItem(chatLanguageKey,chatLanguageOverride);}catch{}drawMessages();void translateIncomingMessages();};
+    $('messages').addEventListener('click',e=>{const button=e.target.closest('[data-chat-translation-toggle]');if(!button)return;const row=chatRows.find(m=>String(m.id)===button.dataset.chatTranslationToggle);if(!row)return;const key=translationKey(row);if(originalMessages.has(key))originalMessages.delete(key);else originalMessages.add(key);drawMessages();});
+  }
   $('refreshThreads').onclick=()=>loadThreads().catch(e=>message('chatMessage',explain(e),true));
   $('audioCall').onclick=()=>startAudioCall().catch(e=>message('chatMessage',explain(e),true));
   $('videoCall').onclick=()=>startVideoCall().catch(e=>message('chatMessage',explain(e),true));
@@ -1543,8 +1613,12 @@ if(typeof initLocale==='function')initLocale();
 if(typeof document.addEventListener==='function')document.addEventListener('fitgoin:localechange',()=>{
   premium?.decorate();
   aiAssistant?.refreshUI?.();
+  refreshChatLanguage();
+  drawMessages();
+  void translateIncomingMessages();
   updateMatchWizard();
 });
+if(typeof document.addEventListener==='function')document.addEventListener('fitgoin:regionchange',()=>{refreshChatLanguage();drawMessages();void translateIncomingMessages();});
 init();
 
 

@@ -49,7 +49,9 @@ messages.fr = frCatalog;
 const choiceKey='fitgoin_locale_preference_v1';
 const savedTexts=new WeakMap(),savedAttributes=new WeakMap();
 const ignoreContent='script,style,[data-i18n],[translate="no"],#messages,#threads,#profileContent,#coachesList,#rankingList,#matchResults,#fitgoinAI,#myGallery,#chatAttachmentPreview';
-let locale='ru', observing=false, queued=false, manuallyChosen=false;
+let locale='ru', observing=false, queued=false, manuallyChosen=false, regionCountry='';
+export function getRegionCountry(){return regionCountry;}
+export function hasManualLocale(){return manuallyChosen;}
 const validLocale=value=>['ru','en','fr'].includes(String(value).toLowerCase())?String(value).toLowerCase():null;
 
 export function chooseLocale({saved='',country='',languages=[],timeZone=''}={}) {
@@ -155,9 +157,13 @@ export function initLocale(){
       .then(res=>res.ok?res.text():'')
       .then(body=>{
         const country=body.match(/^loc=([A-Z]{2})$/m)?.[1];
-        if(country&&!manuallyChosen){
-          const next=chooseLocale({country,languages,timeZone});
-          if(next!==locale)setLocale(next);
+        if(country){
+          regionCountry=country;
+          document.dispatchEvent(new CustomEvent('fitgoin:regionchange',{detail:{country}}));
+          if(!manuallyChosen){
+            const next=chooseLocale({country,languages,timeZone});
+            if(next!==locale)setLocale(next);
+          }
         }
       }).catch(()=>{/* Keep the browser/region fallback. */});
   }

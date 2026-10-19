@@ -58,6 +58,13 @@ h1,h2,h3,.muted{overflow-wrap:anywhere}
 .client-account .account-actions .btn.primary{background:var(--accent);border-color:var(--accent);color:#18210e}
 @media(max-width:650px){.client-account .workspace-content{grid-row:1}.client-account #clientSidebar{grid-row:2}}
 
+/* Chat translations leave the original stored message untouched. */
+.chat-language-setting{display:grid;gap:4px;margin-top:9px;max-width:330px}
+.chat-language-setting label{font-size:12px;opacity:.85}
+.chat-language-setting select{max-width:240px;background:#18231e;color:#fff;border:1px solid #82927f;border-radius:8px;padding:7px}
+.chat-language-setting .hint{font-size:11px;line-height:1.4;margin:2px 0 0}
+.chat-translation-toggle{display:block;border:0;background:transparent;color:#a7c3ff;font-size:11px;cursor:pointer;text-decoration:underline;padding:4px 0;margin-top:4px;text-align:left}
+.chat-translation-failed{display:block;font-size:10px;opacity:.75;margin-top:4px}
 /* FitGoIn language selector: compact across guest and signed-in headers. */
 .fgi-language{display:flex;align-items:center;flex:0 0 auto;z-index:2}
 .fgi-language select{appearance:auto;border:1px solid rgba(255,255,255,.28);border-radius:9px;background:#142219;color:#f4f7ef;font-family:inherit;font-size:12px;font-weight:600;line-height:1.2;min-height:36px;padding:6px 7px;cursor:pointer}
