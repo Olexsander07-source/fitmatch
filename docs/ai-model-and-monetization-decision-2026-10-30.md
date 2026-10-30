@@ -12,6 +12,18 @@
 - Proposed Premium web-search cap: **up to 100 searches/month**, provided the overall $10 cost budget permits them.
 - Business strategy: commissions on trainer bookings plus AI subscriptions, with one French enterprise envisioned for FitGoIn and subsequent software projects.
 
+## Suggested feature separation after owner discussion (30 October 2026)
+
+**Owner requirement:** During the 7-day trial, do **not** generate personalized nutrition programs; all main training, nutrition, progress, and vetted-source internet research features must be available in AI Pro. Separate AI Premium only by additional advanced value, not by withholding essential trainer features from Pro.
+
+**Recommended product design — pricing and feature boundaries pending full implementation:**
+
+- **Trial (free, 7 days, 1,000,000 combined tokens across the week):** AI chat, general sport/technique and nutrition explanations, product guidance and profile onboarding. **No individualized training or nutrition program generation, no paid web research, no photo/video AI analysis.** Public marketplace coach search remains available independently of AI subscription.
+- **AI Pro — €19.90/month:** All ordinary AI Trainer & Assistant features: personalized training plans, personalized nutrition plans, adaptation via chat, memory, workout/progress tracking, and reliable, cited scientific and public-health web research using the existing allowlist (WHO, NHS, PubMed, etc.). **Proposed fair-use research allowance: up to 30 searches per month.** The research count may correspond to more than one billable tool call per question; monitor actual costs.
+- **AI Premium — €24.90/month:** Everything in Pro plus advanced food-photo assessment, exercise technique assessment from selected photos/video frames, deeper progress reports, and **proposed up to 100 verified research searches per month**. These advanced capabilities require real quality/privacy and cost checks before they can be advertised as fully functional.
+- The overall maximum OpenAI spending target remains **$10 per paying user per month**, including both tokens and web-search calls. Consider a lower budget tier for Pro, but **do not silently change existing live spending caps**. There must be clear, non-misleading usage/expense thresholds rather than unlimited-access claims.
+- **This is a planned offer, not published billing or a production entitlement change.** The currently deployed Stripe pricing, trial mechanics, and AI function gates are unchanged; verify consumer terms, cancellation, testing, tax and provider setup before enabling automatic charges.
+
 ## Implementation status
 
 This branch proposes server-side Luna/Terra routing, request-specific metering, conservative price protection, and automated regression tests. **It is not a claim of deployment to production.**
