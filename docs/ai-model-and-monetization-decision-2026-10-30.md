@@ -7,7 +7,7 @@
 - Use **GPT-6.1 Terra** for complex or structured training/nutrition plans, sensitive technical validations, exercise substitutions, and web research.
 - Give the user a single seamless AI Trainer experience; routing happens securely on the backend.
 - Trial direction: **7 days free**, with **10,000 tokens/day** as an initial proposed limit.
-- Proposed tiers (not yet implemented or final prices): **AI Pro €24.90/month**, **AI Premium €29.90/month** including web search; no unrestricted use promise.
+- **Owner-selected starting prices (30 October 2026): AI Pro €19.90/month and AI Premium €24.90/month** (includes internet search); these replace the earlier €24.90/€29.90 proposal. No unlimited-use promise; the prices are not yet activated in Stripe or production.
 - Business requirement: a target **maximum of $10 in total OpenAI costs per paid user per month** (model tokens and web-search fees together), enforced server-side before usage can accrue. The existing shipped caps are different and should not be silently relabeled as $10.
 - Proposed Premium web-search cap: **up to 100 searches/month**, provided the overall $10 cost budget permits them.
 - Business strategy: commissions on trainer bookings plus AI subscriptions, with one French enterprise envisioned for FitGoIn and subsequent software projects.
