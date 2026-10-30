@@ -86,7 +86,26 @@ test('server identity is verified and ignores body user_id, quota and model over
   const s=setup(),r=await s.request({user_id:OTHER,model:'expensive',limit:100000});assert.equal(r.status,200);
   assert.equal(s.calls.find(x=>x.url.includes('fgi_ai_claim')).body.p_user,USER);
   assert.equal(s.calls.find(x=>x.url.includes('fgi_ai_complete')).body.p_user,USER);
-  const payload=s.calls.find(x=>x.url.includes('api.openai.com')).body;assert.equal(payload.model,'gpt-4.1');assert.equal(payload.store,false);assert.equal(payload.text.format.strict,true);assert(!payload.instructions.includes('private-test'));
+  const payload=s.calls.find(x=>x.url.includes('api.openai.com')).body;assert.equal(payload.model,'gpt-6-luna');assert.equal(payload.reasoning.effort,'none');assert.equal(payload.store,false);assert.equal(payload.text.format.strict,true);assert(!payload.instructions.includes('private-test'));
+});
+test('model routing uses Luna for chat, Terra for structured plans and verified internet search',async()=>{
+  const normal=setup();assert.equal((await normal.request()).status,200);
+  assert.equal(normal.calls.find(x=>x.url.includes('api.openai.com')).body.model,'gpt-6-luna');
+  const plan=setup({response:providerResponse(training())});await plan.request({action:'training'});
+  assert.equal(plan.calls.find(x=>x.url.includes('api.openai.com')).body.model,'gpt-6.1-terra');
+  const research=setup({response:providerResponse({answer:'Данные из исследований.'},{output:[{type:'web_search_call',status:'completed'}],citations:[{type:'url_citation',url:'https://pubmed.ncbi.nlm.nih.gov/123/',title:'Study'}]})});
+  assert.equal((await research.request({action:'search',message:'Найди обзор исследований тренировок.'})).status,200);
+  assert.equal(research.calls.find(x=>x.url.includes('api.openai.com')).body.model,'gpt-6.1-terra');
+});
+test('billing meter prices each model by actual returned usage, not the old GPT-4.1 rate',async()=>{
+  const billed={...providerResponse(),usage:{input_tokens:1000,output_tokens:1000}};
+  const normal=setup({response:billed});assert.equal((await normal.request()).status,200);
+  const meter=normal.calls.find(x=>x.url.endsWith('/rpc/fgi_ai_meter')).body;
+  assert(Math.abs(meter.p_actual-0.00072)<1e-9); // Luna $0.10/$0.50, 20% conservative buffer
+  const plan=setup({response:{...providerResponse(training()),usage:{input_tokens:1000,output_tokens:1000}}});
+  await plan.request({action:'training'});
+  const heavy=plan.calls.find(x=>x.url.endsWith('/rpc/fgi_ai_meter')).body;
+  assert(heavy.p_actual>=0.0072); // Terra $1/$5, 20% buffer
 });
 test('idempotent result and quota exhaustion do not repeat an external API call',async()=>{
   const cached=setup({claim:{cached:{answer:'Saved',remaining:20}}});assert.equal((await (await cached.request()).json()).answer,'Saved');assert(!cached.calls.some(x=>x.url.includes('api.openai.com')));
@@ -143,7 +162,7 @@ test('monthly resource exhaustion and an unpriced model stop before any provider
   const exhausted=setup({reserve:{error:'monthly_limit'}}),response=await exhausted.request();
   assert.equal(response.status,429);assert.equal((await response.json()).error,'monthly_limit');
   assert(!exhausted.calls.some(x=>x.url.includes('api.openai.com')));assert(exhausted.calls.some(x=>x.url.includes('fgi_ai_fail')));
-  const unknown=setup({env:{OPENAI_MODEL:'unpriced-model'}});assert.equal((await unknown.request()).status,503);assert(!unknown.calls.some(x=>x.url.includes('api.openai.com')));
+  const unknown=setup({env:{FGI_AI_MODEL_CHAT:'unpriced-model'}});assert.equal((await unknown.request()).status,503);assert(!unknown.calls.some(x=>x.url.includes('api.openai.com')));
 });
 test('nutrition uses confirmed food history and training receives only its own context',async()=>{
   const options={profile:{...PROFILE,diet:'vegan',allergies:['milk']},food:[{name:'CONFIRMED_FOOD',recorded_on:'2026-10-04',calories_low:100,calories_high:150}],workouts:[{completed_at:'2026-10-04T10:00:00Z',data:{sets:[{exercise:'ACTUAL_WORKOUT',reps:10}]}}]};
