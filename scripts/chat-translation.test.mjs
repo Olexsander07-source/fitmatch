@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {chatLanguageForRegion,validateTranslateRequest,parseTranslationResult} from '../fitgoin-chat-translation-core.mjs';
 import {createTranslationHandler} from '../supabase/functions/fitgoin-chat-translate/index.mjs';
 
@@ -100,4 +101,13 @@ test('missing default translation model falls back once to supported mini model'
   assert.equal(res.status,200);
   assert.equal(ctx.providerCalls,2);
   assert.equal((await res.json()).translations[0].body,'Здравствуйте, когда встреча?');
+});
+
+test('chat interface offers retry after failure without removing original messages',()=>{
+  const source=readFileSync(new URL('../fitmatch.js',import.meta.url),'utf8');
+  assert(source.includes("retry.dataset.chatTranslationRetry=''"));
+  assert(source.includes('translationFailures.delete(translationKey(row))'));
+  assert(source.includes('Перевод временно недоступен'));
+  assert(source.includes('Повторить перевод'));
+  assert(source.includes('const displayed=translated&&!showingOriginal?translated:row.body'));
 });
