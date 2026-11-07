@@ -29,7 +29,7 @@ function setup(options={}) {
       return Response.json([...(messages.get(key(a,p.get('conversation_id').slice(3),p.get('module').slice(3)))||[])].slice(-40).reverse());
     }
     if(u.pathname==='/rest/v1/rpc/fgi_ai_access')return Response.json({friend:true,modules:['training','nutrition']});
-    if(u.pathname==='/rest/v1/rpc/fgi_ai_claim')return Response.json({remaining:29,search_remaining:3});
+    if(u.pathname==='/rest/v1/rpc/fgi_ai_claim_v2')return Response.json({remaining:29,search_remaining:3});
     if(u.pathname==='/rest/v1/rpc/fgi_ai_complete'){
       const k=key(body.p_user,body.p_conversation,body.p_result.module),h=messages.get(k)||[];
       h.push({role:'user',body:body.p_input},{role:'assistant',body:body.p_output,coach_search:body.p_result.coach_search});messages.set(k,h);return Response.json(null);

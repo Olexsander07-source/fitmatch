@@ -29,9 +29,9 @@ function setup(change={}) {
     if(url.includes('/fgi_ai_workouts?'))return json(change.workouts||[]);
     if(url.includes('/fgi_ai_plans?'))return json(change.plans||[]);
     if(url.endsWith('/rpc/fgi_ai_access'))return json(change.access||{modules:['training','nutrition'],friend:true});
-    if(url.endsWith('/rpc/fgi_ai_reserve'))return json(change.reserve||{reserved:true});
-    if(url.endsWith('/rpc/fgi_ai_claim'))return json(change.claim||{remaining:29,search_remaining:3});
-    if(url.endsWith('/rpc/fgi_ai_claim_search'))return json(change.searchClaim||{search_remaining:2});
+    if(url.endsWith('/rpc/fgi_ai_reserve_v2'))return json(change.reserve||{reserved:true});
+    if(url.endsWith('/rpc/fgi_ai_claim_v2'))return json(change.claim||{remaining:29,search_remaining:3});
+    if(url.endsWith('/rpc/fgi_ai_claim_search_v2'))return json(change.searchClaim||{search_remaining:2});
     if(url.endsWith('/rpc/fgi_ai_complete'))return json(change.completeFails?{error:'consent_changed'}:null,change.completeFails?400:200);
     if(url.includes('/rpc/'))return json(null);
     if(url.includes('/storage/v1/object/list/'))return json(listing++===0?(change.photos||[]):[]);
@@ -175,10 +175,42 @@ test('nutrition uses confirmed food history and training receives only its own c
   assert(sportsContext.includes('ACTUAL_WORKOUT'));assert(!sportsContext.includes('CONFIRMED_FOOD'));assert(!sportsContext.includes('vegan'));assert(!sportsContext.includes('milk'));
   assert(!sports.calls.some(x=>x.url.includes('/fgi_ai_food?')));assert(sports.calls.some(x=>x.url.includes('module=eq.training')));
 });
+test('seven-day trial allows general Luna chat but blocks plans, media and web research before provider usage',async()=>{
+  const options={access:{modules:['training','nutrition'],tier:'trial',trial:true,premium:false}};
+  const chat=setup(options);
+  assert.equal((await chat.request({message:'Что такое разминка?'})).status,200);
+  assert.equal(chat.calls.find(c=>c.url.includes('api.openai.com')).body.model,'gpt-6-luna');
+  const reserved=chat.calls.find(c=>c.url.endsWith('/rpc/fgi_ai_reserve_v2')).body;
+  assert(Number.isInteger(reserved.p_estimated_tokens)&&reserved.p_estimated_tokens>0);
+  for(const body of [
+    {action:'training',message:'Создай программу тренировок'},
+    {action:'nutrition',module:'nutrition',message:'Составь меню на неделю'},
+    {action:'search',message:'Найди исследования о белке'},
+    {action:'food_photo',message:'Оцени блюдо'},
+    {action:'chat',message:'Составь персональную программу на неделю'}
+  ]){
+    const trial=setup(options),response=await trial.request(body);
+    assert.equal(response.status,402,JSON.stringify(body));
+    assert(!trial.calls.some(c=>c.url.includes('api.openai.com')),JSON.stringify(body));
+  }
+});
+test('AI Pro permits plans and research but reserves photo and technique tools for Premium',async()=>{
+  const pro=setup({access:{modules:['training','nutrition'],tier:'pro',premium:false}});
+  const response=await pro.request({action:'food_photo',message:'Оцени еду'});
+  assert.equal(response.status,402);assert(!pro.calls.some(x=>x.url.includes('api.openai.com')));
+});
+test('unknown provider token usage consumes the conservative reserved allowance',async()=>{
+ const s=setup({access:{modules:['training','nutrition'],tier:'trial'}});
+ assert.equal((await s.request()).status,200);
+ const reserve=s.calls.find(x=>x.url.endsWith('/rpc/fgi_ai_reserve_v2')).body;
+ const meter=s.calls.find(x=>x.url.endsWith('/rpc/fgi_ai_meter')).body;
+ assert.equal(meter.p_input,reserve.p_estimated_tokens);
+ assert.equal(meter.p_output,0);
+});
 test('food-photo round trip stores only the assessment and leaves logging to user confirmation',async()=>{
   const assessment={title:'Рис',uncertainty:'Размер порции приблизительный.',items:[{name:'Рис',portion:'Около 150 г',calories_low:160,calories_high:250,protein_g:4,fat_g:1,carbs_g:40}],questions:[],warnings:['Проверь состав.']};
   const bytes=new Uint8Array(300);bytes.set([255,216,255]);const base64=btoa(String.fromCharCode(...bytes));
-  const s=setup({response:providerResponse(assessment)}),response=await s.request({action:'food_photo',images:[{mime:'image/jpeg',base64}],media_consent:'2026-10-04-media'});
+  const s=setup({response:providerResponse(assessment),access:{modules:['training','nutrition'],tier:'premium'}}),response=await s.request({action:'food_photo',images:[{mime:'image/jpeg',base64}],media_consent:'2026-10-04-media'});
   assert.equal(response.status,200);const result=await response.json();assert.equal(result.analysis.total.calories_high,250);assert.equal(result.module,'nutrition');
   assert(!s.calls.some(x=>x.url.includes('/fgi_ai_food?')));
   const persisted=s.calls.find(x=>x.url.includes('fgi_ai_complete')).body;assert(!JSON.stringify(persisted).includes(base64));assert.equal(persisted.p_result.analysis.title,'Рис');
@@ -292,7 +324,7 @@ test('failed database completion never returns a memory save confirmation or ans
 test('a memory update does not change delivery hash or regenerate on cached replay',async()=>{
  const message='Мой вес сейчас 82 кг';const s=setup({response:providerResponse({answer:'Принял.',memory_updates:[{field:'weight_kg',value:'82',evidence:message}]})});const first=await (await s.request({message})).json();
  const again=setup({profile:{...PROFILE,weight_kg:82},updatedAt:'2026-10-06T10:00:00Z',claim:{cached:first}});assert.deepEqual(await (await again.request({message})).json(),first);
- const hash=c=>c.calls.find(x=>x.url.endsWith('/rpc/fgi_ai_claim')).body.p_hash;assert.equal(hash(s),hash(again));assert(!again.calls.some(c=>c.url.includes('api.openai.com')));
+ const hash=c=>c.calls.find(x=>x.url.endsWith('/rpc/fgi_ai_claim_v2')).body.p_hash;assert.equal(hash(s),hash(again));assert(!again.calls.some(c=>c.url.includes('api.openai.com')));
 });
 test('direct memory questions use saved facts even if the model gives a different number',async()=>{
  const s=setup({profile:{...PROFILE,weight_kg:82},response:providerResponse({answer:'Ты весишь 80 кг.',memory_updates:[]})});const result=await (await s.request({message:'Какой у меня сейчас вес?'})).json();assert(result.answer.includes('82'));assert(!result.answer.includes('80'));

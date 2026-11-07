@@ -6,7 +6,7 @@ const subOf=invoice=>id(invoice?.parent?.subscription_details?.subscription)||id
 const json=(data,status=200,headers={})=>new Response(JSON.stringify(data),{status,headers:{...headers,'Content-Type':'application/json','Cache-Control':'no-store'}});
 const modeKey=(key,live)=>new RegExp(`^(?:sk|rk)_${live?'live':'test'}_`).test(key||'');
 const timestamp=value=>Number.isFinite(value)&&value>0?new Date(value*1000).toISOString():null;
-const EVENTS=new Set(['checkout.session.completed','checkout.session.async_payment_succeeded','customer.subscription.created','customer.subscription.updated','customer.subscription.deleted','invoice.paid','invoice.payment_failed','invoice.payment_action_required','charge.refunded','charge.dispute.created','charge.dispute.updated','charge.dispute.closed','radar.early_fraud_warning.created']);
+const EVENTS=new Set(['checkout.session.completed','checkout.session.async_payment_succeeded','customer.subscription.trial_will_end','customer.subscription.created','customer.subscription.updated','customer.subscription.deleted','invoice.paid','invoice.payment_failed','invoice.payment_action_required','charge.refunded','charge.dispute.created','charge.dispute.updated','charge.dispute.closed','radar.early_fraud_warning.created']);
 
 // Stripe resource IDs resolve ownership through a server-owned Customer mapping.
 // User-editable metadata and the Checkout return page never grant an entitlement.
@@ -62,7 +62,7 @@ export function createBillingHandler({env,fetcher=fetch,stripeClient}={}) {
       const dispute=await stripe.disputes.retrieve(event.data.object.id);risk=dispute.status==='won'?'resolved':'disputed';
     }
     if(event.type==='radar.early_fraud_warning.created')risk='fraud_review';
-    await rpc('fgi_ai_billing_sync',{p_event:event.id+':'+sub.id,p_created:event.created,p_live:live,p_user:owner.user_id,p_customer:customer,p_subscription:sub.id,p_plan:plan,p_status:sub.status,p_paid_until:paid&&periods.length?timestamp(Math.max(...periods)):null,p_period_end:timestamp(items[0]?.current_period_end||sub.current_period_end),p_cancel:Boolean(sub.cancel_at_period_end),p_risk:risk,p_risk_id:risk?event.data.object.id:null});
+    await rpc('fgi_ai_billing_sync_v2',{p_event:event.id+':'+sub.id,p_created:event.created,p_live:live,p_user:owner.user_id,p_customer:customer,p_subscription:sub.id,p_plan:plan,p_status:sub.status,p_paid_until:paid&&periods.length?timestamp(Math.max(...periods)):null,p_period_end:timestamp(items[0]?.current_period_end||sub.current_period_end),p_trial_start:timestamp(sub.trial_start),p_trial_end:timestamp(sub.trial_end),p_cancel:Boolean(sub.cancel_at_period_end),p_risk:risk,p_risk_id:risk?event.data.object.id:null});
   }
   return async request=>{
     const origin=request.headers.get('origin'),headers={'Vary':'Origin','Access-Control-Allow-Methods':'GET, POST, OPTIONS','Access-Control-Allow-Headers':'authorization, apikey, content-type, stripe-signature, x-client-info'};
@@ -90,7 +90,7 @@ export function createBillingHandler({env,fetcher=fetch,stripeClient}={}) {
       const user=await auth.json();if(!UUID.test(user.id||''))throw new AIError('authentication_required',401);
       let input;try{input=JSON.parse(raw);}catch{throw new AIError('invalid_request');}
       if(input.action==='access'){
-        const access=await rpc('fgi_ai_access',{p_user:user.id,p_live:live});return json({...access,checkout_enabled:enabled,livemode:live},200,headers);
+        const [access,trialStatus]=await Promise.all([rpc('fgi_ai_access',{p_user:user.id,p_live:live}),rpc('fgi_ai_trial_eligible',{p_user:user.id,p_live:live})]);return json({...access,trial_available:trialStatus?.eligible===true,checkout_enabled:enabled,livemode:live},200,headers);
       }
       if(!['checkout','portal'].includes(input.action)||!UUID.test(input.request_id||''))throw new AIError('invalid_request');
       if(!key||!modeKey(key,live))throw new AIError('billing_not_configured',503);
@@ -108,6 +108,8 @@ export function createBillingHandler({env,fetcher=fetch,stripeClient}={}) {
       if(!customer){const created=await s.customers.create({email:user.email},{idempotencyKey:`fgi-ai-customer-${live}-${user.id}`});const saved=await rpc('fgi_ai_customer_save',{p_user:user.id,p_live:live,p_customer:created.id});customer=saved.customer_id;}
       const subscriptions=await s.subscriptions.list({customer,status:'all',limit:100});
       if(subscriptions.has_more||subscriptions.data.some(sub=>!['canceled','incomplete_expired'].includes(sub.status)))throw new AIError('subscription_exists',409);
+      const eligibility=await rpc('fgi_ai_trial_eligible',{p_user:user.id,p_live:live});
+      if(typeof eligibility?.eligible!=='boolean')throw new AIError('billing_not_configured',503);
       const claim=await rpc('fgi_ai_checkout_claim',{p_user:user.id,p_live:live,p_id:input.request_id,p_plan:input.plan});
       if(claim?.error)throw new AIError(claim.error,409);
       if(claim?.url)return json({url:claim.url},200,headers);
@@ -115,7 +117,7 @@ export function createBillingHandler({env,fetcher=fetch,stripeClient}={}) {
       // Retries and concurrent tabs reuse a server-owned nonce and the same
       // exact parameters, including expiry, so they cannot open two checkouts.
       const suffix=claim.request_id.replace(/-/g,'').slice(0,8).split('').map(c=>String.fromCharCode(97+parseInt(c,16))).join('');
-      const session=await s.checkout.sessions.create({mode:'subscription',customer,line_items:[{price:price.id,quantity:1}],success_url:'https://fitgoin.com/?ai_payment=return#ai',cancel_url:'https://fitgoin.com/#ai',expires_at:claim.expires,integration_identifier:'fitgoin_ai_'+suffix,consent_collection:{terms_of_service:'required'}},{idempotencyKey:`fgi-ai-checkout-${live}-${user.id}-${input.plan}-${claim.request_id}`});
+      const session=await s.checkout.sessions.create({mode:'subscription',customer,line_items:[{price:price.id,quantity:1}],success_url:'https://fitgoin.com/?ai_payment=return#ai',cancel_url:'https://fitgoin.com/#ai',expires_at:claim.expires,integration_identifier:'fitgoin_ai_'+suffix,consent_collection:{terms_of_service:'required'},...(eligibility.eligible?{payment_method_collection:'always',subscription_data:{trial_period_days:7,trial_settings:{end_behavior:{missing_payment_method:'cancel'}}}}:{})},{idempotencyKey:`fgi-ai-checkout-${live}-${user.id}-${input.plan}-${claim.request_id}`});
       await rpc('fgi_ai_checkout_save',{p_user:user.id,p_live:live,p_id:claim.request_id,p_url:session.url});
       return json({url:session.url},200,headers);
     } catch(error){return json({error:error instanceof AIError?error.code:'billing_unavailable'},error instanceof AIError?error.status:503,headers);}

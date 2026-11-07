@@ -98,7 +98,7 @@ export function createAIHandler({env,fetcher=fetch}={}) {
     if(origin)headers['Access-Control-Allow-Origin']=origin;
     if(request.method==='OPTIONS')return new Response(null,{status:204,headers});
     // Public readiness only: no user information, credentials or external API call.
-    if(request.method==='GET')return responseJSON({configured:Boolean(apiKey&&url&&publicKey&&secret),provider_configured:Boolean(apiKey),backend_configured:Boolean(url&&publicKey&&secret),version:CONSENT_VERSION,limits:{daily:30,search:3}},200,headers);
+    if(request.method==='GET')return responseJSON({configured:Boolean(apiKey&&url&&publicKey&&secret),provider_configured:Boolean(apiKey),backend_configured:Boolean(url&&publicKey&&secret),version:CONSENT_VERSION,limits:{daily:120,trial_tokens_week:1000000,pro_search_month:30,premium_search_month:100}},200,headers);
     if(request.method!=='POST')return responseJSON({error:'method_not_allowed'},405,headers);
     let actor,nonce,claimed=false,meter,settle,safetyAction=null;const deadline=Date.now()+55000;
     try {
@@ -132,6 +132,9 @@ export function createAIHandler({env,fetcher=fetch}={}) {
       const live=get('AI_BILLING_MODE')!=='test',module=actionModule(input.action,input.module);
       const access=await rpc('fgi_ai_access',{p_user:actor,p_live:live});
       if(!hasAccess(access,module))throw new AIError('subscription_required',402);
+      const trial=access.tier==='trial',premium=access.tier==='premium'||access.tier==='friend'||access.friend===true;
+      if(trial&&input.action!=='chat')throw new AIError('trial_feature_locked',402);
+      if(['food_photo','technique'].includes(input.action)&&!premium)throw new AIError('premium_required',402);
       const profileRows=await rest(`/rest/v1/fgi_ai_profiles?user_id=eq.${actor}&select=data,consent_version,consented_at,updated_at`,{token});
       const saved=profileRows[0];if(!saved||saved.consent_version!==CONSENT_VERSION)throw new AIError('consent_required',403);
       const p=normalizeProfile(saved.data);
@@ -142,6 +145,7 @@ export function createAIHandler({env,fetcher=fetch}={}) {
       let analysisAction=input.action==='chat'?analysisIntent(message,saved.data,input.program_target):null;
       if(input.workout_payload||input.workout_target)analysisAction=null;
       if(module!=='training'&&['confirm','decline'].includes(analysisAction?.kind))analysisAction=null;
+      if(analysisAction&&!premium)throw new AIError('premium_required',402);
       const progressAction=input.action==='chat'?progressIntent(message):null;
       const nutritionControl=input.action==='chat'?nutritionTurn(saved.data,message,module):null;
       const mealRequest=module==='nutrition'&&(input.action==='nutrition'||input.action==='chat'&&(mealIntent(message)||saved.data.nutrition_plan_pending?.mode==='request'));
@@ -152,6 +156,10 @@ export function createAIHandler({env,fetcher=fetch}={}) {
       if((input.workout_target||input.workout_payload)&&!(module==='training'&&input.action==='chat'))throw new AIError('invalid_workout_result',422);
       const logAction=module==='training'&&input.action==='chat'?workoutLogIntent(message,saved.data,input.workout_payload):null;
       const requestedProgram=module==='training'&&(intent==='create'||(saved.data.program_pending===true&&input.action==='chat'&&!intent));
+      // Trial: general chat, but no personalized programs, log/plan mutations or research.
+      if(trial&&(requestedProgram||mealRequest||nutritionControl||analysisAction||progressAction||
+          workoutAction||logAction||intent||input.nutrition_target||input.program_target||
+          input.workout_target||input.workout_payload))throw new AIError('trial_feature_locked',402);
       const timezone=validTimezone(input.timezone);
       if(input.action==='training'&&!missingSportsMemory(saved.data).length&&programBlocked(saved.data))throw new AIError('professional_required',422);
       if(!transcription&&(!message||message.length>5000))throw new AIError('invalid_message');
@@ -170,7 +178,7 @@ export function createAIHandler({env,fetcher=fetch}={}) {
       if(!apiKey&&!coachAction&&!safetyAction&&!analysisAction&&!progressAction&&!logAction&&!nutritionControl&&!mealRequest&&!['show','today','tomorrow','cancel'].includes(intent)&&!['start','next','stop','rest','technique','confirm','cancel_edit','pain'].includes(workoutAction)&&!(module==='training'&&input.action==='chat'&&explicitScheduleOnly(message))&&!(input.action==='training'&&missingSportsMemory(saved.data).length))throw new AIError('ai_not_configured',503);
       // Memory changes updated_at, while the delivery nonce must remain replayable.
       const hash=await digest(JSON.stringify({action:input.action,module,live,message,conversation:input.conversation_id,audio:transcription?input.audio:null,mime:input.mime,duration:input.duration,images:media?input.images:null,timezone,program_target:input.program_target||null,nutrition_target:input.nutrition_target||null,...(input.workout_target!==undefined?{workout_target:input.workout_target}:{}),...(input.workout_payload!==undefined?{workout_payload:input.workout_payload}:{}),...(input.coach_use_memory!==undefined?{coach_use_memory:input.coach_use_memory}:{}),consent:saved.consented_at||saved.consent_version}));
-      const claim=await rpc('fgi_ai_claim',{p_user:actor,p_id:nonce,p_hash:hash,p_search:search});
+      const claim=await rpc('fgi_ai_claim_v2',{p_user:actor,p_id:nonce,p_hash:hash,p_search:search,p_live:live});
       if(claim.cached)return responseJSON(claim.cached,200,headers);
       if(claim.error)throw new AIError(claim.error,claim.error==='request_conflict'?409:429);
       claimed=true;
@@ -262,11 +270,13 @@ export function createAIHandler({env,fetcher=fetch}={}) {
       const mayEdit=Boolean(previousProgram)&&input.action==='chat';
       const reserveCalls=(requestedProgram||mayEdit)&&input.action==='chat'?3:['training','nutrition','chat'].includes(input.action)?2:1;
       const reservation=transcription ? .004 :Math.ceil(((42000+ (media?images.length*3000:0))*inputRate+ (input.action==='training'||requestedProgram||mayEdit?8000:input.action==='nutrition'?5000:4000)*outputRate)/1e6*1.25*1e4)/1e4*reserveCalls+.03;
-      const cap=access.friend?5:access.modules.length===2?7:module==='nutrition'?3:5;
-      const reserved=await rpc('fgi_ai_reserve',{p_user:actor,p_id:nonce,p_live:live,p_module:module,p_amount:reservation,p_user_cap:cap,p_site_cap:Number(get('FGI_AI_MONTHLY_SITE_USD')||20)});
+      const expectedOutput=input.action==='training'||requestedProgram||mayEdit?8000:input.action==='nutrition'?5000:4000;
+      const estimatedTokens=Math.min(200000,Math.ceil((42000+(media?images.length*3000:0)+expectedOutput)*reserveCalls));
+      const reserved=await rpc('fgi_ai_reserve_v2',{p_user:actor,p_id:nonce,p_live:live,p_module:module,p_amount:reservation,p_estimated_tokens:estimatedTokens,p_site_cap:Number(get('FGI_AI_MONTHLY_SITE_USD')||20)});
       if(reserved?.error)throw new AIError(reserved.error,reserved.error==='subscription_required'?402:429);
       meter={input:0,output:0,cost:0,duration:input.duration||0,inputRate,outputRate,unknown:false};
-      settle=()=>rpc('fgi_ai_meter',{p_user:actor,p_id:nonce,p_actual:meter.unknown||meter.pending?reservation:Math.max(.000001,meter.cost),p_input:meter.input,p_output:meter.output});
+      // When the provider omits usage, charge the whole reserved token count to the trial allowance instead of accidentally granting free repeated calls.
+      settle=()=>rpc('fgi_ai_meter',{p_user:actor,p_id:nonce,p_actual:meter.unknown||meter.pending?reservation:Math.max(.000001,meter.cost),p_input:meter.unknown||meter.pending?estimatedTokens:meter.input,p_output:meter.unknown||meter.pending?0:meter.output});
       if(transcription){
         let bytes;try{bytes=Uint8Array.from(atob(input.audio),c=>c.charCodeAt(0));}catch{throw new AIError('invalid_audio');}
         if(bytes.byteLength<100||bytes.byteLength>2000000)throw new AIError('invalid_audio');
@@ -301,6 +311,7 @@ export function createAIHandler({env,fetcher=fetch}={}) {
       let instructions=RULES+'\nFor chat: set needs_search=true and a generic sports/nutrition search_query when a reliable answer needs current sources, research verification or knowledge you lack. Never put personal data, locations, contact details, ages or measurements into search_query. Otherwise needs_search=false, search_query="". For an explicit search, use the web search tool and set needs_search=false.';
       let schema=CHAT_SCHEMA;
       if(input.action==='chat'){schema=MEMORY_CHAT_SCHEMA;instructions+='\n'+MEMORY_RULES+'\n'+NUTRITION_MEMORY_RULES;}
+      if(trial)instructions+='\nFREE TRIAL: general exercise and nutrition education only. Do not produce individualized exercise plans, sets/reps routines, meal plans, individual calorie targets or paid research. Tell the user that structured plans and official-source research unlock with Pro. Do not imply web browsing occurred.';
       if(module==='training'&&input.action==='chat'){
         instructions+='\nPROGRAM EDIT MODE: the application can adapt a saved active program and replace individual exercises after validation and database commit. Never claim an update is saved yourself. Extract explicit sports facts normally. For unavailable individual equipment, do not overwrite the entire inventory with a negative phrase. The application removes/excludes that equipment. Do not generate replacements in the ordinary chat answer; the application separately validates only targeted replacements. Current workout context below is a cursor, not proof of completed sets.';
         context.push({role:'developer',content:'CURRENT WORKOUT (actual stored data): '+JSON.stringify(currentWorkout(previousProgram,saved.data))});
@@ -398,10 +409,10 @@ export function createAIHandler({env,fetcher=fetch}={}) {
           }
         }
       }
-      if(!kind&&!media&&!requestedProgram&&!workoutAction&&!adaptationNeeded(saved.data,memory.data)&&input.action==='chat'&&document.needs_search===true){
+      if(!trial&&!kind&&!media&&!requestedProgram&&!workoutAction&&!adaptationNeeded(saved.data,memory.data)&&input.action==='chat'&&document.needs_search===true){
         const query=typeof document.search_query==='string'?document.search_query.trim():'';
         if(!query||query.length>800||/\b\d{1,3}(?:[.,]\d+)?\b|@|https?:/i.test(query)||(p.city.length>2&&query.toLowerCase().includes(p.city.toLowerCase())))throw new AIError('search_query_private',422);
-        const allowance=await rpc('fgi_ai_claim_search',{p_user:actor,p_id:nonce});
+        const allowance=await rpc('fgi_ai_claim_search_v2',{p_user:actor,p_id:nonce,p_live:live});
         if(allowance.error)throw new AIError(allowance.error,429);
         claim.search_remaining=allowance.search_remaining;
         rawResult=await provider({model:searchModel,store:false,instructions:RULES+'\nUse actual web search for module '+module+'; explain the evidence in '+p.language+' with '+p.response_style+' style (short means at most 180 words and three sources). Set needs_search=false and search_query="".',input:[{role:'user',content:query}],max_output_tokens:2000,text:{format:{type:'json_schema',name:'fitgoin_research',strict:true,schema:CHAT_SCHEMA}},tools:[{type:'web_search',filters:{allowed_domains:SOURCES}}],tool_choice:{type:'web_search'},max_tool_calls:2},false,deadline,meter);

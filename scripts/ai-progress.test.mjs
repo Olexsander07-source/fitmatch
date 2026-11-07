@@ -55,7 +55,7 @@ function fixture({failure=false,cached=false}={}){
   const body=o.body?JSON.parse(o.body):null;calls.push({url,body});
   if(url.endsWith('/auth/v1/user'))return json({id:U});if(url.includes('/fgi_ai_profiles?'))return json([{data:{goal:'Сила'},consent_version:'2026-10-03',consented_at:'2026-10-09T10:00:00Z',updated_at:'2026-10-09T10:00:00Z'}]);
   if(url.includes('/fgi_ai_conversations?'))return json([{id:C}]);if(url.includes('/fgi_ai_plans?'))return json([]);
-  if(url.endsWith('/rpc/fgi_ai_access'))return json({modules:['training'],friend:true});if(url.endsWith('/rpc/fgi_ai_claim'))return json(cached?{cached:{answer:'Ранее сохранено',progress_saved:true}}:{remaining:29});
+  if(url.endsWith('/rpc/fgi_ai_access'))return json({modules:['training'],friend:true});if(url.endsWith('/rpc/fgi_ai_claim_v2'))return json(cached?{cached:{answer:'Ранее сохранено',progress_saved:true}}:{remaining:29});
   if(url.endsWith('/rpc/fgi_ai_history'))return failure?json({},503):json({workouts:[],weights:[],workout_count_week:0,week_start:'2026-10-04',today:'2026-10-10'});
   if(url.endsWith('/rpc/fgi_ai_complete'))return json(null);if(url.endsWith('/rpc/fgi_ai_fail'))return json(null);throw Error('Unexpected provider call');
  };
