@@ -1405,8 +1405,11 @@ function showTranslatedMessage(node,row){
   if(incoming&&translationFailures.has(key)&&!translated){
     if(!error){error=document.createElement('span');error.className='chat-translation-failed';error.dataset.chatTranslationError='';node.insertBefore(error,node.querySelector('time'));}
     const display=getLocale();
-    error.textContent=display==='fr'?'Traduction indisponible : texte original':display==='en'?'Translation unavailable: original shown':'Перевод недоступен — показан оригинал';
-  }else if(error)error.remove();
+    error.textContent=display==='fr'?'Traduction momentanément indisponible : texte original affiché':display==='en'?'Translation temporarily unavailable: original shown':'Перевод временно недоступен — показан оригинал';
+    let retry=node.querySelector('[data-chat-translation-retry]');
+    if(!retry){retry=document.createElement('button');retry.type='button';retry.className='chat-translation-retry';retry.dataset.chatTranslationRetry='';node.insertBefore(retry,node.querySelector('time'));}
+    retry.textContent=display==='fr'?'Réessayer':display==='en'?'Retry translation':'Повторить перевод';
+  }else{error?.remove();node.querySelector('[data-chat-translation-retry]')?.remove();}
 }
 async function translateIncomingMessages(){
   if(translatingChat || !user || !db || !activeThread)return;
@@ -1478,7 +1481,16 @@ function bindChat() {
     $('chatLanguage').innerHTML=Object.entries(CHAT_LANGUAGE_NAMES).map(([code,label])=>'<option value="'+esc(code)+'">'+esc(label)+'</option>').join('');
     refreshChatLanguage();
     $('chatLanguage').onchange=e=>{chatLanguageOverride=e.target.value;try{localStorage.setItem(chatLanguageKey,chatLanguageOverride);}catch{}drawMessages();void translateIncomingMessages();};
-    $('messages').addEventListener('click',e=>{const button=e.target.closest('[data-chat-translation-toggle]');if(!button)return;const row=chatRows.find(m=>String(m.id)===button.dataset.chatTranslationToggle);if(!row)return;const key=translationKey(row);if(originalMessages.has(key))originalMessages.delete(key);else originalMessages.add(key);drawMessages();});
+    $('messages').addEventListener('click',e=>{
+      if(e.target.closest('[data-chat-translation-retry]')){
+        for(const row of chatRows)translationFailures.delete(translationKey(row));
+        void translateIncomingMessages();return;
+      }
+      const button=e.target.closest('[data-chat-translation-toggle]');if(!button)return;
+      const row=chatRows.find(m=>String(m.id)===button.dataset.chatTranslationToggle);if(!row)return;
+      const key=translationKey(row);if(originalMessages.has(key))originalMessages.delete(key);else originalMessages.add(key);
+      drawMessages();
+    });
   }
   $('refreshThreads').onclick=()=>loadThreads().catch(e=>message('chatMessage',explain(e),true));
   $('audioCall').onclick=()=>startAudioCall().catch(e=>message('chatMessage',explain(e),true));
