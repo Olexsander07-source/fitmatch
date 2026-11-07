@@ -70,6 +70,20 @@ test('Webhook rejects bad signatures, separates live/test and uses resource owne
  const different=billing({event:{id:'evt_live',created:1,livemode:true,type:'invoice.paid',data:{object:{}}}});assert.equal((await different.webhook()).status,200);assert.equal(different.calls.length,0);
  const valid=billing();assert.equal((await valid.webhook()).status,200);const sync=valid.calls.find(c=>c.url.endsWith('fgi_ai_billing_sync_v2')).body;assert.equal(sync.p_user,USER);assert.equal(sync.p_plan,'pro');assert.equal(sync.p_paid_until,new Date(1900000000000).toISOString());
 });
+test('trial webhook syncs real Stripe trial dates and does not mark a zero-paid invoice as paid entitlement',async()=>{
+ const started=1790000000,ending=started+7*86400;
+ const subscription={id:'sub_owner',livemode:false,customer:'cus_owner',status:'trialing',
+  trial_start:started,trial_end:ending,cancel_at_period_end:false,
+  latest_invoice:{id:'in_trial',customer:'cus_owner',status:'paid',amount_remaining:0,
+    parent:{subscription_details:{subscription:'sub_owner'}},lines:{data:[]}},
+  items:{data:[{price:{id:'price_pro'},current_period_end:ending}]}};
+ const s=billing({subscription,event:{id:'evt_trial',created:started,livemode:false,type:'customer.subscription.created',data:{object:subscription}}});
+ assert.equal((await s.webhook()).status,200);
+ const sync=s.calls.find(x=>x.url.endsWith('fgi_ai_billing_sync_v2')).body;
+ assert.equal(sync.p_plan,'pro');assert.equal(sync.p_status,'trialing');
+ assert.equal(sync.p_trial_end,new Date(ending*1000).toISOString());
+ assert.equal(sync.p_paid_until,null);
+});
 test('Payment failure does not grant a new paid period; DB errors leave webhooks retryable',async()=>{
  const unpaid=billing({subscription:{id:'sub_owner',livemode:false,customer:'cus_owner',status:'past_due',latest_invoice:{status:'open'},items:{data:[{price:{id:'price_pro'},current_period_end:1900000000}]}}});assert.equal((await unpaid.webhook()).status,200);assert.equal(unpaid.calls.find(c=>c.url.endsWith('fgi_ai_billing_sync_v2')).body.p_paid_until,null);
  const failed=billing({failSync:true});assert.equal((await failed.webhook()).status,503);
