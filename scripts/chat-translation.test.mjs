@@ -6,7 +6,7 @@ import {createTranslationHandler} from '../supabase/functions/fitgoin-chat-trans
 
 const actor='11111111-1111-4111-8111-111111111111';
 const sender='22222222-2222-4222-8222-222222222222';
-const mockEnv={SUPABASE_URL:'https://example.supabase.co',SUPABASE_ANON_KEY:'anon-test',SUPABASE_SERVICE_ROLE_KEY:'secret-test',OPENAI_API_KEY:'openai-test'};
+const mockEnv={SUPABASE_URL:'https://example.supabase.co',SUPABASE_ANON_KEY:'anon-test',SUPABASE_SERVICE_ROLE_KEY:'secret-test',FGI_TRANSLATE_URL:'https://translate.fitgoin.test',FGI_TRANSLATE_API_KEY:'test-private-key'};
 const wrap=value=>new Response(JSON.stringify(value),{status:200,headers:{'Content-Type':'application/json'}});
 function setup({foreign=false,used=0,providerFailure=''}={}){
   const cache=new Map();let providerCalls=0,visibleReads=0;
@@ -27,13 +27,17 @@ function setup({foreign=false,used=0,providerFailure=''}={}){
       const language=path.searchParams.get('target_language')?.slice(3);
       return wrap(ids.filter(id=>cache.has(id+'-'+language)).map(id=>({message_id:Number(id),translated_text:cache.get(id+'-'+language)})));
     }
-    if(url==='https://api.openai.com/v1/responses'){
+    if(url==='https://translate.fitgoin.test/translate'){
       providerCalls++;
-      if(providerFailure==='quota')return new Response(JSON.stringify({error:{code:'insufficient_quota'}}),{status:429});
-      if(providerFailure==='missing-model'&&providerCalls===1)return new Response(JSON.stringify({error:{code:'model_not_found'}}),{status:404});
-      if(providerFailure==='invalid-key')return new Response(JSON.stringify({error:{code:'invalid_api_key'}}),{status:401});
-      const input=JSON.parse(JSON.parse(opts.body).input[0].content[0].text);
-      return wrap({status:'completed',output:[{type:'message',content:[{type:'output_text',text:JSON.stringify({translations:input.map(x=>({id:x.id,translation:'Здравствуйте, когда встреча?'}))})}]}]});
+      const input=JSON.parse(opts.body);
+      assert.deepEqual(Object.keys(input).sort(),['api_key','format','q','source','target'].sort());
+      assert.equal(input.api_key,'test-private-key');
+      assert.equal(input.source,'auto');
+      assert.equal(input.target,'ru');
+            if(providerFailure==='busy')return new Response(JSON.stringify({error:'too_many_requests'}),{status:429});
+      if(providerFailure==='unsupported')return new Response(JSON.stringify({error:'unsupported'}),{status:400});
+      if(providerFailure==='invalid-key')return new Response(JSON.stringify({error:'key'}),{status:401});
+      return wrap({translatedText:'Здравствуйте, когда встреча?'});
     }
     throw Error('Unexpected request '+url);
   };
@@ -83,26 +87,40 @@ test('daily safety cap prevents provider spending',async()=>{
   assert.equal(ctx.providerCalls,0);
 });
 
-test('OpenAI quota failures return a specific safe error and do not store private messages',async()=>{
-  const ctx=setup({providerFailure:'quota'}),res=await ctx.handler(ctx.req());
-  assert.equal(res.status,503);
-  assert.deepEqual(await res.json(),{error:'translation_provider_quota'});
+test('self-hosted translate failures do not cache bad results',async()=>{
+  const ctx=setup({providerFailure:'busy'}),res=await ctx.handler(ctx.req());
+  assert.equal(res.status,429);
+  assert.deepEqual(await res.json(),{error:'translation_daily_limit'});
   assert.equal(ctx.cache.size,0);
   assert.equal(ctx.providerCalls,1);
 });
-test('provider invalid key is safely rejected without leaking credentials',async()=>{
+test('an invalid private translator API key is not exposed',async()=>{
   const ctx=setup({providerFailure:'invalid-key'}),res=await ctx.handler(ctx.req());
   assert.equal(res.status,503);
-  assert.deepEqual(await res.json(),{error:'translation_provider_auth'});
+  assert.deepEqual(await res.json(),{error:'translation_unavailable'});
   assert.equal(ctx.cache.size,0);
 });
-test('missing default translation model falls back once to supported mini model',async()=>{
-  const ctx=setup({providerFailure:'missing-model'}),res=await ctx.handler(ctx.req());
-  assert.equal(res.status,200);
-  assert.equal(ctx.providerCalls,2);
-  assert.equal((await res.json()).translations[0].body,'Здравствуйте, когда встреча?');
+test('unknown target language from self-hosted server is reported without caching',async()=>{
+  const ctx=setup({providerFailure:'unsupported'}),res=await ctx.handler(ctx.req());
+  assert.equal(res.status,422);
+  assert.deepEqual(await res.json(),{error:'unsupported_language'});
+  assert.equal(ctx.cache.size,0);
 });
-
+test('private translator configuration is mandatory (never use public translation services)',async()=>{
+  const base=setup();
+  const handler=createTranslationHandler({env:{...mockEnv,FGI_TRANSLATE_URL:'http://localhost:5000'}});
+  const res=await handler(base.req());
+  assert.equal(res.status,503);
+  assert.deepEqual(await res.json(),{error:'translation_unavailable'});
+  assert.equal(base.providerCalls,0);
+});
+test('translation backend contains no OpenAI or Microsoft translation API calls',()=>{
+  const source=readFileSync(new URL('../supabase/functions/fitgoin-chat-translate/index.mjs',import.meta.url),'utf8');
+  assert(source.includes('FGI_TRANSLATE_URL'));
+  assert(source.includes('FGI_TRANSLATE_API_KEY'));
+  assert(!source.includes('api.openai.com'));
+  assert(!source.includes('cognitive.microsofttranslator.com'));
+});
 test('chat interface offers retry after failure without removing original messages',()=>{
   const source=readFileSync(new URL('../fitmatch.js',import.meta.url),'utf8');
   assert(source.includes("retry.dataset.chatTranslationRetry=''"));
