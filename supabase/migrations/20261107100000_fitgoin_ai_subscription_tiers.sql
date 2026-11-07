@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS fgi_private.ai_search_usage (
  created_at timestamptz NOT NULL DEFAULT now(),
  PRIMARY KEY(user_id,request_id)
 );
+ALTER TABLE fgi_private.ai_search_usage ENABLE ROW LEVEL SECURITY;
 CREATE INDEX IF NOT EXISTS ai_search_usage_month_idx
  ON fgi_private.ai_search_usage(user_id,livemode,created_at);
 CREATE INDEX IF NOT EXISTS ai_cost_ledger_trial_window_idx
@@ -208,7 +209,7 @@ DECLARE m date:=(date_trunc('month',now() AT TIME ZONE 'UTC'))::date;
 BEGIN
  PERFORM pg_catalog.pg_advisory_xact_lock(631005);
  access_data:=public.fgi_ai_access(p_user,p_live);tier:=access_data->>'tier';
- IF NOT (access_data->'modules') ? p_module THEN RETURN jsonb_build_object('error','subscription_required'); END IF;
+ IF NOT ((access_data->'modules') ? p_module) THEN RETURN jsonb_build_object('error','subscription_required'); END IF;
  cap:=CASE tier WHEN 'trial' THEN 1 WHEN 'pro' THEN 6 WHEN 'premium' THEN 10 WHEN 'friend' THEN 5 ELSE 0 END;
  IF p_amount<=0 OR p_amount>3 OR p_site_cap<=0 OR cap=0 OR p_estimated_tokens<=0 OR p_estimated_tokens>200000
   THEN RETURN jsonb_build_object('error','budget_unavailable'); END IF;
@@ -241,5 +242,20 @@ BEGIN
  RETURN jsonb_build_object('reserved',true);
 END;
 $$;
+
+-- Public RPC functions are server-to-server only. Never expose subscriber status or
+-- allow callers to submit another user's UUID with a public/anonymous token.
+REVOKE ALL ON FUNCTION public.fgi_ai_access(uuid,boolean) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.fgi_ai_access(uuid,boolean) TO service_role;
+REVOKE ALL ON FUNCTION public.fgi_ai_trial_eligible(uuid,boolean) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.fgi_ai_trial_eligible(uuid,boolean) TO service_role;
+REVOKE ALL ON FUNCTION public.fgi_ai_billing_sync_v2(text,bigint,boolean,uuid,text,text,text,text,timestamptz,timestamptz,timestamptz,timestamptz,boolean,text,text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.fgi_ai_billing_sync_v2(text,bigint,boolean,uuid,text,text,text,text,timestamptz,timestamptz,timestamptz,timestamptz,boolean,text,text) TO service_role;
+REVOKE ALL ON FUNCTION public.fgi_ai_claim_v2(uuid,uuid,text,boolean,boolean) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.fgi_ai_claim_v2(uuid,uuid,text,boolean,boolean) TO service_role;
+REVOKE ALL ON FUNCTION public.fgi_ai_claim_search_v2(uuid,uuid,boolean) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.fgi_ai_claim_search_v2(uuid,uuid,boolean) TO service_role;
+REVOKE ALL ON FUNCTION public.fgi_ai_reserve_v2(uuid,uuid,boolean,text,numeric,bigint,numeric) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.fgi_ai_reserve_v2(uuid,uuid,boolean,text,numeric,bigint,numeric) TO service_role;
 
 COMMIT;
