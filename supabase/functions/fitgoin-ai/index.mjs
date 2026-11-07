@@ -132,7 +132,7 @@ export function createAIHandler({env,fetcher=fetch}={}) {
       const live=get('AI_BILLING_MODE')!=='test',module=actionModule(input.action,input.module);
       const access=await rpc('fgi_ai_access',{p_user:actor,p_live:live});
       if(!hasAccess(access,module))throw new AIError('subscription_required',402);
-      const trial=access.tier==='trial',premium=access.tier==='premium'||access.tier==='friend';
+      const trial=access.tier==='trial',premium=access.tier==='premium'||access.tier==='friend'||access.friend===true;
       if(trial&&input.action!=='chat')throw new AIError('trial_feature_locked',402);
       if(['food_photo','technique'].includes(input.action)&&!premium)throw new AIError('premium_required',402);
       const profileRows=await rest(`/rest/v1/fgi_ai_profiles?user_id=eq.${actor}&select=data,consent_version,consented_at,updated_at`,{token});
@@ -145,6 +145,7 @@ export function createAIHandler({env,fetcher=fetch}={}) {
       let analysisAction=input.action==='chat'?analysisIntent(message,saved.data,input.program_target):null;
       if(input.workout_payload||input.workout_target)analysisAction=null;
       if(module!=='training'&&['confirm','decline'].includes(analysisAction?.kind))analysisAction=null;
+      if(analysisAction&&!premium)throw new AIError('premium_required',402);
       const progressAction=input.action==='chat'?progressIntent(message):null;
       const nutritionControl=input.action==='chat'?nutritionTurn(saved.data,message,module):null;
       const mealRequest=module==='nutrition'&&(input.action==='nutrition'||input.action==='chat'&&(mealIntent(message)||saved.data.nutrition_plan_pending?.mode==='request'));
