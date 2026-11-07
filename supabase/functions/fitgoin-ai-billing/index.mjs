@@ -90,7 +90,7 @@ export function createBillingHandler({env,fetcher=fetch,stripeClient}={}) {
       const user=await auth.json();if(!UUID.test(user.id||''))throw new AIError('authentication_required',401);
       let input;try{input=JSON.parse(raw);}catch{throw new AIError('invalid_request');}
       if(input.action==='access'){
-        const access=await rpc('fgi_ai_access',{p_user:user.id,p_live:live});return json({...access,checkout_enabled:enabled,livemode:live},200,headers);
+        const [access,trialStatus]=await Promise.all([rpc('fgi_ai_access',{p_user:user.id,p_live:live}),rpc('fgi_ai_trial_eligible',{p_user:user.id,p_live:live})]);return json({...access,trial_available:trialStatus?.eligible===true,checkout_enabled:enabled,livemode:live},200,headers);
       }
       if(!['checkout','portal'].includes(input.action)||!UUID.test(input.request_id||''))throw new AIError('invalid_request');
       if(!key||!modeKey(key,live))throw new AIError('billing_not_configured',503);
