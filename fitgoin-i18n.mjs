@@ -49,6 +49,17 @@ messages.fr = frCatalog;
 const choiceKey='fitgoin_locale_preference_v1';
 const savedTexts=new WeakMap(),savedAttributes=new WeakMap();
 const ignoreContent='script,style,[data-i18n],[translate="no"],#messages,#threads,#profileContent,#coachesList,#rankingList,#matchResults,#fitgoinAI,#myGallery,#chatAttachmentPreview';
+// Native FR/EN/RU localization must not compete with browser/Google translation.
+// Chrome/Google normally injects layout-affecting <font> wrappers; once present,
+// leave that translated DOM intact until the visitor explicitly changes the
+// built-in FitGoIn language picker. No external calls or translation services.
+export function browserTranslationActive(doc=typeof document!=='undefined'?document:null){
+  if(!doc?.documentElement)return false;
+  const classes=doc.documentElement.classList;
+  return classes?.contains('translated-ltr')||classes?.contains('translated-rtl')||
+    Boolean(doc.querySelector?.('font[style*="vertical-align"]'));
+}
+
 let locale='ru', observing=false, queued=false, manuallyChosen=false, regionCountry='';
 export function getRegionCountry(){return regionCountry;}
 export function hasManualLocale(){return manuallyChosen;}
@@ -80,8 +91,10 @@ export function setLocale(next,{persist=false}={}){
   const resolved=validLocale(next)||'ru',changed=locale!==resolved;
   locale=resolved;
   if(typeof document!=='undefined'){
-    document.documentElement.lang=locale;
-    translate();
+    if(!browserTranslationActive()||persist){
+      document.documentElement.lang=locale;
+      translate(document,{force:persist});
+    }
     const select=document.getElementById('languageSelect');
     if(select)select.value=locale;
   }
@@ -128,8 +141,8 @@ function applyAttributes(root){
     }
   }
 }
-export function translate(root=document){
-  if(typeof document==='undefined'||!root)return;
+export function translate(root=document,{force=false}={}){
+  if(typeof document==='undefined'||!root||(!force&&browserTranslationActive()))return;
   for(const el of root.querySelectorAll('[data-i18n]')){
     const value=t(el.dataset.i18n);
     if(typeof value==='string'&&el.textContent!==value)el.textContent=value;
@@ -160,7 +173,7 @@ export function initLocale(){
         if(country){
           regionCountry=country;
           document.dispatchEvent(new CustomEvent('fitgoin:regionchange',{detail:{country}}));
-          if(!manuallyChosen){
+          if(!manuallyChosen&&!browserTranslationActive()){
             const next=chooseLocale({country,languages,timeZone});
             if(next!==locale)setLocale(next);
           }
@@ -170,7 +183,7 @@ export function initLocale(){
   if(!observing&&typeof MutationObserver!=='undefined'){
     observing=true;
     new MutationObserver(records=>{
-      if(!records.some(record=>record.type==='childList'&&record.addedNodes.length))return;
+      if(browserTranslationActive()||!records.some(record=>record.type==='childList'&&record.addedNodes.length))return;
       if(queued)return;queued=true;
       queueMicrotask(()=>{queued=false;translate();});
     }).observe(document.body,{childList:true,subtree:true});
