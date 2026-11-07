@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {messages,chooseLocale,setLocale,getLocale,t,translate,browserTranslationActive} from '../fitgoin-i18n.mjs';
 import {staticFrench} from '../fitgoin-fr.mjs';
+import {approvedPlanCardsHTML} from '../fitgoin-ai.js';
 
 test('French covers every existing translation key and array step',()=>{
   const missing=Object.keys(messages.ru).filter(key=>!(key in messages.fr));
@@ -89,4 +90,27 @@ test('approved Trial, Pro and Premium are shown without executable checkout',()=
  }
  assert.equal((pricing.match(/<button class="soon" disabled/g)||[]).length,3);
  assert.match(terms,/оплата и бесплатная неделя пока не активированы/);
+});
+
+test('in-app AI access shows ONLY approved Trial, Pro and Premium in every locale',()=>{
+ const source=readFileSync(new URL('../fitgoin-ai.js',import.meta.url),'utf8');
+ const start=source.indexOf('  function accessView(){');
+ const end=source.indexOf('  function mediaForm(kind)',start);
+ assert(start>0&&end>start);
+ const actualAccessView=source.slice(start,end);
+ assert.match(actualAccessView,/approvedPlanCardsHTML\(\)/);
+ assert.doesNotMatch(actualAccessView,/Object\.entries\(PLANS\)/);
+ assert.doesNotMatch(actualAccessView,/button\('checkout'/);
+ for(const locale of ['ru','fr','en']){
+   setLocale(locale);
+   const html=approvedPlanCardsHTML();
+   assert.equal((html.match(/class="panel fgi-ai-offer"/g)||[]).length,3,locale);
+   for(const id of ['trial','pro','premium'])assert(html.includes('data-ai-offer="'+id+'"'),locale+': '+id);
+   for(const price of ['0 €','19,90 €','24,90 €'])assert(html.includes(price),locale+': '+price);
+   for(const oldPrice of ['20 €','10 €','30 €'])assert(!html.includes('>'+oldPrice),locale+': legacy '+oldPrice);
+   assert(!/data-ai-action="checkout"|Выбрать тариф|Choose plan|Choisir/.test(html),locale);
+   assert(html.includes('data-i18n="offerTrialRestriction"'),locale);
+   assert(html.includes('data-i18n="offerProPlans"'),locale);
+ }
+ setLocale('ru');
 });

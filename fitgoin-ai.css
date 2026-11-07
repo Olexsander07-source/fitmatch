@@ -20,3 +20,14 @@
 .fgi-ai-coach-note{font-size:.75rem!important;color:var(--muted)!important;line-height:1.5!important;white-space:normal!important;margin:10px 0 0}
 .fgi-ai-coach-empty{padding:18px;margin-top:16px;border:1px solid #ffffff24;border-radius:16px;background:#1a2c37}.fgi-ai-coach-empty p{color:var(--muted);font-size:.9rem;line-height:1.6;margin:8px 0 0}
 @media(max-width:540px){.fgi-ai-message .fgi-ai-coach-results{grid-template-columns:1fr}.fgi-ai-coach-results .card-body{padding:18px}.fgi-ai-coach-results .match-card-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.fgi-ai-coach-results .btn{font-size:.78rem;padding:10px 8px}.fgi-ai-coach-avatar{width:64px;height:64px}}
+
+/* Approved AI plan preview inside the logged-in AI access screen. */
+.fgi-ai-offer{display:flex;flex-direction:column;min-width:0;overflow-wrap:anywhere}
+.fgi-ai-offer h3{margin-bottom:12px}
+.fgi-ai-offer .fgi-ai-dose{font-variant-numeric:tabular-nums;line-height:1.2;margin-bottom:20px}
+.fgi-ai-offer .fgi-ai-dose small{font-size:.5em;font-weight:400;color:var(--muted,#a4afa1)}
+.fgi-ai-offer-desc{min-height:2.8em}
+.fgi-ai-offer ul{padding-left:21px;margin:6px 0 24px;flex:1}
+.fgi-ai-offer li{line-height:1.55;margin-bottom:12px}
+.fgi-ai-offer-soon{border-top:1px solid #ffffff20;margin-top:auto!important;padding-top:14px}
+@media(max-width:640px){.fgi-ai-offer .fgi-ai-dose{font-size:1.6rem}.fgi-ai-offer-desc{min-height:0}}
