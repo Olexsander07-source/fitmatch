@@ -175,6 +175,38 @@ test('nutrition uses confirmed food history and training receives only its own c
   assert(sportsContext.includes('ACTUAL_WORKOUT'));assert(!sportsContext.includes('CONFIRMED_FOOD'));assert(!sportsContext.includes('vegan'));assert(!sportsContext.includes('milk'));
   assert(!sports.calls.some(x=>x.url.includes('/fgi_ai_food?')));assert(sports.calls.some(x=>x.url.includes('module=eq.training')));
 });
+test('seven-day trial allows general Luna chat but blocks plans, media and web research before provider usage',async()=>{
+  const options={access:{modules:['training','nutrition'],tier:'trial',trial:true,premium:false}};
+  const chat=setup(options);
+  assert.equal((await chat.request({message:'Что такое разминка?'})).status,200);
+  assert.equal(chat.calls.find(c=>c.url.includes('api.openai.com')).body.model,'gpt-6-luna');
+  const reserved=chat.calls.find(c=>c.url.endsWith('/rpc/fgi_ai_reserve_v2')).body;
+  assert(Number.isInteger(reserved.p_estimated_tokens)&&reserved.p_estimated_tokens>0);
+  for(const body of [
+    {action:'training',message:'Создай программу тренировок'},
+    {action:'nutrition',module:'nutrition',message:'Составь меню на неделю'},
+    {action:'search',message:'Найди исследования о белке'},
+    {action:'food_photo',message:'Оцени блюдо'},
+    {action:'chat',message:'Составь персональную программу на неделю'}
+  ]){
+    const trial=setup(options),response=await trial.request(body);
+    assert.equal(response.status,402,JSON.stringify(body));
+    assert(!trial.calls.some(c=>c.url.includes('api.openai.com')),JSON.stringify(body));
+  }
+});
+test('AI Pro permits plans and research but reserves photo and technique tools for Premium',async()=>{
+  const pro=setup({access:{modules:['training','nutrition'],tier:'pro',premium:false}});
+  const response=await pro.request({action:'food_photo',message:'Оцени еду'});
+  assert.equal(response.status,402);assert(!pro.calls.some(x=>x.url.includes('api.openai.com')));
+});
+test('unknown provider token usage consumes the conservative reserved allowance',async()=>{
+ const s=setup({access:{modules:['training','nutrition'],tier:'trial'}});
+ assert.equal((await s.request()).status,200);
+ const reserve=s.calls.find(x=>x.url.endsWith('/rpc/fgi_ai_reserve_v2')).body;
+ const meter=s.calls.find(x=>x.url.endsWith('/rpc/fgi_ai_meter')).body;
+ assert.equal(meter.p_input,reserve.p_estimated_tokens);
+ assert.equal(meter.p_output,0);
+});
 test('food-photo round trip stores only the assessment and leaves logging to user confirmation',async()=>{
   const assessment={title:'Рис',uncertainty:'Размер порции приблизительный.',items:[{name:'Рис',portion:'Около 150 г',calories_low:160,calories_high:250,protein_g:4,fat_g:1,carbs_g:40}],questions:[],warnings:['Проверь состав.']};
   const bytes=new Uint8Array(300);bytes.set([255,216,255]);const base64=btoa(String.fromCharCode(...bytes));
