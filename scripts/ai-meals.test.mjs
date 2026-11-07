@@ -20,7 +20,7 @@ function harness(initial=PROFILE){
   if(url.includes('/fgi_ai_conversations?'))return json([{id:CONV}]);
   if(url.includes('/fgi_ai_plans?'))return state.fault==='read'?json({error:'offline'},503):json(url.includes('kind=eq.nutrition')?state.plans.filter(p=>p.status==='active'):[]);
   if(url.endsWith('/rpc/fgi_ai_access'))return json({modules:['training','nutrition'],friend:true});
-  if(url.endsWith('/rpc/fgi_ai_claim')){const old=state.cache.get(body.p_id);if(old)return json(old.hash!==body.p_hash?{error:'request_conflict'}:old.result?{cached:old.result}:{error:'request_pending'});state.cache.set(body.p_id,{hash:body.p_hash});return json({remaining:29,search_remaining:3});}
+  if(url.endsWith('/rpc/fgi_ai_claim_v2')){const old=state.cache.get(body.p_id);if(old)return json(old.hash!==body.p_hash?{error:'request_conflict'}:old.result?{cached:old.result}:{error:'request_pending'});state.cache.set(body.p_id,{hash:body.p_hash});return json({remaining:29,search_remaining:3});}
   if(url.endsWith('/rpc/fgi_ai_complete')){
    if(state.fault==='write')return json({error:'offline'},503);
    state.completions++;const r=body.p_result;
