@@ -178,7 +178,7 @@ test('nutrition uses confirmed food history and training receives only its own c
 test('food-photo round trip stores only the assessment and leaves logging to user confirmation',async()=>{
   const assessment={title:'Рис',uncertainty:'Размер порции приблизительный.',items:[{name:'Рис',portion:'Около 150 г',calories_low:160,calories_high:250,protein_g:4,fat_g:1,carbs_g:40}],questions:[],warnings:['Проверь состав.']};
   const bytes=new Uint8Array(300);bytes.set([255,216,255]);const base64=btoa(String.fromCharCode(...bytes));
-  const s=setup({response:providerResponse(assessment)}),response=await s.request({action:'food_photo',images:[{mime:'image/jpeg',base64}],media_consent:'2026-10-04-media'});
+  const s=setup({response:providerResponse(assessment),access:{modules:['training','nutrition'],tier:'premium'}}),response=await s.request({action:'food_photo',images:[{mime:'image/jpeg',base64}],media_consent:'2026-10-04-media'});
   assert.equal(response.status,200);const result=await response.json();assert.equal(result.analysis.total.calories_high,250);assert.equal(result.module,'nutrition');
   assert(!s.calls.some(x=>x.url.includes('/fgi_ai_food?')));
   const persisted=s.calls.find(x=>x.url.includes('fgi_ai_complete')).body;assert(!JSON.stringify(persisted).includes(base64));assert.equal(persisted.p_result.analysis.title,'Рис');
