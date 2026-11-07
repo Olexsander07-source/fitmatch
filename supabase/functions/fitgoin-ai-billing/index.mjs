@@ -62,7 +62,7 @@ export function createBillingHandler({env,fetcher=fetch,stripeClient}={}) {
       const dispute=await stripe.disputes.retrieve(event.data.object.id);risk=dispute.status==='won'?'resolved':'disputed';
     }
     if(event.type==='radar.early_fraud_warning.created')risk='fraud_review';
-    await rpc('fgi_ai_billing_sync',{p_event:event.id+':'+sub.id,p_created:event.created,p_live:live,p_user:owner.user_id,p_customer:customer,p_subscription:sub.id,p_plan:plan,p_status:sub.status,p_paid_until:paid&&periods.length?timestamp(Math.max(...periods)):null,p_period_end:timestamp(items[0]?.current_period_end||sub.current_period_end),p_trial_start:timestamp(sub.trial_start),p_trial_end:timestamp(sub.trial_end),p_cancel:Boolean(sub.cancel_at_period_end),p_risk:risk,p_risk_id:risk?event.data.object.id:null});
+    await rpc('fgi_ai_billing_sync_v2',{p_event:event.id+':'+sub.id,p_created:event.created,p_live:live,p_user:owner.user_id,p_customer:customer,p_subscription:sub.id,p_plan:plan,p_status:sub.status,p_paid_until:paid&&periods.length?timestamp(Math.max(...periods)):null,p_period_end:timestamp(items[0]?.current_period_end||sub.current_period_end),p_trial_start:timestamp(sub.trial_start),p_trial_end:timestamp(sub.trial_end),p_cancel:Boolean(sub.cancel_at_period_end),p_risk:risk,p_risk_id:risk?event.data.object.id:null});
   }
   return async request=>{
     const origin=request.headers.get('origin'),headers={'Vary':'Origin','Access-Control-Allow-Methods':'GET, POST, OPTIONS','Access-Control-Allow-Headers':'authorization, apikey, content-type, stripe-signature, x-client-info'};
