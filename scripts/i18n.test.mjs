@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {messages,chooseLocale,setLocale,getLocale,t} from '../fitgoin-i18n.mjs';
+import {messages,chooseLocale,setLocale,getLocale,t,translate,browserTranslationActive} from '../fitgoin-i18n.mjs';
 import {staticFrench} from '../fitgoin-fr.mjs';
 
 test('French covers every existing translation key and array step',()=>{
@@ -41,4 +41,38 @@ test('localization files are included in production and user messages remain pro
   assert.match(html,/id="languageSelect"/);
   assert.match(src,/#messages,#threads,#profileContent/);
   assert.match(src,/choiceKey='fitgoin_locale_preference_v1'/);
+});
+
+test('Chrome translated DOM is not rewritten by the native translation observer',()=>{
+  let changed=0,hasFont=true;
+  const doc={
+    documentElement:{classList:{contains:()=>false}},
+    querySelector:()=>hasFont?{}:null,
+    querySelectorAll:()=>{changed++;return [];}
+  };
+  assert.equal(browserTranslationActive(doc),true);
+  const previous=globalThis.document;
+  try{
+    globalThis.document=doc;
+    translate(doc);
+    assert.equal(changed,0,'native translation must not touch Google font-wrapped text');
+    doc.documentElement.classList.contains=key=>key==='translated-ltr';
+    hasFont=false;
+    assert.equal(browserTranslationActive(doc),true);
+    translate(doc);
+    assert.equal(changed,0);
+  }finally{
+    if(previous===undefined)delete globalThis.document;
+    else globalThis.document=previous;
+  }
+});
+
+test('branding and Google font wrappers preserve layout without disabling language translation',()=>{
+  const css=readFileSync(new URL('../fitgoin-premium.css',import.meta.url),'utf8');
+  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+  assert.match(css,/font\[style\*="vertical-align"\]/);
+  assert.match(css,/display:\s*contents\s*!important/);
+  assert.match(html,/class="logo notranslate" translate="no"/);
+  assert.match(html,/class="hero-mark notranslate" translate="no"/);
+  assert.doesNotMatch(html,/<html[^>]+translate="no"/);
 });
