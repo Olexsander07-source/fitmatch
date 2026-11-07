@@ -274,7 +274,8 @@ export function createAIHandler({env,fetcher=fetch}={}) {
       const reserved=await rpc('fgi_ai_reserve_v2',{p_user:actor,p_id:nonce,p_live:live,p_module:module,p_amount:reservation,p_estimated_tokens:estimatedTokens,p_site_cap:Number(get('FGI_AI_MONTHLY_SITE_USD')||20)});
       if(reserved?.error)throw new AIError(reserved.error,reserved.error==='subscription_required'?402:429);
       meter={input:0,output:0,cost:0,duration:input.duration||0,inputRate,outputRate,unknown:false};
-      settle=()=>rpc('fgi_ai_meter',{p_user:actor,p_id:nonce,p_actual:meter.unknown||meter.pending?reservation:Math.max(.000001,meter.cost),p_input:meter.input,p_output:meter.output});
+      // When the provider omits usage, charge the whole reserved token count to the trial allowance instead of accidentally granting free repeated calls.
+      settle=()=>rpc('fgi_ai_meter',{p_user:actor,p_id:nonce,p_actual:meter.unknown||meter.pending?reservation:Math.max(.000001,meter.cost),p_input:meter.unknown||meter.pending?estimatedTokens:meter.input,p_output:meter.unknown||meter.pending?0:meter.output});
       if(transcription){
         let bytes;try{bytes=Uint8Array.from(atob(input.audio),c=>c.charCodeAt(0));}catch{throw new AIError('invalid_audio');}
         if(bytes.byteLength<100||bytes.byteLength>2000000)throw new AIError('invalid_audio');
