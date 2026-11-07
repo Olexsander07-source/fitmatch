@@ -17,6 +17,19 @@ Object.assign(ERRORS,{workout_changed:'Тренировка или резуль�
 Object.assign(ERRORS,{program_changed:'Программа уже изменилась. Обнови историю и выбери упражнение из активной версии.',invalid_workout:'Не удалось найти тренировку или упражнение в активной программе. Выбери его из карточки.'});
 Object.assign(ERRORS,{progress_proposal_changed:'Предложение или данные уже изменились. Обнови разбор прогресса перед подтверждением; программа не изменена.'});
 Object.assign(ERRORS,{nutrition_plan_changed:'Рацион или данные профиля уже изменились. Обнови историю; при изменении цели или числа приёмов пищи составь новый черновик.',invalid_nutrition_plan:'Рацион не прошёл проверку порций и БЖУ. Он не был сохранён.',nutrition_preferences_conflict:'Не удалось составить сбалансированный базовый рацион с этими ограничениями. Уточни доступные продукты.'});
+Object.assign(ERRORS,{
+  trial_feature_locked:'В бесплатную неделю доступны общие ответы AI. Персональные программы, питание по плану и исследования открываются в AI Pro.',
+  premium_required:'Эта расширенная функция доступна в FitGoIn AI Premium.',
+  search_requires_pro:'Поиск в научных и официальных источниках доступен с подпиской AI Pro.',
+  search_limit:'Месячный лимит интернет-поиска исчерпан. Он обновится в начале следующего календарного месяца.',
+  trial_token_limit:'В бесплатной неделе почти закончился или исчерпан лимит 1 000 000 токенов. Для продолжения общения выбери AI Pro.',
+  subscription_required:'Нужна активная AI-подписка или бесплатная пробная неделя.',
+  monthly_limit:'Месячный лимит ресурсов AI исчерпан. Следующий период доступен после обновления лимита.',
+  billing_not_configured:'Подключение оплаты ещё не завершено. Пока карта не будет списана.',
+  billing_price_mismatch:'Настройки стоимости подписки ещё не проверены. Оплата не выполнялась.',
+  subscription_exists:'Подписка уже оформлена. Используй управление подпиской в FitGoIn AI.',
+  checkout_pending:'У тебя уже открыто оформление другого тарифа. Закончи его или попробуй позже.'
+});
 Object.assign(ERRORS,{coach_not_public:'Этот профиль больше не доступен для публичного поиска. Попробуй новый подбор.'});
 const field=(title,input)=>`<label>${title}${input}</label>`;
 const options=(values,current)=>values.map(v=>{const [key,label]=Array.isArray(v)?v:[v,v];return `<option value="${esc(key)}"${key===current?' selected':''}>${esc(label)}</option>`;}).join('');
@@ -164,7 +177,7 @@ export function mountFitGoInAI(root,opts) {
       const current=access.tier===key;
       return `<article class="panel"><h3>${esc(plan.name)}</h3><p class="fgi-ai-dose">${(plan.amount/100).toLocaleString('fr-FR',{minimumFractionDigits:2})} € / месяц</p>
       <p>${esc(description[key])}</p>
-      ${current?'<span class="tag">Текущий тариф</span>':button('checkout',eligible?'Начать 7 дней бесплатно':'Оформить подписку',true,`data-plan="${key}"${!access.checkout_enabled?' disabled':''}`)}
+      ${current?'<span class="tag">Текущий тариф</span>':trial?'<span class="tag">План можно изменить через управление подпиской</span>':button('checkout',eligible?'Начать 7 дней бесплатно':'Оформить подписку',true,`data-plan="${key}"${!access.checkout_enabled?' disabled':''}`)}
       </article>`;
     }).join('');
     return `<div class="section-head"><h2>Доступ к FitGoIn AI</h2>${button('refresh','Проверить доступ')}</div>
