@@ -82,7 +82,7 @@ function fixture({failure,cached=false,modules=['training','nutrition'],data=fac
   const body=o.body?JSON.parse(o.body):null;calls.push({url,body});
   if(url.endsWith('/auth/v1/user'))return json({id:U});if(url.includes('/fgi_ai_profiles?'))return json([{data,consent_version:'2026-10-03',consented_at:'2026-10-09T10:00:00Z',updated_at:'2026-10-09T10:00:00Z'}]);
   if(url.includes('/fgi_ai_conversations?'))return json([{id:C}]);if(url.includes('/fgi_ai_plans?'))return json(p?[p]:[]);if(url.includes('/fgi_ai_workouts?'))return json(sessions);
-  if(url.endsWith('/rpc/fgi_ai_access'))return json({modules,friend:true});if(url.endsWith('/rpc/fgi_ai_claim'))return json(failure==='quota'?{error:'daily_limit'}:cached?{cached:{answer:'Ранее сохранено',program_saved:true}}:{remaining:29});
+  if(url.endsWith('/rpc/fgi_ai_access'))return json({modules,friend:true});if(url.endsWith('/rpc/fgi_ai_claim_v2'))return json(failure==='quota'?{error:'daily_limit'}:cached?{cached:{answer:'Ранее сохранено',program_saved:true}}:{remaining:29});
   if(url.endsWith('/rpc/fgi_ai_progress_analysis'))return failure==='history'?json({},503):json(h);
   if(/\/rpc\/fgi_ai_(?:progress_complete|complete)$/.test(url))return failure==='commit'?json({},503):failure==='stale'?json({code:'P0001',message:'progress_proposal_changed'},400):json(null);
   if(url.endsWith('/rpc/fgi_ai_fail'))return json(null);throw Error('Unexpected provider call');
