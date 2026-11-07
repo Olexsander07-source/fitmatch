@@ -1,5 +1,8 @@
 # FitGoIn AI paid release candidate
 
+> **7 November 2026 implementation candidate (NOT LIVE):** AI Trial is 7 days with up to 1,000,000 input+output tokens shared over the full week, general chat only (no structured training/nutrition, research, or photo assessment). New Stripe plans are AI Pro **€19.90/month** and AI Premium **€24.90/month**, with paid Pro training/nutrition, saved memory, progress and up to 30 approved-source research queries monthly; Premium adds photo/video-frame analysis and up to 100 approved-source research queries monthly. The server enforces an approximate **$6 Pro/$10 Premium** monthly OpenAI cost cap and a separate **$1 trial-week** cost cap. All API/token usage remains subject to rate and site budgets. The old production offer of training/nutrition/bundle €20/€10/€30 is not automatically migrated. Apply `20261107100000_fitgoin_ai_subscription_tiers.sql`, deploy the matching AI and billing bundles together, configure new Price IDs and trial webhooks, and test in a sandbox before enabling any production billing. Existing account: Stripe live charges and payouts are disabled pending onboarding; do not set `FGI_AI_COMMERCIAL_READY=true` until business and legal readiness is verified.
+
+
 Continues PR #14 and the existing marketplace. Monthly products: training €20, independent nutrition €10, bundle €30. No production frontend release or live billing activation is implied by this candidate.
 
 ## Configuration, kept on the server
