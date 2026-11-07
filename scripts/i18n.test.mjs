@@ -76,3 +76,17 @@ test('branding and Google font wrappers preserve layout without disabling langua
   assert.match(html,/class="hero-mark notranslate" translate="no"/);
   assert.doesNotMatch(html,/<html[^>]+translate="no"/);
 });
+
+test('approved Trial, Pro and Premium are shown without executable checkout',()=>{
+ const pricing=readFileSync(new URL('../ai-pricing.html',import.meta.url),'utf8');
+ const build=readFileSync(new URL('build.mjs',import.meta.url),'utf8');
+ const index=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ const terms=readFileSync(new URL('../terms.html',import.meta.url),'utf8');
+ assert.match(build,/ai-pricing\\.html/);
+ assert.match(index,/href="\\.\\/ai-pricing\\.html"/);
+ for(const value of ['AI Trial','AI Pro','AI Premium','19,90','24,90','1 000 000','gpt-6-luna'.replace('gpt-6-luna','GPT-6 Luna'),'GPT-6.1 Terra']){
+   assert(pricing.includes(value),'Missing approved offer value '+value);
+ }
+ assert.equal((pricing.match(/<button class="soon" disabled/g)||[]).length,3);
+ assert.match(terms,/оплата и бесплатная неделя пока не активированы/);
+});
