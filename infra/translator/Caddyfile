@@ -1,0 +1,18 @@
+# TLS terminates here. LibreTranslate's management UI and endpoints are private.
+{$TRANSLATE_HOSTNAME} {
+  @translate {
+    path /translate
+    method POST
+  }
+  handle @translate {
+    reverse_proxy libretranslate:5000
+  }
+  @health {
+    path /health
+    method GET
+  }
+  handle @health {
+    reverse_proxy libretranslate:5000
+  }
+  respond "Not found" 404
+}
