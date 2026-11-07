@@ -164,8 +164,12 @@ BEGIN
  WHERE user_id=p_user AND livemode=p_live AND created_at>=date_trunc('month',now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC';
  SELECT count(*) INTO global_count FROM fgi_private.ai_requests
  WHERE created_at>=date_trunc('day',now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC';
- IF daily >= 120 OR global_count>=5000 OR (p_search AND searches>=search_limit)
-  THEN RETURN jsonb_build_object('error','daily_limit'); END IF;
+ IF daily >= 120 OR global_count>=5000 THEN
+  RETURN jsonb_build_object('error','daily_limit');
+ END IF;
+ IF p_search AND searches>=search_limit THEN
+  RETURN jsonb_build_object('error','search_limit');
+ END IF;
  IF (SELECT count(*) FROM fgi_private.ai_requests WHERE user_id=p_user AND created_at>now()-interval '1 minute')>=5
   THEN RETURN jsonb_build_object('error','rate_limit'); END IF;
  INSERT INTO fgi_private.ai_requests(id,user_id,request_hash,search) VALUES(p_id,p_user,p_hash,p_search);
