@@ -8,6 +8,30 @@ import {activeProgram,programOutdated,calendarWorkout} from './fitgoin-ai-progra
 import {currentWorkout} from './fitgoin-ai-workout.mjs';
 
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/** Pre-launch, read-only offers. Do not bind these to the legacy Checkout prices.
+ * Stripe + server entitlements still use the previous model until a separate
+ * verified, commercially enabled migration; no payment actions are exposed.
+ */
+export function approvedPlanCardsHTML(){
+  const offers=[
+    {id:'trial',name:'AI Trial',price:'0 €',period:'offerWeek',
+      description:'offerTrialDescription',items:['offerTrialTokens','offerTrialChat','offerTrialRestriction']},
+    {id:'pro',name:'AI Pro',price:'19,90 €',period:'offerMonth',
+      description:'offerProDescription',items:['offerProPlans','offerProMemory','offerProSearch']},
+    {id:'premium',name:'AI Premium',price:'24,90 €',period:'offerMonth',
+      description:'offerPremiumDescription',items:['offerPremiumAll','offerPremiumMedia','offerPremiumSearch']}
+  ];
+  const localized=key=>`<span data-i18n="${key}">${esc(t(key))}</span>`;
+  return offers.map(offer=>`<article class="panel fgi-ai-offer" data-ai-offer="${offer.id}">
+    <h3>${offer.name}</h3>
+    <p class="fgi-ai-dose">${offer.price} <small>${localized(offer.period)}</small></p>
+    <p class="fgi-ai-offer-desc">${localized(offer.description)}</p>
+    <ul>${offer.items.map(key=>`<li>${localized(key)}</li>`).join('')}</ul>
+    <p class="hint fgi-ai-offer-soon">${localized('offerComingSoon')}</p>
+  </article>`).join('');
+}
+
 const DAYS=['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
 const labels={goal:'цель',sport:'спорт',age:'возраст',weekdays:'дни недели',weight_kg:'вес',height_cm:'рост'};
 const ERRORS={authentication_required:'Войди в аккаунт снова.',ai_not_configured:'Сервер AI ещё не подключён. Профиль и дневник доступны; ответы появятся после подключения.',consent_required:'Открой профиль и дай согласие на работу AI.',profile_incomplete:'Сначала заполни обязательные поля спортивного профиля.',professional_required:'Для персональной программы с этими данными нужна оценка тренера или врача. AI может отвечать на общие вопросы.',daily_limit:'Дневной лимит AI исчерпан. Он обновится в 00:00 UTC. Сохранённые планы и дневник остаются доступными.',rate_limit:'Слишком много запросов подряд. Повтори через минуту.',request_pending:'Этот запрос ещё выполняется. Подожди и обнови историю.',request_failed:'Предыдущая попытка не завершилась. Отправь новый запрос.',request_conflict:'Повторный запрос отличается от исходного. Отправь его заново.',provider_busy:'AI временно занят. Повтори позже.',provider_unavailable:'AI сейчас недоступен. Повтори позже.',provider_refused:'AI не смог выполнить этот запрос. Попробуй задать вопрос о спорте иначе.',invalid_plan:'AI-план не прошёл проверку времени, нагрузки или питания и не был сохранён. Попробуй уточнить запрос.',provider_incomplete:'AI не закончил ответ. Повтори запрос.',search_unverified:'Поиск не вернул проверяемые источники. AI не будет выдавать это за найденное исследование.',invalid_audio:'Не удалось распознать запись. Запиши до 30 секунд ещё раз.',backend_unavailable:'Не удалось сохранить или загрузить данные. Повтори позже.',delete_retry:'Не все фотографии удалены. Повтори удаление.',invalid_conversation:'Этот диалог больше недоступен. Обнови раздел AI.'};
@@ -153,8 +177,21 @@ export function mountFitGoInAI(root,opts) {
   function savedView(){return `<div class="ai-saved-list"><div><p class="eyebrow">FITGOIN AI</p><h2>${t('saved')}</h2></div>${savedMessages.length?savedMessages.map(messageHTML).join(''):`<div class="panel"><p class="muted">${t('noSaved')}</p>${button('view-ask',t('ai'),true)}</div>`}</div>`;}
   function menu(open){drawerOpen=open;const shell=q('.fgi-ai-shell');if(shell)shell.classList.toggle('drawer-open',open);const aside=q('.fgi-ai-sidebar');if(aside){aside.setAttribute('role',open?'dialog':'navigation');if(open)aside.setAttribute('aria-modal','true');else aside.removeAttribute('aria-modal');}q('[data-ai-action="menu"]')?.setAttribute('aria-expanded',String(open));document.body.style.overflow=open?'hidden':'';if(open)q('.ai-sidebar-close')?.focus();else q('[data-ai-action="menu"]')?.focus();}
   function accessView(){
-    const descriptions={training:'Программы под твою цель, история подходов, адаптация по восстановлению, голосовой ввод и оценка техники по выбранным кадрам.',nutrition:'Примерное меню, замены продуктов, список покупок, оценка еды по фото и дневник питания.',bundle:'Оба модуля: тренировки и питание с раздельной историей и общим профилем.'};
-    return `<div class="section-head"><h2>Доступ к FitGoIn AI</h2>${button('refresh','Проверить доступ')}</div><p>${access.friend?'Тебе предоставлен бесплатный доступ по приглашению.':''}${access.unavailable?'Сервер подписок сейчас недоступен. Сохранённые данные остаются доступны.':''}${!access.checkout_enabled?' Оплата пока отключена: подключение и проверка ещё не завершены.':''}</p><div class="fgi-ai-week">${Object.entries(PLANS).map(([key,plan])=>`<article class="panel"><h3>${esc(plan.name)}</h3><p class="fgi-ai-dose">${plan.amount/100} € / месяц</p><p>${esc(descriptions[key])}</p>${plan.modules.every(m=>hasAccess(access,m))?'<span class="tag">Доступ активен</span>':button('checkout','Выбрать тариф',true,`data-plan="${key}"${!access.checkout_enabled?' disabled':''}`)}</article>`).join('')}</div><div class="panel section-small"><p>До 30 запросов и 3 поисков в день UTC. Действует месячный ресурс AI; длинные программы, фото и исследования расходуют его быстрее. Сохранённые планы, дневник и подбор тренера доступны после окончания подписки.</p>${access.subscriptions?.length?access.subscriptions.map(s=>`<p>${esc(PLANS[s.plan]?.name||'Подписка')}: ${esc(s.status)}${s.paid_until?` · оплачено до ${esc(new Date(s.paid_until).toLocaleDateString())}`:''}${s.cancel_at_period_end?' · продление отключено':''}</p>`).join('')+button('portal','Управлять подпиской / отменить'):''}<p class="hint">После оплаты доступ подтвердит сервер. Возврат на сайт сам по себе подписку не активирует. Периодическая оплата и отмена управляются через Stripe. Условия: <a href="./terms.html#ai">FitGoIn AI</a>.</p></div>`;
+    const localized=key=>`<span data-i18n="${key}">${esc(t(key))}</span>`;
+    const subscriptions=Array.isArray(access.subscriptions)?access.subscriptions:[];
+    const legacyInfo=subscriptions.length?`<div class="panel section-small"><h3>${localized('offerExistingTitle')}</h3>
+      ${subscriptions.map(s=>`<p>${esc(PLANS[s.plan]?.name||s.plan||'AI')}: ${esc(s.status||'—')}${s.paid_until?` · ${esc(new Date(s.paid_until).toLocaleDateString())}`:''}${s.cancel_at_period_end?' · продление отключено':''}</p>`).join('')}
+      ${button('portal',esc(t('offerManageExisting')))}</div>`:'';
+    return `<div class="section-head"><h2>${localized('offerAccessTitle')}</h2>${button('refresh',esc(t('offerRefresh')))}</div>
+      <div class="panel section-small"><p role="status">${localized('offerPrelaunchNotice')}</p>
+      ${access.friend?`<p>${localized('offerFriendNotice')}</p>`:''}
+      ${access.unavailable?`<p>${localized('offerAccessUnavailable')}</p>`:''}
+      <p><a href="./ai-pricing.html">${localized('offerAllFeatures')}</a></p></div>
+      <div class="fgi-ai-week" aria-label="${esc(t('offerAccessTitle'))}">${approvedPlanCardsHTML()}</div>
+      <div class="panel section-small"><p>${localized('offerUsageNotice')}</p>
+      <p>${localized('offerExistingAccessSafe')}</p>
+      <p class="hint"><a href="./terms.html#ai">${localized('offerTerms')}</a></p></div>
+      ${legacyInfo}`;
   }
   function mediaForm(kind){return `<form data-ai-form="media" data-kind="${kind}"><h3>${kind==='food_photo'?'Оценить еду по фото':'Проверить видимую технику'}</h3><label>${kind==='food_photo'?'Фото блюда':'Фото или короткое видео'}<input name="media" type="file" accept="${kind==='food_photo'?'image/jpeg,image/png,image/webp':'image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime'}" required></label>${field(kind==='food_photo'?'Что известно о порции и составе?':'Какое упражнение и что проверить?',`<textarea name="description" rows="2" maxlength="1200" placeholder="${kind==='food_photo'?'Например: рис 150 г, курица 100 г, масло 1 ч. л.':'Название упражнения, вес и твой вопрос'}"></textarea>`)}<label class="fgi-ai-check"><input name="consent" type="checkbox" required>Разрешаю отправить выбранное фото или шесть кадров видео в OpenAI для этого анализа.</label><p class="hint">Изображения подготовятся на устройстве без метаданных. Исходное видео и звук не отправляются. Фото и кадры не сохраняются в FitGoIn; текст оценки остаётся в твоей AI-истории. ${kind==='food_photo'?'Калории и состав приблизительные. Скрытые ингредиенты и аллергены по фото не определить.':'Кадры не показывают всю траекторию движения. AI не подтверждает безопасность техники и не заменяет тренера.'}</p><button class="btn primary" type="submit"${!configured?' disabled':''}>Получить оценку</button></form>`;}
   function foodView(){
