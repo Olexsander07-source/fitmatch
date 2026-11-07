@@ -16,6 +16,16 @@ ALTER TABLE fgi_private.ai_subscriptions
 ALTER TABLE fgi_private.ai_checkout_sessions DROP CONSTRAINT IF EXISTS ai_checkout_sessions_plan_check;
 ALTER TABLE fgi_private.ai_checkout_sessions
  ADD CONSTRAINT ai_checkout_sessions_plan_check CHECK(plan IN ('training','nutrition','bundle','pro','premium'));
+-- Count monthly web research independently of the 24-hour idempotency cache.
+CREATE TABLE IF NOT EXISTS fgi_private.ai_search_usage (
+ user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+ request_id uuid NOT NULL,
+ livemode boolean NOT NULL,
+ created_at timestamptz NOT NULL DEFAULT now(),
+ PRIMARY KEY(user_id,request_id)
+);
+CREATE INDEX IF NOT EXISTS ai_search_usage_month_idx
+ ON fgi_private.ai_search_usage(user_id,livemode,created_at);
 CREATE INDEX IF NOT EXISTS ai_cost_ledger_trial_window_idx
  ON fgi_private.ai_cost_ledger(user_id,livemode,created_at);
 
@@ -119,7 +129,7 @@ BEGIN
   AND fgi_private.ai_subscriptions.livemode=EXCLUDED.livemode;
  IF p_risk IS NOT NULL THEN
   INSERT INTO fgi_private.ai_billing_risks(risk_id,subscription_id,active,reason,last_event_created)
-   VALUES(p_risk_id,p_subscription,p_live IS NOT NULL AND p_risk<>'resolved',p_risk,p_created)
+   VALUES(p_risk_id,p_subscription,p_risk<>'resolved',p_risk,p_created)
   ON CONFLICT(risk_id,subscription_id) DO UPDATE SET active=EXCLUDED.active,
    reason=EXCLUDED.reason,last_event_created=EXCLUDED.last_event_created
   WHERE fgi_private.ai_billing_risks.last_event_created<=EXCLUDED.last_event_created;
@@ -149,8 +159,8 @@ BEGIN
  IF p_search AND search_limit=0 THEN RETURN jsonb_build_object('error','search_requires_pro'); END IF;
  SELECT count(*) INTO daily FROM fgi_private.ai_requests
  WHERE user_id=p_user AND created_at>=date_trunc('day',now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC';
- SELECT count(*) INTO searches FROM fgi_private.ai_requests
- WHERE user_id=p_user AND search AND created_at>=date_trunc('month',now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC';
+ SELECT count(*) INTO searches FROM fgi_private.ai_search_usage
+ WHERE user_id=p_user AND livemode=p_live AND created_at>=date_trunc('month',now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC';
  SELECT count(*) INTO global_count FROM fgi_private.ai_requests
  WHERE created_at>=date_trunc('day',now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC';
  IF daily >= 120 OR global_count>=5000 OR (p_search AND searches>=search_limit)
@@ -158,6 +168,9 @@ BEGIN
  IF (SELECT count(*) FROM fgi_private.ai_requests WHERE user_id=p_user AND created_at>now()-interval '1 minute')>=5
   THEN RETURN jsonb_build_object('error','rate_limit'); END IF;
  INSERT INTO fgi_private.ai_requests(id,user_id,request_hash,search) VALUES(p_id,p_user,p_hash,p_search);
+ IF p_search THEN
+  INSERT INTO fgi_private.ai_search_usage(user_id,request_id,livemode) VALUES(p_user,p_id,p_live);
+ END IF;
  RETURN jsonb_build_object('remaining',119-daily,
    'search_remaining',GREATEST(0,search_limit-searches-CASE WHEN p_search THEN 1 ELSE 0 END));
 END;
@@ -175,10 +188,12 @@ BEGIN
  tier:=public.fgi_ai_access(p_user,p_live)->>'tier';
  lim:=CASE tier WHEN 'premium' THEN 100 WHEN 'pro' THEN 30 WHEN 'friend' THEN 100 ELSE 0 END;
  IF lim=0 THEN RETURN jsonb_build_object('error','search_requires_pro'); END IF;
- SELECT count(*) INTO searches FROM fgi_private.ai_requests
- WHERE user_id=p_user AND search AND created_at>=date_trunc('month',now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC';
+ SELECT count(*) INTO searches FROM fgi_private.ai_search_usage
+ WHERE user_id=p_user AND livemode=p_live AND created_at>=date_trunc('month',now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC';
  IF searches>=lim AND NOT old_search THEN RETURN jsonb_build_object('error','search_limit'); END IF;
  UPDATE fgi_private.ai_requests SET search=true WHERE user_id=p_user AND id=p_id;
+ INSERT INTO fgi_private.ai_search_usage(user_id,request_id,livemode)
+ VALUES(p_user,p_id,p_live) ON CONFLICT(user_id,request_id) DO NOTHING;
  RETURN jsonb_build_object('search_remaining',GREATEST(0,lim-searches-CASE WHEN old_search THEN 0 ELSE 1 END));
 END;
 $$;
