@@ -7,7 +7,7 @@ const actor='11111111-1111-4111-8111-111111111111';
 const sender='22222222-2222-4222-8222-222222222222';
 const mockEnv={SUPABASE_URL:'https://example.supabase.co',SUPABASE_ANON_KEY:'anon-test',SUPABASE_SERVICE_ROLE_KEY:'secret-test',OPENAI_API_KEY:'openai-test'};
 const wrap=value=>new Response(JSON.stringify(value),{status:200,headers:{'Content-Type':'application/json'}});
-function setup({foreign=false,used=0}={}){
+function setup({foreign=false,used=0,providerFailure=''}={}){
   const cache=new Map();let providerCalls=0,visibleReads=0;
   const fetcher=async(url,opts={})=>{
     const path=new URL(url);
@@ -28,6 +28,9 @@ function setup({foreign=false,used=0}={}){
     }
     if(url==='https://api.openai.com/v1/responses'){
       providerCalls++;
+      if(providerFailure==='quota')return new Response(JSON.stringify({error:{code:'insufficient_quota'}}),{status:429});
+      if(providerFailure==='missing-model'&&providerCalls===1)return new Response(JSON.stringify({error:{code:'model_not_found'}}),{status:404});
+      if(providerFailure==='invalid-key')return new Response(JSON.stringify({error:{code:'invalid_api_key'}}),{status:401});
       const input=JSON.parse(JSON.parse(opts.body).input[0].content[0].text);
       return wrap({status:'completed',output:[{type:'message',content:[{type:'output_text',text:JSON.stringify({translations:input.map(x=>({id:x.id,translation:'Здравствуйте, когда встреча?'}))})}]}]});
     }
@@ -77,4 +80,24 @@ test('daily safety cap prevents provider spending',async()=>{
   const ctx=setup({used:120}),res=await ctx.handler(ctx.req());
   assert.equal(res.status,429);
   assert.equal(ctx.providerCalls,0);
+});
+
+test('OpenAI quota failures return a specific safe error and do not store private messages',async()=>{
+  const ctx=setup({providerFailure:'quota'}),res=await ctx.handler(ctx.req());
+  assert.equal(res.status,503);
+  assert.deepEqual(await res.json(),{error:'translation_provider_quota'});
+  assert.equal(ctx.cache.size,0);
+  assert.equal(ctx.providerCalls,1);
+});
+test('provider invalid key is safely rejected without leaking credentials',async()=>{
+  const ctx=setup({providerFailure:'invalid-key'}),res=await ctx.handler(ctx.req());
+  assert.equal(res.status,503);
+  assert.deepEqual(await res.json(),{error:'translation_provider_auth'});
+  assert.equal(ctx.cache.size,0);
+});
+test('missing default translation model falls back once to supported mini model',async()=>{
+  const ctx=setup({providerFailure:'missing-model'}),res=await ctx.handler(ctx.req());
+  assert.equal(res.status,200);
+  assert.equal(ctx.providerCalls,2);
+  assert.equal((await res.json()).translations[0].body,'Здравствуйте, когда встреча?');
 });
