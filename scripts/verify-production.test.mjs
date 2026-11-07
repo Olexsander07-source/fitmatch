@@ -96,6 +96,6 @@ test('Cloudflare-managed robots.txt preserves the exact source rules',async t=>{
   };
   assert.equal((await verifyProduction(options)).status,'passed');
   const originalBytes=Buffer.from('User-agent: *\nAllow: /\n');
-  assert.equal(matchesCloudflareManagedRobots(Buffer.from(prefix)+originalBytes,originalBytes),true);
+  assert.equal(matchesCloudflareManagedRobots(Buffer.concat([Buffer.from(prefix),originalBytes]),originalBytes),true);
   assert.equal(matchesCloudflareManagedRobots(Buffer.from(prefix+'User-agent: *\nDisallow: /\n'),originalBytes),false);
 });
