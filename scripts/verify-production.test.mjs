@@ -4,7 +4,7 @@ import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { parseUploadedVersion, verifyProduction } from './verify-production.mjs';
+import { parseUploadedVersion, verifyProduction, matchesCloudflareManagedRobots } from './verify-production.mjs';
 
 test('publish uses the exact version identified by the upload, including coloured CLI output', () => {
   assert.equal(parseUploadedVersion('Uploaded assets\nWorker Version ID: \x1b[32m3c41785e-d6b0-4236-8827-00f456c0838e\x1b[0m\n'), '3c41785e-d6b0-4236-8827-00f456c0838e');
@@ -30,6 +30,7 @@ async function build(t) {
     ['premium.mjs', ['export const ready = true;', 'application/javascript']],
     ['styles.css', ['body { color: white; }', 'text/css']],
     ['release.json', ['{"build_id":"current-build"}', 'application/json']],
+    ['robots.txt', ['User-agent: *\nAllow: /\n', 'text/plain']],
     ['assets/hero.webp', ['fixture-image-bytes', 'image/webp']],
     ['_headers', ['/*\n  X-Frame-Options: DENY', 'text/plain']],
   ]);
@@ -45,7 +46,7 @@ async function build(t) {
 test('complete deployed build includes modules and images, excluding hosting controls', async t => {
   const report = await verifyProduction(await build(t));
   assert.equal(report.status, 'passed');
-  assert.equal(report.assets.length, 6);
+  assert.equal(report.assets.length, 7);
   assert(report.assets.some(asset => asset.file === 'premium.mjs'));
   assert(report.assets.some(asset => asset.file === 'assets/hero.webp'));
 });
@@ -83,4 +84,18 @@ test('transient missing assets are retried before declaring success', async t =>
   options.fetchAsset = url => new URL(url).pathname.endsWith('.mjs') && ++calls === 1 ? new Response(null, { status: 404 }) : original(url);
   assert.equal((await verifyProduction(options)).status, 'passed');
   assert.equal(calls, 2);
+});
+
+test('Cloudflare-managed robots.txt preserves the exact source rules',async t=>{
+  const options=await build(t),original=options.fetchAsset;
+  const prefix='# As a condition of accessing this website\n# BEGIN Cloudflare Managed content\nUser-agent: GPTBot\nDisallow: /\n# END Cloudflare Managed Content\n\n';
+  options.fetchAsset=async url=>{
+    const r=await original(url);
+    if(new URL(url).pathname.endsWith('/robots.txt'))return new Response(prefix+await r.text(),{headers:{'content-type':'text/plain'}});
+    return r;
+  };
+  assert.equal((await verifyProduction(options)).status,'passed');
+  const originalBytes=Buffer.from('User-agent: *\nAllow: /\n');
+  assert.equal(matchesCloudflareManagedRobots(Buffer.concat([Buffer.from(prefix),originalBytes]),originalBytes),true);
+  assert.equal(matchesCloudflareManagedRobots(Buffer.from(prefix+'User-agent: *\nDisallow: /\n'),originalBytes),false);
 });

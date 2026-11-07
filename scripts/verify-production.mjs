@@ -5,6 +5,18 @@ import { pathToFileURL } from 'node:url';
 const controls = new Set(['_headers', '_redirects']);
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 
+// Cloudflare's managed robots.txt feature prepends an opt-out policy to the
+// original robots.txt. Verify the managed block markers AND the unmodified
+// original suffix instead of treating Cloudflare's prefix as an asset mismatch.
+export function matchesCloudflareManagedRobots(received, original) {
+  const text = received.toString('utf8');
+  return text.includes('# BEGIN Cloudflare Managed content') &&
+    text.includes('# END Cloudflare Managed Content') &&
+    received.length > original.length &&
+    received.subarray(received.length - original.length).equals(original);
+}
+
+
 export function parseUploadedVersion(output) {
   const plain = String(output).replace(/\x1b\[[0-9;]*m/g, '');
   const ids = [...plain.matchAll(/^Worker Version ID:\s*([a-f\d]{8}-(?:[a-f\d]{4}-){3}[a-f\d]{12})\s*$/gim)];
@@ -58,7 +70,11 @@ export async function verifyProduction({
           const type = response.headers.get('content-type') || '';
           if (expectedType(asset.file) && !expectedType(asset.file).test(type)) throw new Error(`wrong Content-Type: ${type || 'missing'}`);
           const bytes = Buffer.from(await response.arrayBuffer());
-          if (digest(bytes) !== asset.sha256) throw new Error('content differs from this production build');
+          if (digest(bytes) !== asset.sha256) {
+            const original = asset.file === 'robots.txt' ? await readFile(new URL(asset.file, directory)) : null;
+            if (!original || !matchesCloudflareManagedRobots(bytes, original))
+              throw new Error('content differs from this production build');
+          }
           checked.set(asset.file, { file: asset.file, status: response.status, sha256: asset.sha256, bytes: bytes.length });
         } catch (error) {
           failures.push(`${asset.file}: ${error.message}`);
