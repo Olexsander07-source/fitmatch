@@ -29,9 +29,9 @@ function setup(change={}) {
     if(url.includes('/fgi_ai_workouts?'))return json(change.workouts||[]);
     if(url.includes('/fgi_ai_plans?'))return json(change.plans||[]);
     if(url.endsWith('/rpc/fgi_ai_access'))return json(change.access||{modules:['training','nutrition'],friend:true});
-    if(url.endsWith('/rpc/fgi_ai_reserve'))return json(change.reserve||{reserved:true});
-    if(url.endsWith('/rpc/fgi_ai_claim'))return json(change.claim||{remaining:29,search_remaining:3});
-    if(url.endsWith('/rpc/fgi_ai_claim_search'))return json(change.searchClaim||{search_remaining:2});
+    if(url.endsWith('/rpc/fgi_ai_reserve_v2'))return json(change.reserve||{reserved:true});
+    if(url.endsWith('/rpc/fgi_ai_claim_v2'))return json(change.claim||{remaining:29,search_remaining:3});
+    if(url.endsWith('/rpc/fgi_ai_claim_search_v2'))return json(change.searchClaim||{search_remaining:2});
     if(url.endsWith('/rpc/fgi_ai_complete'))return json(change.completeFails?{error:'consent_changed'}:null,change.completeFails?400:200);
     if(url.includes('/rpc/'))return json(null);
     if(url.includes('/storage/v1/object/list/'))return json(listing++===0?(change.photos||[]):[]);
@@ -292,7 +292,7 @@ test('failed database completion never returns a memory save confirmation or ans
 test('a memory update does not change delivery hash or regenerate on cached replay',async()=>{
  const message='Мой вес сейчас 82 кг';const s=setup({response:providerResponse({answer:'Принял.',memory_updates:[{field:'weight_kg',value:'82',evidence:message}]})});const first=await (await s.request({message})).json();
  const again=setup({profile:{...PROFILE,weight_kg:82},updatedAt:'2026-10-06T10:00:00Z',claim:{cached:first}});assert.deepEqual(await (await again.request({message})).json(),first);
- const hash=c=>c.calls.find(x=>x.url.endsWith('/rpc/fgi_ai_claim')).body.p_hash;assert.equal(hash(s),hash(again));assert(!again.calls.some(c=>c.url.includes('api.openai.com')));
+ const hash=c=>c.calls.find(x=>x.url.endsWith('/rpc/fgi_ai_claim_v2')).body.p_hash;assert.equal(hash(s),hash(again));assert(!again.calls.some(c=>c.url.includes('api.openai.com')));
 });
 test('direct memory questions use saved facts even if the model gives a different number',async()=>{
  const s=setup({profile:{...PROFILE,weight_kg:82},response:providerResponse({answer:'Ты весишь 80 кг.',memory_updates:[]})});const result=await (await s.request({message:'Какой у меня сейчас вес?'})).json();assert(result.answer.includes('82'));assert(!result.answer.includes('80'));
