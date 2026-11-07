@@ -98,7 +98,7 @@ function handlerFixture({failure=false}={}){
  const calls=[];const fetcher=async(url,o={})=>{const body=o.body?JSON.parse(o.body):null;calls.push({url,body});const json=(v,status=200)=>new Response(JSON.stringify(v),{status});
   if(url.endsWith('/auth/v1/user'))return json({id:U});if(url.includes('/fgi_ai_profiles?'))return json([{data,consent_version:'2026-10-03',consented_at:'2026-10-10T07:00:00Z',updated_at:'2026-10-10T07:00:00Z'}]);
   if(url.includes('/fgi_ai_conversations?'))return json([{id:C}]);if(url.includes('/fgi_ai_plans?'))return json([plan]);if(url.includes('/fgi_ai_workouts?'))return json([session()]);
-  if(url.endsWith('/rpc/fgi_ai_access'))return json({modules:['training'],friend:true});if(url.endsWith('/rpc/fgi_ai_claim'))return json({remaining:29});
+  if(url.endsWith('/rpc/fgi_ai_access'))return json({modules:['training'],friend:true});if(url.endsWith('/rpc/fgi_ai_claim_v2'))return json({remaining:29});
   if(url.endsWith('/rpc/fgi_ai_complete'))return json(failure?{code:'P0001',message:'workout_changed'}:null,failure?400:200);
   if(url.endsWith('/rpc/fgi_ai_fail'))return json(null);throw Error('unexpected model or endpoint');
  };const handler=createAIHandler({env:{SUPABASE_URL:'https://fixture.supabase.co',SUPABASE_ANON_KEY:'public',SUPABASE_SERVICE_ROLE_KEY:'private',OPENAI_API_KEY:''},fetcher});
