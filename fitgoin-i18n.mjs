@@ -46,6 +46,88 @@ export const messages = {
 };
 // Languages supported by this interface. Region selects the initial language only.
 messages.fr = frCatalog;
+
+// Approved future AI offers shown on the in-app access screen. The actual Stripe
+// products and current server entitlements stay unchanged until billing launch.
+const aiOfferTranslations={
+  ru:{
+    offerAccessTitle:'Доступ к FitGoIn AI',offerRefresh:'Проверить доступ',
+    offerPrelaunchNotice:'Новые тарифы утверждены, но подписки и бесплатная неделя ещё не активированы. Оплата картой пока отключена; списаний не будет.',
+    offerWeek:'/ 7 дней',offerMonth:'/ месяц',
+    offerTrialDescription:'7 дней бесплатного ознакомления с AI-тренером.',
+    offerTrialTokens:'1 000 000 токенов на все 7 дней без ежедневного сброса.',
+    offerTrialChat:'Общение с AI и общие советы по тренировкам и питанию.',
+    offerTrialRestriction:'Без персональных программ тренировок и питания, поиска в интернете и анализа фото.',
+    offerProDescription:'Полноценный персональный AI-тренер.',
+    offerProPlans:'Персональные программы тренировок и питания с корректировкой в диалоге.',
+    offerProMemory:'Память, дневник тренировок и анализ прогресса.',
+    offerProSearch:'До 30 поисков в месяц по проверенным научным и официальным источникам.',
+    offerPremiumDescription:'Расширенные возможности персонального AI-тренера.',
+    offerPremiumAll:'Все возможности AI Pro.',
+    offerPremiumMedia:'Анализ фото еды и видимой техники упражнений по фото и выбранным кадрам видео; подробные отчёты.',
+    offerPremiumSearch:'До 100 интернет-поисков в месяц по проверенным источникам.',
+    offerComingSoon:'Скоро доступно · оформление пока закрыто.',
+    offerFriendNotice:'Твой доступ по приглашению сохраняется.',
+    offerAccessUnavailable:'Сервер проверки текущего доступа временно недоступен.',
+    offerAllFeatures:'Все условия Trial, Pro и Premium',
+    offerUsageNotice:'AI автоматически выбирает Luna для обычных вопросов и Terra для сложных задач. После запуска будут действовать лимиты использования и расходов; подписки не безлимитные.',
+    offerExistingAccessSafe:'Существующий доступ к AI и сохранённые данные не меняются до запуска новой системы.',
+    offerTerms:'Условия FitGoIn AI',
+    offerExistingTitle:'Существующая подписка',offerManageExisting:'Управлять текущей подпиской / отменить'
+  },
+  en:{
+    offerAccessTitle:'Access to FitGoIn AI',offerRefresh:'Check access',
+    offerPrelaunchNotice:'The new plans are confirmed, but subscriptions and the free trial are not yet active. Card payments are disabled, so no charges will be made.',
+    offerWeek:'/ 7 days',offerMonth:'/ month',
+    offerTrialDescription:'A free seven-day introduction to your AI coach.',
+    offerTrialTokens:'1,000,000 tokens shared across all 7 days, with no daily reset.',
+    offerTrialChat:'AI chat and general training and nutrition guidance.',
+    offerTrialRestriction:'No personalized workout or nutrition plans, online research or photo analysis.',
+    offerProDescription:'Your full personal AI coach.',
+    offerProPlans:'Personalized training and nutrition plans, with adjustments by chat.',
+    offerProMemory:'Memory, workout diary and progress analysis.',
+    offerProSearch:'Up to 30 searches per month of verified official and scientific sources.',
+    offerPremiumDescription:'Advanced capabilities for your personal AI coach.',
+    offerPremiumAll:'Everything in AI Pro.',
+    offerPremiumMedia:'Food photo assessments, exercise technique analysis from photos and selected video frames, and detailed reports.',
+    offerPremiumSearch:'Up to 100 verified-source web searches per month.',
+    offerComingSoon:'Coming soon · enrollment is not yet open.',
+    offerFriendNotice:'Your invitation-based access remains available.',
+    offerAccessUnavailable:'The current access verification service is temporarily unavailable.',
+    offerAllFeatures:'Full Trial, Pro and Premium plan details',
+    offerUsageNotice:'AI automatically uses Luna for everyday questions and Terra for complex tasks. Usage and cost limits will apply when subscriptions launch; plans are not unlimited.',
+    offerExistingAccessSafe:'Your existing AI access and saved data will not change before the new plans launch.',
+    offerTerms:'FitGoIn AI terms',
+    offerExistingTitle:'Existing subscription',offerManageExisting:'Manage or cancel existing subscription'
+  },
+  fr:{
+    offerAccessTitle:'Accès à FitGoIn AI',offerRefresh:'Vérifier mon accès',
+    offerPrelaunchNotice:"Les nouvelles offres sont confirmées, mais les abonnements et l'essai gratuit ne sont pas encore activés. Le paiement par carte est désactivé : aucun prélèvement n'aura lieu.",
+    offerWeek:'/ 7 jours',offerMonth:'/ mois',
+    offerTrialDescription:"Sept jours gratuits pour découvrir ton coach IA.",
+    offerTrialTokens:'1 000 000 de tokens sur les 7 jours, sans remise à zéro quotidienne.',
+    offerTrialChat:"Discussions avec l'IA et conseils généraux sur le sport et la nutrition.",
+    offerTrialRestriction:"Sans programmes d'entraînement ou de nutrition personnalisés, recherche web ni analyse photo.",
+    offerProDescription:'Ton coach IA personnel complet.',
+    offerProPlans:"Programmes d'entraînement et de nutrition personnalisés, modifiables en discutant.",
+    offerProMemory:'Mémoire, journal des séances et analyse des progrès.',
+    offerProSearch:"Jusqu'à 30 recherches mensuelles sur des sources officielles et scientifiques fiables.",
+    offerPremiumDescription:'Des capacités avancées pour ton coach IA personnel.',
+    offerPremiumAll:"Toutes les fonctionnalités d'AI Pro.",
+    offerPremiumMedia:"Estimation des repas sur photo, analyse de la technique à partir de photos et d'images vidéo sélectionnées, et bilans détaillés.",
+    offerPremiumSearch:"Jusqu'à 100 recherches web mensuelles sur des sources fiables.",
+    offerComingSoon:'Bientôt disponible · inscriptions non ouvertes.',
+    offerFriendNotice:"Ton accès sur invitation est conservé.",
+    offerAccessUnavailable:"Le service de vérification de l'accès est temporairement indisponible.",
+    offerAllFeatures:'Tous les détails des offres Trial, Pro et Premium',
+    offerUsageNotice:"L'IA choisit automatiquement Luna pour les questions courantes et Terra pour les tâches complexes. Des limites d'utilisation et de coût s'appliqueront au lancement ; les abonnements ne sont pas illimités.",
+    offerExistingAccessSafe:"Ton accès IA actuel et tes données sauvegardées restent inchangés jusqu'au lancement des nouvelles offres.",
+    offerTerms:"Conditions de FitGoIn AI",
+    offerExistingTitle:'Abonnement existant',offerManageExisting:"Gérer ou résilier mon abonnement actuel"
+  }
+};
+for(const [language,catalog] of Object.entries(aiOfferTranslations)) Object.assign(messages[language],catalog);
+
 const choiceKey='fitgoin_locale_preference_v1';
 const savedTexts=new WeakMap(),savedAttributes=new WeakMap();
 const ignoreContent='script,style,[data-i18n],[translate="no"],#messages,#threads,#profileContent,#coachesList,#rankingList,#matchResults,#fitgoinAI,#myGallery,#chatAttachmentPreview';
