@@ -109,5 +109,5 @@ test('chat interface offers retry after failure without removing original messag
   assert(source.includes('translationFailures.delete(translationKey(row))'));
   assert(source.includes('Перевод временно недоступен'));
   assert(source.includes('Повторить перевод'));
-  assert(source.includes('const displayed=translated&&!showingOriginal?translated:row.body'));
+  assert(source.includes('displayed=translated&&!showingOriginal?translated:row.body'));
 });
