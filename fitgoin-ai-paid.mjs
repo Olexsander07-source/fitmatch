@@ -1,11 +1,12 @@
 // Public product descriptions and deterministic validation; no credentials.
 import {AIError} from './fitgoin-ai-core.mjs';
 
-export const PLANS = {
-  training:{name:'AI-тренировки',amount:2000,modules:['training']},
-  nutrition:{name:'AI-питание',amount:1000,modules:['nutrition']},
-  bundle:{name:'FitGoIn AI · полный пакет',amount:3000,modules:['training','nutrition']}
-};
+// Current subscription offer. All access decisions are repeated on the server.
+export const PLANS = Object.freeze({
+  pro:Object.freeze({name:'FitGoIn AI Pro',amount:1990,modules:['training','nutrition'],search_limit:30,media:false}),
+  premium:Object.freeze({name:'FitGoIn AI Premium',amount:2490,modules:['training','nutrition'],search_limit:100,media:true}),
+});
+export const TRIAL = Object.freeze({days:7,total_tokens:1000000,media:false,web_search:false,nutrition_program:false,training_program:false});
 export const MEDIA_CONSENT='2026-10-04-media';
 const obj=properties=>({type:'object',additionalProperties:false,properties,required:Object.keys(properties)});
 const str={type:'string'},num={type:'number'},list={type:'array',items:str};
