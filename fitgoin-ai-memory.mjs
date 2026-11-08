@@ -69,6 +69,8 @@ export function prepareMemoryPatch(data,updates,message){
  // A new place never silently inherits equipment from the old place.
  const placeChanged=Object.hasOwn(patch,'setting')&&patch.setting!==data.setting;
  if(placeChanged&&!Object.hasOwn(patch,'equipment'))patch.equipment='';
+ // Equipment excluded at the old location must not silently restrict a new gym or home.
+ if(placeChanged)patch.unavailable_equipment=[];
  if(Object.hasOwn(patch,'days_per_week')&&data.weekdays?.length!==patch.days_per_week)patch.weekdays=[];
  if(patch.preferred_sports)patch.sport=patch.preferred_sports[0];
  if(patch.restrictions)patch.needs_professional=true;
