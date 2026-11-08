@@ -71,3 +71,17 @@ h1,h2,h3,.muted{overflow-wrap:anywhere}
 .fgi-language select:focus-visible{outline:2px solid #b1d97d;outline-offset:2px}
 .fgi-language option{color:#1a1d1a;background:#fff}
 @media(max-width:650px){.fgi-language select{min-height:34px;padding:4px;font-size:11px}.header:has(.guest-nav) .fgi-language{margin-left:auto}.header:has(.guest-nav) .header-actions{order:3}}
+
+
+/* Booking, owner inbox and user support: compact mobile-first controls. */
+#bookings .stack,#alerts .stack,#support .stack,#owner .stack{display:grid;gap:12px;margin-top:18px}
+#bookings .panel,#alerts .panel,#support .panel,#owner .panel{padding:20px;border-radius:16px}
+#fgiBookingForm{margin:12px 0;padding:18px;border:1px solid var(--line);border-radius:15px;background:var(--panel)}
+#fgiBookingForm[hidden]{display:none}
+#fgiBookingForm label{display:grid;gap:5px;margin:8px 0}
+#fgiBookingForm input,#fgiBookingForm select,#fgiBookingForm textarea,#fgiSupportForm input,#fgiSupportForm select,#fgiSupportForm textarea,#fgiOwnerTickets select,#fgiOwnerTickets textarea{width:100%;max-width:100%;padding:10px;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:9px}
+#fgiBookingForm button,#fgiSupportForm button{margin-top:12px}
+#fgiBL .btn,#fgiNL .btn{margin:8px 8px 0 0}
+#fgiOL .panel textarea,#fgiOL .panel select{display:block;margin:10px 0}
+#fgiOpenBooking{margin-top:10px}
+@media(max-width:650px){#bookings .panel,#alerts .panel,#support .panel,#owner .panel{padding:15px}}

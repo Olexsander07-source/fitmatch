@@ -5,9 +5,11 @@ import {mountPremium} from './fitgoin-premium.js';
 import {workspaceRole,BRAND_IMAGES} from './fitgoin-premium-core.mjs';
 import {t,initLocale,getLocale,getRegionCountry,hasManualLocale} from './fitgoin-i18n.mjs';
 import {CHAT_LANGUAGE_NAMES,ACTIVE_TRANSLATION_LANGUAGES,chatLanguageForRegion} from './fitgoin-chat-translation-core.mjs';
+import {mountStage5} from './fitgoin-stage5.mjs?v=20261108-stage5';
 import {matchSportKey,formatFits,formMatchPreferences,rankCoaches} from './fitgoin-match-core.mjs';
 let aiAssistant=null;
 let premium=null;
+let stage5=null;
 const CONFIG = Object.freeze({
   url: 'https://ypbhcgcwkpiujcakvaji.supabase.co',
   key: 'sb_publishable_Lsrk07A5aXJH7YypVR8QGQ_TQPwhfOV',
@@ -171,7 +173,7 @@ function requireUser(action = '') {
 function closeDialogs() { document.querySelectorAll('dialog[open]:not(#callDialog):not(#incomingCallDialog)').forEach(d => d.close()); }
 function page(id, push = true) {
   if (!$(id)?.classList.contains('page')) id = 'home';
-  const routed=premium?.route(id)||id;
+  const routed=stage5?.isOwner()?id:(premium?.route(id)||id);
   if(routed==='login'){requireUser(id);return;}
   if(routed==='own-profile'){openProfile(user.id,push).catch(e=>notice(explain(e)));return;}
   id=routed;
@@ -192,6 +194,7 @@ function page(id, push = true) {
   if (id === 'account') loadAccount().catch(e => message('coachMessage',explain(e),true));
   if (id === 'ai') aiAssistant?.open();
   premium?.entered(id);
+  stage5?.onPage(id);
 }
 async function run(form, target, work) {
   if (form.dataset.busy) return;
@@ -469,6 +472,7 @@ function authChanged(event, session) {
     setTimeout(()=>{loadCatalogue().then(()=>user?loadAccount():null).catch(e=>notice(explain(e)));},0);
   }
   authUI();
+  void stage5?.sessionChanged();
   if(event==='PASSWORD_RECOVERY') {pendingAction='';closeDialogs();$('resetDialog').showModal();}
 }
 async function afterLogin() {
@@ -1367,7 +1371,7 @@ async function loadThreads() {
   } finally {inboxBusy=false;}
 }
 async function openThread(t) {
-  cancelVoiceRecording();activeThread=t;chatRows=[];pendingMessage=null;threadEpoch++;clearChatAttachment();clearChatMediaURLs();
+  cancelVoiceRecording();activeThread=t;stage5?.onThread();chatRows=[];pendingMessage=null;threadEpoch++;clearChatAttachment();clearChatMediaURLs();
   $('messages').replaceChildren();$('messageForm').hidden=false;$('messageForm').reset();$('audioCall').hidden=false;$('videoCall').hidden=false;$('chatTitle').textContent=threadTitle(t);message('chatMessage','');
   try{await loadPresence(true);}catch{} updateActivePresence();
   $('olderMessages').hidden=true;await pollMessages(true);await loadThreads();
@@ -1589,6 +1593,7 @@ async function init() {
   const requestedPage=location.hash.slice(1); // Считываем до обработки Auth SDK.
   const requestedTrainer=query.get('trainer');
   setSignupRole(query.get('signup'));
+  stage5=mountStage5({getDB:()=>db,getUser:()=>user,getThread:()=>activeThread,getCoaches:()=>coaches,getLocale,navigate:page});
   bindUI();bindAuth();bindClient();bindCoach();bindMedia();bindChat();
   premium=mountPremium({getDB:()=>db,getUser:()=>user,getProfile:()=>profileRecord,getCoach:()=>own,getPage:()=>currentPage,getAccountTab:()=>accountTab,setAccountTab,
     getMatchStep:()=>matchStep,setMatchStep:value=>{matchStep=Number(value)||0;updateMatchWizard();},signup:openSignup,navigate:page,notice,explain,
@@ -1606,7 +1611,7 @@ async function init() {
       matches:p=>rankCoaches(coaches,formMatchPreferences(p),{sports,actor:user?.id})
     });
     db.auth.onAuthStateChange(authChanged); // Callback синхронный: никаких вложенных вызовов Supabase Auth.
-    const data=unwrap(await db.auth.getSession());user=data.session?.user || null;premium.setSession(user);authUI();aiAssistant.setSession(user);if(user)startPresenceHeartbeat();
+    const data=unwrap(await db.auth.getSession());user=data.session?.user || null;premium.setSession(user);authUI();aiAssistant.setSession(user);void stage5?.sessionChanged();if(user)startPresenceHeartbeat();
     await loadCatalogue();
     if(callbackError){closeDialogs();$('authDialog').showModal();message('authMessage','Ссылка недействительна: '+callbackError,true);history.replaceState(null,'',redirectURL());}
     else if(callback.get('type')==='recovery' && user){closeDialogs();$('resetDialog').showModal();}
