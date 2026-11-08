@@ -6,6 +6,7 @@ import {t} from './fitgoin-i18n.mjs';
 import {sportsMemory,MEMORY_LABELS,memoryDisplayValue} from './fitgoin-ai-memory.mjs';
 import {activeProgram,programOutdated,calendarWorkout} from './fitgoin-ai-program.mjs';
 import {currentWorkout} from './fitgoin-ai-workout.mjs';
+import {localLabel,localDiscoveryHTML} from './fitgoin-ai-local.mjs';
 
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -41,6 +42,7 @@ Object.assign(ERRORS,{workout_changed:'Тренировка или резуль�
 Object.assign(ERRORS,{program_changed:'Программа уже изменилась. Обнови историю и выбери упражнение из активной версии.',invalid_workout:'Не удалось найти тренировку или упражнение в активной программе. Выбери его из карточки.'});
 Object.assign(ERRORS,{progress_proposal_changed:'Предложение или данные уже изменились. Обнови разбор прогресса перед подтверждением; программа не изменена.'});
 Object.assign(ERRORS,{nutrition_plan_changed:'Рацион или данные профиля уже изменились. Обнови историю; при изменении цели или числа приёмов пищи составь новый черновик.',invalid_nutrition_plan:'Рацион не прошёл проверку порций и БЖУ. Он не был сохранён.',nutrition_preferences_conflict:'Не удалось составить сбалансированный базовый рацион с этими ограничениями. Уточни доступные продукты.'});
+Object.assign(ERRORS,{geo_not_configured:'Геосервис ещё не настроен.',geo_rate_limited:'Лимит местного поиска исчерпан. Повтори позже.',city_not_found:'Город не найден. Укажи город и страну.',ambiguous_city:'Найдено несколько городов. Укажи страну или регион.',location_consent_required:'Нужно согласие на поиск города.',invalid_location:'Укажи город и страну, без адреса или личных данных.'});
 Object.assign(ERRORS,{coach_not_public:'Этот профиль больше не доступен для публичного поиска. Попробуй новый подбор.'});
 const field=(title,input)=>`<label>${title}${input}</label>`;
 const options=(values,current)=>values.map(v=>{const [key,label]=Array.isArray(v)?v:[v,v];return `<option value="${esc(key)}"${key===current?' selected':''}>${esc(label)}</option>`;}).join('');
@@ -54,12 +56,14 @@ export function mountFitGoInAI(root,opts) {
   let intakeStep=0,profileConsent=false,savedIds=[],savedMessages=[],drawerOpen=false,requestActive=false,userStopped=false,searchDraft=false;
   let busy=false,status='',statusError=false,configured=false,controller=null,active=null,restTimer=null,recorder=null,micStream=null,voicePending=false,voiceTicket=0,voiceText='',draft='',lastLoad=0,readinessRequest=null,destroyed=false;
   let access={modules:[],checkout_enabled:false},food=[],analysis=null,module='training';
+  let localReady=false,localResult=null,localCity='';
   let pending=null,historyLimit=80,moreHistory=false,preferredConversation=null,progressPending=null,progressShown=30,workoutsShown=30,analysisReport=null;
   // Only this tab's draft and delivery state. Completed history lives in Supabase.
   const chatKey=()=>`fgi-ai-chat:${actor}`;
   function persistChat(){if(actor)try{sessionStorage.setItem(chatKey(),JSON.stringify({conversation_id:conversation?.id||preferredConversation,module,draft,searchDraft,pending,progressPending}));}catch{}}
   function restoreChat(){try{const saved=JSON.parse(sessionStorage.getItem(chatKey())||'null');if(!saved)return;preferredConversation=saved.conversation_id;module=saved.module==='nutrition'?'nutrition':'training';draft=typeof saved.draft==='string'?saved.draft.slice(0,5000):'';searchDraft=Boolean(saved.searchDraft);if(saved.pending?.body?.request_id&&saved.pending.body.message?.length<=5000)pending=saved.pending;if(saved.progressPending?.id&&saved.progressPending.user_id===actor)progressPending=saved.progressPending;}catch{}}
   const billingEndpoint=opts.endpoint.replace(/\/fitgoin-ai\/?$/,'/fitgoin-ai-billing');
+  const localEndpoint=opts.endpoint.replace(/\/fitgoin-ai\/?$/,'/fitgoin-local-discovery');
   const db=()=>opts.getDB();
   const q=s=>root.querySelector(s);
   const assert=e=>{if(e!==epoch||opts.getUser()?.id!==actor)throw Error('session_changed');};
@@ -72,7 +76,7 @@ export function mountFitGoInAI(root,opts) {
     if(actor)try{sessionStorage.removeItem(chatKey());}catch{}
     epoch++;controller?.abort();controller=null;stopVoice();clearInterval(restTimer);restTimer=null;
     programExpanded=false;actor=null;loaded=false;profile=null;profileDraft=null;conversation=null;conversations=[];messages=[];plans=[];sessions=[];progress=[];shares=[];received=[];photoURLs.clear();active=null;voiceText='';draft='';busy=false;status='';statusError=false;
-    access={modules:[],checkout_enabled:false};food=[];analysis=null;module='training';pending=null;historyLimit=80;moreHistory=false;preferredConversation=null;progressPending=null;progressShown=30;workoutsShown=30;analysisReport=null;
+    access={modules:[],checkout_enabled:false};food=[];analysis=null;module='training';pending=null;historyLimit=80;moreHistory=false;preferredConversation=null;progressPending=null;progressShown=30;workoutsShown=30;analysisReport=null;localReady=false;localResult=null;localCity='';
     intakeStep=0;profileConsent=false;savedIds=[];savedMessages=[];drawerOpen=false;requestActive=false;userStopped=false;searchDraft=false;view='ask';document.body.style.overflow='';
     if(window.speechSynthesis)window.speechSynthesis.cancel();
   }
@@ -83,13 +87,13 @@ export function mountFitGoInAI(root,opts) {
     catch(error){if(e!==epoch||error.message==='session_changed')return;notice(error.name==='AbortError'?'Ответ занял слишком много времени. Обнови историю перед повторным запросом.':ERRORS[error.message]||({subscription_required:'Для этого модуля нужна активная подписка. Открой «Доступ к AI».',monthly_limit:'Месячный ресурс AI исчерпан. Сохранённые планы и дневник доступны; ресурс обновляется в начале месяца UTC.',billing_not_configured:'Оплата пока отключена до проверки подключения AI и Stripe.',billing_unavailable:'Сервис оплаты временно недоступен. Доступ нельзя подтвердить; повтори позже.',checkout_pending:'Есть незавершённая оплата другого тарифа. Заверши её или дождись истечения ссылки, прежде чем выбрать новый тариф.',subscription_exists:'У тебя уже есть подписка или незавершённая оплата. Измени тариф в управлении подпиской.',invalid_image:'Не удалось обработать фото. Выбери JPEG, PNG или WebP до 12 МБ.',invalid_video:'Выбери MP4, WebM или MOV длительностью 1–45 секунд, до 25 МБ.',media_consent_required:'Для анализа нужно отдельное согласие на отправку изображения в AI.',request_too_large:'Файл слишком большой. Выбери более короткое видео или уменьшенное фото.',invalid_analysis:'Оценка изображения не прошла проверку. Она не сохранена в дневник.',invalid_food:'Проверь название, калории и БЖУ: все поля обязательны.',search_query_private:'Для поиска сформулируй общий спортивный вопрос без имени, города, контактов и личных измерений.',budget_unavailable:'AI временно недоступен: требуется проверка серверных лимитов.'}[error.message])||'Не удалось выполнить действие. Проверь подключение и повтори.',true);}
     finally{if(e===epoch){busy=false;requestActive=false;root.setAttribute('aria-busy','false');if(userStopped)notice('Остановили ожидание ответа. Запрос мог завершиться и сохраниться на сервере. Обнови историю перед повторной отправкой.',true);render();}}
   }
-  async function api(body,e=epoch,billing=false) {
+  async function api(body,e=epoch,billing=false,customEndpoint=null) {
     assert(e);const data=unwrap(await db().auth.getSession());assert(e);
     if(data.session?.user.id!==actor)throw Error('authentication_required');
     if(userStopped)throw new DOMException('Stopped','AbortError');
     const requestController=new AbortController();controller=requestController;const timeout=setTimeout(()=>requestController.abort(),65000);
     try{
-      const response=await fetch(billing?billingEndpoint:opts.endpoint,{method:'POST',headers:{Authorization:`Bearer ${data.session.access_token}`,'Content-Type':'application/json'},body:JSON.stringify(body),signal:requestController.signal});
+      const response=await fetch(customEndpoint||(billing?billingEndpoint:opts.endpoint),{method:'POST',headers:{Authorization:`Bearer ${data.session.access_token}`,'Content-Type':'application/json'},body:JSON.stringify(body),signal:requestController.signal});
       let result;try{result=await response.json();}catch{throw Error('connection_uncertain');}assert(e);if(!response.ok){const error=Error(result.error||'provider_unavailable');error.confirmed=true;throw error;}return result;
     } catch(error){if(error instanceof TypeError)throw Error('connection_uncertain');throw error;
     } finally{clearTimeout(timeout);if(controller===requestController)controller=null;}
@@ -105,11 +109,12 @@ export function mountFitGoInAI(root,opts) {
       db().from('fgi_ai_shares').select('*').eq('user_id',id).order('created_at',{ascending:false}),
       db().from('fgi_ai_shares').select('id,summary,created_at,expires_at').eq('coach_id',id).gt('expires_at',new Date().toISOString()).order('created_at',{ascending:false}),
       db().from('fgi_ai_food').select('*').eq('user_id',id).order('recorded_on',{ascending:false}).order('created_at',{ascending:false}).limit(365),
-      api({action:'access'},e,true).catch(error=>{if(error.message==='session_changed')throw error;return {modules:[],checkout_enabled:false,unavailable:true};})
+      api({action:'access'},e,true).catch(error=>{if(error.message==='session_changed')throw error;return {modules:[],checkout_enabled:false,unavailable:true};}),
+      fetch(localEndpoint,{method:'GET'}).then(r=>r.ok?r.json():null).catch(()=>null)
     ]);assert(e);
     [profile]=results.map(unwrap);conversations=unwrap(results[1]);conversation=conversations.find(x=>x.id===(conversation?.id||preferredConversation))||conversations[0]||null;plans=unwrap(results[2]);sessions=unwrap(results[3]);progress=unwrap(results[4]);shares=unwrap(results[5]);received=unwrap(results[6]);
     if(progressPending&&progress.some(x=>x.id===progressPending.id))progressPending=null;
-    food=unwrap(results[7]);access=results[8];if(!hasAccess(access,module)&&access.modules?.length)module=access.modules[0];
+    food=unwrap(results[7]);access=results[8];localReady=results[9]?.configured===true;if(!hasAccess(access,module)&&access.modules?.length)module=access.modules[0];
     const unfinished=sessions.filter(x=>!x.completed_at&&x.data?.workout&&x.data?.status==='active');
     active=unfinished.find(x=>x.id===profile?.data?.current_workout?.session_id)||unfinished.find(x=>x.id===active?.id)||(unfinished.length===1?unfinished[0]:null);
     if(conversation){const result=await db().from('fgi_ai_messages').select('*').eq('user_id',id).eq('conversation_id',conversation.id).order('created_at',{ascending:false}).order('request_id',{ascending:false}).order('role',{ascending:true}).limit(historyLimit+1);assert(e);const rows=unwrap(result);moreHistory=rows.length>historyLimit;messages=rows.slice(0,historyLimit).reverse();}
@@ -280,15 +285,16 @@ export function mountFitGoInAI(root,opts) {
       ${shares.length?`<div class="panel section-small"><h3>Переданные сводки</h3><p class="hint">Тренер видит только текст сводки до указанной даты. Отзыв доступа не удаляет копию, которую тренер уже сохранил.</p>${shares.map(s=>`<details><summary>${esc(opts.coachName(s.coach_id))} · до ${esc(new Date(s.expires_at).toLocaleDateString())}</summary><p class="fgi-ai-pre">${esc(s.summary)}</p>${button('revoke-share','Отозвать доступ',false,`data-share="${esc(s.id)}"`)}</details>`).join('')}</div>`:''}
       ${received.length?`<div class="panel section-small"><h3>Клиенты поделились с тобой</h3>${received.map(s=>`<details><summary>Сводка от ${esc(new Date(s.created_at).toLocaleDateString())}</summary><p class="fgi-ai-pre">${esc(s.summary)}</p><p class="hint">До ${esc(new Date(s.expires_at).toLocaleDateString())}. Используй данные только для согласованной работы с клиентом.</p></details>`).join('')}</div>`:''}`;
   }
+  function localView(){return localDiscoveryHTML({city:localCity||profile?.data?.city||'',language:profile?.data?.language||'fr',ready:localReady,result:localResult});}
   function render() {
     if(!actor){root.innerHTML='<div class="ai-workspace-loading"><h2>Твой спортивный помощник</h2><p>AI-тренировки и питание по подписке. Профиль, дневник и подбор тренера доступны без оплаты. Войди, чтобы сохранить свою историю.</p>'+button('login','Войти и начать',true)+'</div>';return;}
     if(!loaded){root.innerHTML='<div class="ai-workspace-loading"><p>Загружаем твоего помощника…</p><p data-ai-status role="status"></p>'+button('refresh','Повторить загрузку')+'</div>';notice(status,statusError);return;}
     const oldLog=q('.fgi-ai-messages'),oldTop=oldLog?.scrollTop||0,atBottom=!oldLog||oldLog.scrollHeight-oldLog.scrollTop-oldLog.clientHeight<80;
     const focused=document.activeElement,restoreFocus=focused?.matches('[data-ai-form=chat] [name=message]')&&root.contains(focused),selection=restoreFocus?[focused.selectionStart,focused.selectionEnd]:null;
-    const tabs=[['ask','✧','ai'],['today','◇','training'],['nutrition','◌','nutrition'],['progress','↗','progress'],['coaches','♡','match'],['saved','⌑','saved'],['profile','◎','profile'],['access','◈','access']];
+    const tabs=[['ask','✧','ai'],['today','◇','training'],['nutrition','◌','nutrition'],['progress','↗','progress'],['coaches','♡','match'],...(localReady&&access.modules?.length?[['local','⌖','local']]:[]),['saved','⌑','saved'],['profile','◎','profile'],['access','◈','access']];
     const show=!profile&&!['access','saved','profile'].includes(view)?'ask':view;
     root.innerHTML=`<div class="fgi-ai-shell${drawerOpen?' drawer-open':''}"><button type="button" class="ai-drawer-backdrop" data-ai-action="close-menu" aria-label="${t('close')}"></button><aside class="fgi-ai-sidebar" role="navigation" aria-label="${t('menu')}"><button type="button" class="ai-sidebar-close" data-ai-action="close-menu" aria-label="${t('close')}">×</button><div class="ai-side-brand"><div class="ai-side-mark" aria-hidden="true">✧</div><div><strong>FitGoIn AI</strong><small>PERSONAL BY DESIGN</small></div></div>${button('new-chat','＋ '+t('newChat'))}<nav class="fgi-ai-nav" aria-label="${t('menu')}">${tabs.map(([key,icon,label])=>`<button class="btn${show===key?' primary':''}" type="button" data-ai-view="${key}" aria-current="${show===key?'page':'false'}"><span class="ai-nav-icon" aria-hidden="true">${icon}</span>${t(label)}</button>`).join('')}</nav><p class="ai-history-label">${t('history')}</p><div class="ai-history">${conversations.slice(0,20).map(c=>`<button type="button" data-ai-history="${esc(c.id)}" aria-current="${c.id===conversation?.id}" title="${esc(c.title)}">${esc(c.title)}</button>`).join('')||'<p class="hint">Новые разговоры появятся здесь.</p>'}</div><a class="ai-side-help" href="./support.html">${t('help')} ↗</a></aside><div class="fgi-ai-main"><div class="ai-workspace-top"><div class="actions"><button type="button" class="ai-mobile-menu" data-ai-action="menu" aria-label="${t('menu')}" aria-expanded="${drawerOpen}">☰</button><strong>${t(tabs.find(x=>x[0]===show)?.[2]||'ai')}</strong></div><span class="tag">${access.friend?'По приглашению':access.modules?.length?'Подписка активна':'AI по подписке'}</span></div><div class="fgi-ai-availability">${configured?'Твой профиль, планы и история — в одном месте.':'AI-ответы пока не подключены; профиль и дневник доступны.'}</div><p class="fgi-ai-status${statusError?' error':''}" data-ai-status role="status">${esc(status)}</p>${statusError?`<div class="ai-error-actions">${button('refresh','Обновить историю')}</div>`:''}
-      ${voiceText?`<div class="panel fgi-ai-voice-review"><label>Проверь распознанный текст<textarea data-ai-voice-text rows="2" dir="auto">${esc(voiceText)}</textarea></label><div class="actions">${button('voice-use',active?'Выполнить команду / задать вопрос':'Перенести в вопрос',true)}${button('voice-dismiss','Закрыть')}</div><p class="hint">Голосовые команды выполняются только после подтверждения.</p></div>`:''}<div class="fgi-ai-content">${({profile:profileView,today:todayView,ask:chatView,nutrition:nutritionView,progress:progressView,coaches:coachesView,saved:savedView,access:accessView}[show]||chatView)()}</div></div><dialog data-ai-dialog></dialog></div>`;
+      ${voiceText?`<div class="panel fgi-ai-voice-review"><label>Проверь распознанный текст<textarea data-ai-voice-text rows="2" dir="auto">${esc(voiceText)}</textarea></label><div class="actions">${button('voice-use',active?'Выполнить команду / задать вопрос':'Перенести в вопрос',true)}${button('voice-dismiss','Закрыть')}</div><p class="hint">Голосовые команды выполняются только после подтверждения.</p></div>`:''}<div class="fgi-ai-content">${({profile:profileView,today:todayView,ask:chatView,nutrition:nutritionView,progress:progressView,coaches:coachesView,local:localView,saved:savedView,access:accessView}[show]||chatView)()}</div></div><dialog data-ai-dialog></dialog></div>`;
     updateRest();
     const log=q('.fgi-ai-messages');if(log)log.scrollTop=atBottom?log.scrollHeight:oldTop;
     if(restoreFocus){const field=q('[data-ai-form=chat] [name=message]');field?.focus({preventScroll:true});if(field&&selection)field.setSelectionRange(...selection);}
@@ -475,6 +481,13 @@ export function mountFitGoInAI(root,opts) {
   root.addEventListener('submit',event=>{
     const form=event.target.closest('[data-ai-form]');if(!form)return;event.preventDefault();if(busy)return;
     const name=form.dataset.aiForm;
+    if(name==='local'){
+      const fields=new FormData(form);const city=String(fields.get('city')||'').trim();
+      const category=String(fields.get('category')||'');
+      if(!fields.has('consent')){notice('Нужно согласие на поиск указанного города.',true);return;}
+      work(async e=>{const result=await api({city,category,language:profile?.data?.language||'fr',consent:true},e,false,localEndpoint);
+        assert(e);localCity=city;localResult=result;view='local';notice('Места найдены. Цены не подтверждены.');});return;
+    }
     if(name==='chat'){
       const f=new FormData(form),text=String(f.get('message')||'').trim();
       if(!text)return;
