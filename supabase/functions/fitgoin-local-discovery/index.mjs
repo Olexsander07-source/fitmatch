@@ -17,7 +17,7 @@ export function createLocalHandler({env=(name)=>Deno.env.get(name),fetcher=fetch
   const supabaseURL=String(get('SUPABASE_URL')||'').replace(/\/$/,'');
   const publicKey=get('SUPABASE_ANON_KEY')||firstKey(get('SUPABASE_PUBLISHABLE_KEYS'));
   const secret=get('SUPABASE_SERVICE_ROLE_KEY')||firstKey(get('SUPABASE_SECRET_KEYS'));
-  const mapsKey=get('GOOGLE_MAPS_SERVER_API_KEY');
+  const geoKey=get('GEOAPIFY_API_KEY');
   const enabled=get('FGI_LOCAL_GEO_ENABLED')==='true';
   const allowed=String(get('AI_ALLOWED_ORIGINS')||'https://fitgoin.com,https://www.fitgoin.com').split(',').map(x=>x.trim());
   return async request=>{
@@ -27,9 +27,9 @@ export function createLocalHandler({env=(name)=>Deno.env.get(name),fetcher=fetch
     if(origin&&!allowed.includes(origin))return response({error:'origin_not_allowed'},403,headers);
     if(origin)headers['Access-Control-Allow-Origin']=origin;
     if(request.method==='OPTIONS')return new Response(null,{status:204,headers});
-    if(request.method==='GET')return response({configured:Boolean(enabled&&mapsKey&&supabaseURL&&publicKey&&secret),
+    if(request.method==='GET')return response({configured:Boolean(enabled&&geoKey&&supabaseURL&&publicKey&&secret),
       enabled, radius_km:LOCAL_RADIUS_KM, categories:LOCAL_CATEGORIES,
-      prices_connected:false, source:'Google Maps Platform'},200,headers);
+      prices_connected:false, source:'Geoapify'},200,headers);
     if(request.method!=='POST')return response({error:'method_not_allowed'},405,headers);
     const token=request.headers.get('authorization')?.match(/^Bearer ([^\s]+)$/i)?.[1];
     if(!token||!supabaseURL||!publicKey||!secret)return response({error:'authentication_required'},401,headers);
@@ -47,7 +47,7 @@ export function createLocalHandler({env=(name)=>Deno.env.get(name),fetcher=fetch
         headers:{apikey:publicKey,Authorization:'Bearer '+token}});
       if(!auth?.id||!/^[a-f0-9-]{36}$/i.test(auth.id))return response({error:'authentication_required'},401,headers);
       // Even authenticated users cannot trigger paid provider calls until enabled.
-      if(!enabled||!mapsKey)return response({error:'geo_not_configured'},503,headers);
+      if(!enabled||!geoKey)return response({error:'geo_not_configured'},503,headers);
       const entitlement=await resultJSON(fetcher,supabaseURL+'/rest/v1/rpc/fgi_ai_access',{
         method:'POST',headers:{apikey:secret,Authorization:'Bearer '+secret,'Content-Type':'application/json'},
         body:JSON.stringify({p_user:auth.id,p_live:get('AI_BILLING_MODE')!=='test'})});
@@ -56,23 +56,28 @@ export function createLocalHandler({env=(name)=>Deno.env.get(name),fetcher=fetch
         method:'POST',headers:{apikey:secret,Authorization:'Bearer '+secret,'Content-Type':'application/json'},
         body:JSON.stringify({p_user:auth.id})});
       if(approved!==true)return response({error:'geo_rate_limited'},429,headers);
-      const query=new URL('https://maps.googleapis.com/maps/api/geocode/json');
-      query.searchParams.set('address',city);
-      query.searchParams.set('language',lang);
-      query.searchParams.set('key',mapsKey);
+      const query=new URL('https://api.geoapify.com/v1/geocode/search');
+      query.searchParams.set('text',city);
+      query.searchParams.set('type','city');
+      query.searchParams.set('lang',lang);
+      query.searchParams.set('format','json');
+      query.searchParams.set('limit','5');
+      query.searchParams.set('apiKey',geoKey);
       const geocoded=await resultJSON(fetcher,query.toString(),{headers:{Accept:'application/json'}});
       const center=cityCenter(geocoded);
       if(center.error)return response({error:center.error,...(center.choices?{choices:center.choices}:{})},422,headers);
-      const found=await resultJSON(fetcher,'https://places.googleapis.com/v1/places:searchNearby',{
-        method:'POST',headers:{'Content-Type':'application/json','X-Goog-Api-Key':mapsKey,
-          'X-Goog-FieldMask':'places.id,places.displayName,places.formattedAddress,places.location,places.googleMapsUri,places.businessStatus'},
-        body:JSON.stringify({includedTypes:LOCAL_CATEGORY_TYPES[category],maxResultCount:20,
-          rankPreference:'DISTANCE',languageCode:lang,
-          locationRestriction:{circle:{center:{latitude:center.lat,longitude:center.lng},radius:LOCAL_RADIUS_KM*1000}}})});
-      if(!Array.isArray(found?.places))throw {code:'service_unavailable',status:503};
+      const nearby=new URL('https://api.geoapify.com/v2/places');
+      nearby.searchParams.set('categories',LOCAL_CATEGORY_TYPES[category].join(','));
+      nearby.searchParams.set('filter','circle:'+center.lng+','+center.lat+','+(LOCAL_RADIUS_KM*1000));
+      nearby.searchParams.set('bias','proximity:'+center.lng+','+center.lat);
+      nearby.searchParams.set('lang',lang);
+      nearby.searchParams.set('limit','20');
+      nearby.searchParams.set('apiKey',geoKey);
+      const found=await resultJSON(fetcher,nearby.toString(),{headers:{Accept:'application/json'}});
+      if(!Array.isArray(found?.features))throw {code:'service_unavailable',status:503};
       return response({city:center.name,center:{latitude:center.lat,longitude:center.lng},
         radius_km:LOCAL_RADIUS_KM, distance_method:'straight_line',category,
-        results:normalizePlaces(found.places,center,{category}),source:'Google Maps Platform',
+        results:normalizePlaces(found.features,center,{category}),source:'Geoapify',
         checked_at:new Date().toISOString(),price_status:'not_verified'},200,headers);
     } catch(error){
       const code=['authentication_required','service_unavailable','geo_rate_limited'].includes(error?.code)?error.code:'service_unavailable';
