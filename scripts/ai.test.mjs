@@ -344,7 +344,7 @@ test('2B chat uses the saved profile to generate and commit a structured program
 test('2B intake asks only missing fields and durable pending intent creates after the final memory reply',async()=>{
  const partial={...PROFILE};delete partial.equipment;delete partial.minutes;
  const missing=setup({profile:partial,response:providerResponse({answer:'Какая у тебя цель?',memory_updates:[]})});
- const question=await (await missing.request({message:'Создай программу тренировок'})).json();assert.equal(question.kind,null);assert.equal(question.program_pending,true);assert.deepEqual(question.missing_fields,['minutes','equipment']);assert(!question.answer.includes('цель'));assert(missing.calls.find(c=>c.url.endsWith('/rpc/fgi_ai_complete')).body.p_result.program_pending);
+ const question=await (await missing.request({message:'Создай программу тренировок'})).json();assert.equal(question.kind,null);assert.equal(question.program_pending,true);assert.deepEqual(question.missing_fields,['minutes']);assert(!question.answer.includes('цель'));assert(missing.calls.find(c=>c.url.endsWith('/rpc/fgi_ai_complete')).body.p_result.program_pending);
  const message='Из оборудования у меня коврик. Обычно тренируюсь по 30 минут.';
  const finish=setup({profile:{...partial,program_pending:true},responses:[providerResponse({answer:'Спасибо.',memory_updates:[{field:'equipment',value:'коврик',evidence:'Из оборудования у меня коврик.'},{field:'minutes',value:'30',evidence:'Обычно тренируюсь по 30 минут.'}]}),providerResponse(program())]});
  const result=await (await finish.request({message})).json();assert.equal(result.program_saved,true);assert.equal(result.memory_saved,true);assert.equal(result.profile_snapshot.equipment,'коврик');
@@ -416,9 +416,9 @@ test('2C suggested replacement does not become active until the separate confirm
  const failed=setup({plans:[plan],profile:{...PROFILE,program_edit_pending:pending.program_edit_pending},completeFails:true}),error=await failed.request({message:'Сохрани замену'});assert.equal(error.status,503);assert.equal((await error.json()).program_saved,undefined);
  const changed=setup({plans:[plan],profile:{...PROFILE,goal:'Выносливость',program_edit_pending:pending.program_edit_pending}}),stale=await changed.request({message:'Сохрани замену'});assert.equal(stale.status,409);assert.equal((await stale.json()).program_saved,undefined);assert(!changed.calls.some(c=>c.url.endsWith('/rpc/fgi_ai_complete')));
 });
-test('2C new gym place preserves old version until equipment is explicitly supplied; nutrition cannot edit training',async()=>{
- const plan=activeFixture(),message='Я теперь хожу в зал',updates=[{field:'setting',value:'gym',evidence:message}],s=setup({plans:[plan],response:providerResponse({answer:'Сменим упражнения.',memory_updates:updates})});
- const result=await (await s.request({message})).json();assert.equal(result.program_pending,true);assert.equal(result.kind,null);assert.deepEqual(result.missing_fields,['equipment']);
+test('2C new gym place regenerates a plan without requiring an equipment list; nutrition cannot edit training',async()=>{
+ const plan=activeFixture(),message='Я теперь хожу в зал',updates=[{field:'setting',value:'gym',evidence:message}],s=setup({plans:[plan],responses:[providerResponse({answer:'Сменим упражнения.',memory_updates:updates}),providerResponse(program())]});
+ const result=await (await s.request({message})).json();assert.equal(result.program_saved,true);assert.equal(result.kind,'training');assert.equal(result.profile_snapshot.setting,'gym');assert(!result.missing_fields?.includes('equipment'));
  const other=setup({plans:[plan],response:providerResponse({answer:'Обсуди программу в модуле тренировок.',memory_updates:[]})});assert.equal((await (await other.request({module:'nutrition',message:'Замени приседания'})).json()).program_saved,undefined);
 });
 
