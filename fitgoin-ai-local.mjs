@@ -29,7 +29,7 @@ export function localDiscoveryHTML({city='',language='fr',ready=false,result=nul
    '<h3>',esc(result.city),' · ',esc(result.radius_km),' km</h3>',
    rows.length?'<div class="fgi-local-results">'+cards+'</div>':'<p>'+s.empty+'</p>',
    '<p class="hint">',s.note,'</p><p class="hint">',s.checked,': ',
-   esc(String(result.checked_at||'').slice(0,16)),' · Google Maps Platform</p>'
+   esc(String(result.checked_at||'').slice(0,16)),' · <span class="fgi-google-attribution" translate="no">Google Maps</span></p>'
  ].join(''):'';
  return '<section class="fgi-local" data-ai-local><h2>'+s.title+'</h2><p>'+s.intro+'</p>'+form+found+'</section>';
 }

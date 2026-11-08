@@ -23,7 +23,7 @@
 - SQL RPC: 4 lookups/user/UTC day and 100 total site-wide/UTC month; function executable by service_role only. Users have no SELECT on quota table.
 - One city geocode and one category Nearby Search per authorized request (up to 20 results). No retries on disabled config, failed Auth or exhausted quota.
 - Only verified locations and independently distance-filtered results are displayed; prices and stock deliberately absent.
-- Google Maps attribution accompanies results. Check current Google Maps Platform terms and EEA rules.
+- The literal text Google Maps is displayed alongside results with translate=no, as required for text attribution on compact screens; review current Places API attribution guidelines, Terms of Use and Privacy Policy before launch.
 
 ## Tests and launch
 
