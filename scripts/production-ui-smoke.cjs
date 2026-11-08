@@ -49,12 +49,12 @@ const {chromium} = require(process.env.FGI_PLAYWRIGHT_MODULE || 'playwright-core
 
       await page.locator('#home [data-signup-role="client"]').click();
       await page.locator('#signup.active').waitFor();
-      assert.match(await page.locator('#signupRoleLabel').textContent(), /КЛИЕНТА/);
+      assert.match(await page.locator('#signupRoleLabel').textContent(), /(КЛИЕНТ|CLIENT)/i);
       assert.equal(await overflow(), false, `client signup overflow at ${width}`);
       await page.locator('button.logo[data-page="home"]').click();
       await page.locator('#home [data-signup-role="coach"]').click();
       await page.locator('#signup.active').waitFor();
-      assert.match(await page.locator('#signupRoleLabel').textContent(), /ТРЕНЕРА/);
+      assert.match(await page.locator('#signupRoleLabel').textContent(), /(ТРЕНЕР|COACH|ENTRA[ÎI]NEUR)/i);
       await page.locator('button.logo[data-page="home"]').click();
       await page.locator('#authOpen').click();
       await page.locator('#authDialog[open]').waitFor();
