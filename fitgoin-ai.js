@@ -133,7 +133,7 @@ export function mountFitGoInAI(root,opts) {
       field('Возраст',input('age',p.age,'number','min="13" max="100" required'))+
       field('Твой опыт',select('experience',[['beginner','Начинающий'],['intermediate','Есть опыт'],['advanced','Опытный']],p.experience)),
       field('Где занимаешься',select('setting',[['home','Дома'],['gym','В зале'],['outdoor','На улице']],p.setting))+
-      field('Оборудование',input('equipment',p.equipment,'text','maxlength="600" placeholder="Коврик, гантели, оборудование зала…"'))+
+      field('Оборудование (необязательно)',input('equipment',p.equipment,'text','maxlength="600" placeholder="Для зала заполнять не нужно; дома — если есть инвентарь"'))+
       field('Тренировок в неделю',input('days_per_week',p.days_per_week,'number','min="1" max="6" step="1" required'))+
       field('Минут на тренировку',input('minutes',p.minutes,'number','min="10" max="90" step="1" required'))+
       `<fieldset class="fgi-ai-checks full"><legend>Дни тренировок · можно выбрать позже</legend>${[1,2,3,4,5,6,0].map(day=>`<label><input type="checkbox" name="weekday" value="${day}"${p.weekdays.includes(day)?' checked':''}>${DAYS[day]}</label>`).join('')}</fieldset>`,
@@ -144,7 +144,7 @@ export function mountFitGoInAI(root,opts) {
       field('Язык ответов',select('language',Object.entries(LANGUAGES),p.language))+
       field('Стиль общения',select('response_style',[['short','Коротко и по делу'],['detailed','С подробными объяснениями']],p.response_style))+
       `<fieldset class="fgi-ai-checks full"><legend>Аллергены · исключить из меню</legend>${ALLERGENS.map((x,i)=>`<label><input type="checkbox" name="allergy" value="${x}"${p.allergies.includes(x)?' checked':''}>${ALLERGEN_LABELS[i]}</label>`).join('')}</fieldset>`,
-      `<div class="ai-intake-summary full"><strong>${esc(p.goal||'Выбери цель')}</strong><br>${esc(opts.sports().find(x=>x[0]===p.sport)?.[1]||p.sport||'Спорт можно добавить позже')} · ${p.days_per_week} раза в неделю · ${p.minutes} мин<br>${esc(p.setting==='gym'?'В зале':p.setting==='outdoor'?'На улице':'Дома')} · ${esc(p.equipment||'Оборудование не указано')}</div>`+
+      `<div class="ai-intake-summary full"><strong>${esc(p.goal||'Выбери цель')}</strong><br>${esc(opts.sports().find(x=>x[0]===p.sport)?.[1]||p.sport||'Спорт можно добавить позже')} · ${p.days_per_week} раза в неделю · ${p.minutes} мин<br>${esc(p.setting==='gym'?'В зале':p.setting==='outdoor'?'На улице':'Дома')} · ${esc(p.equipment||(p.setting==='gym'?'Стандартное оборудование зала':'Упражнения без инвентаря'))}</div>`+
       field('Город для поиска тренера',input('city',p.city,'text','maxlength="100"'))+
       field('Формат с тренером',select('format',[['','Любой'],['Онлайн','Онлайн'],['Офлайн','Офлайн']],p.format))+
       field('Бюджет, € · необязательно',input('budget',p.budget,'number','min="0" max="100" step="0.01"'))+
