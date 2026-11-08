@@ -20,7 +20,7 @@ export function mountStage5({getDB,getUser,getThread,getCoaches,getLocale,naviga
  section('bookings','<p class="eyebrow">FITGOIN</p><h1 id="fgiBT"></h1><button class="btn" id="fgiBR" type="button"></button><p id="fgiBE" role="status"></p><div class="stack" id="fgiBL"></div>');
  section('alerts','<p class="eyebrow">FITGOIN</p><h1 id="fgiNT"></h1><button class="btn" id="fgiNR" type="button"></button><button class="btn" id="fgiAllRead" type="button">✓</button><p id="fgiNE" role="status"></p><div class="stack" id="fgiNL"></div>');
  section('support','<p class="eyebrow">FITGOIN</p><h1 id="fgiST"></h1><div class="panel"><form id="fgiSupportForm" class="stack"><label><select name="category" required><option value="problem">Problem</option><option value="question">Question</option><option value="suggestion">Suggestion</option></select></label><label><span id="fgiSL"></span><input name="subject" minlength="6" maxlength="140" required></label><label><span id="fgiDL"></span><textarea name="body" rows="5" minlength="10" maxlength="6000" required></textarea></label><button class="btn primary" type="submit" id="fgiSS"></button><p id="fgiSE" role="status"></p></form></div><div class="stack" id="fgiSM"></div>');
- section('owner','<p class="eyebrow">FITGOIN</p><h1 id="fgiOT"></h1><div class="panel"><strong>Owner • FitGoIn</strong><p id="fgiON"></p><button class="btn" id="fgiOR" type="button"></button></div><p id="fgiOE" role="status"></p><div class="stack" id="fgiOL"></div>');
+ section('owner','<p class="eyebrow">FITGOIN</p><h1 id="fgiOT"></h1><div class="panel"><strong>Owner • FitGoIn</strong><p><button class="btn small" type="button" data-page="dashboard">Client</button> <button class="btn small" type="button" data-page="match">MATCH</button> <button class="btn small" type="button" data-page="account">Coach</button> <button class="btn small" type="button" data-page="ai">FitGoIn AI</button></p><p id="fgiON"></p><button class="btn" id="fgiOR" type="button"></button></div><p id="fgiOE" role="status"></p><div class="stack" id="fgiOL"></div>');
  const form=document.createElement('form');form.id='fgiBookingForm';form.className='panel';form.hidden=true;
  form.innerHTML='<h3 id="fgiFT"></h3><label>Date <input name="date" type="date" required></label><label>Time <input name="time" type="time" value="18:00" required></label><label>Minutes <select name="duration"><option>30</option><option>45</option><option selected>60</option><option>90</option><option>120</option></select></label><label>Note <textarea name="note" maxlength="1000" rows="2"></textarea></label><button class="btn primary" type="submit" id="fgiFS"></button><p id="fgiFE" role="status"></p>';
  const original=$('messageForm');original.parentNode.insertBefore(form,original);
@@ -96,7 +96,7 @@ export function mountStage5({getDB,getUser,getThread,getCoaches,getLocale,naviga
  async function guarded(button,action,id){
   if(button?.disabled)return;
   if(button)button.disabled=true;
-  try{await action();msg(id,'');}catch(e){report(id,e);}finally{if(button)button.disabled=false;}
+  try{msg(id,'');await action();}catch(e){report(id,e);}finally{if(button)button.disabled=false;}
  }
  open.addEventListener('click',()=>{form.hidden=!form.hidden;form.querySelector('[name=date]').min=localDate();});
  form.addEventListener('submit',e=>{
@@ -150,5 +150,5 @@ export function mountStage5({getDB,getUser,getThread,getCoaches,getLocale,naviga
  }
  labels();onThread();
  document.addEventListener('fitgoin:localechange',()=>onPage(document.querySelector('.page.active')?.id));
- return {sessionChanged,onPage,onThread};
+ return {sessionChanged,onPage,onThread,isOwner:()=>owner};
 }
