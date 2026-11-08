@@ -1,0 +1,50 @@
+# Private FitGoIn translation engine: Argos/LibreTranslate, no paid translation API.
+# Reverse proxy provides HTTPS; only POST /translate is publicly routed.
+services:
+  libretranslate:
+    image: libretranslate/libretranslate:v1.9.6
+    restart: unless-stopped
+    expose:
+      - "5000"
+    environment:
+      LT_LOAD_ONLY: "en,fr,ru,uk,de,es,it,pt,pl"
+      LT_UPDATE_MODELS: "true"
+      LT_API_KEYS: "true"
+      LT_REQUIRE_API_KEY_SECRET: "true"
+      LT_API_KEYS_DB_PATH: "/app/db/api_keys.db"
+      LT_REQ_LIMIT: "0"
+      LT_CHAR_LIMIT: "4000"
+      LT_DISABLE_WEB_UI: "true"
+      LT_DISABLE_FILES_TRANSLATION: "true"
+      LT_THREADS: "2"
+    volumes:
+      - translation_models:/home/libretranslate/.local:rw
+      - translation_keys:/app/db:rw
+    healthcheck:
+      test: ['CMD-SHELL', './venv/bin/python scripts/healthcheck.py']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 180s
+
+  caddy:
+    image: caddy:2.10.2
+    restart: unless-stopped
+    depends_on:
+      libretranslate:
+        condition: service_started
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      TRANSLATE_HOSTNAME: ${TRANSLATE_HOSTNAME:?Set TRANSLATE_HOSTNAME in local .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  translation_models:
+  translation_keys:
+  caddy_data:
+  caddy_config:
