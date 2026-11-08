@@ -19,6 +19,7 @@
 ## Cost / privacy safeguards
 
 - Optional per-search consent; no background geolocation, GPS or user diet, injuries, name, email or chat shared with Google.
+- Existing FitGoIn AI entitlement is checked server-side before location spending; no paid AI access means no geocoding calls.
 - SQL RPC: 4 lookups/user/UTC day and 100 total site-wide/UTC month; function executable by service_role only. Users have no SELECT on quota table.
 - One city geocode and one category Nearby Search per authorized request (up to 20 results). No retries on disabled config, failed Auth or exhausted quota.
 - Only verified locations and independently distance-filtered results are displayed; prices and stock deliberately absent.
@@ -26,5 +27,5 @@
 
 ## Tests and launch
 
-Run npm run check and npm run build. Unit tests cover categories, consent, city validation, Auth, quota, radius, disabled startup, and non-fabricated prices. 
+Run npm run check and npm run build. Unit tests cover categories, consent, city validation, Auth, subscription entitlement, quota, radius, disabled startup, and non-fabricated prices.
 Do not enable the API until an actual key, Google Cloud API usage quotas, and billing alerts are configured. Run a live authenticated test, inspect logs, and check charges before wider release.

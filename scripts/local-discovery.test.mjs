@@ -30,6 +30,7 @@ const fake=(opts={})=>{
  const fetcher=async (url,init={})=>{
   calls.push({url,init});
   if(url.endsWith('/auth/v1/user'))return reply(opts.auth===false?{error:'invalid'}:{id:actor},opts.auth===false?401:200);
+  if(url.endsWith('/rest/v1/rpc/fgi_ai_access'))return reply({modules:opts.access===false?[]:['training']});
   if(url.endsWith('/rest/v1/rpc/fgi_local_claim'))return reply(opts.quota===false?false:true);
   if(url.startsWith('https://maps.googleapis.com/'))return reply(opts.geocode??geo);
   if(url.startsWith('https://places.googleapis.com/'))return reply(opts.places??places);
@@ -100,4 +101,11 @@ test('local UI remains hidden without API key and escapes server text',()=>{
  assert(enabled.includes('&lt;img src=x onerror=alert(1)&gt;'));
  assert(!enabled.includes('<img src=x'));
  assert(enabled.includes('Цена не подтверждена'));
+});
+
+test('users without paid AI access never consume location provider quota',async()=>{
+ const a=fake({access:false});const response=await a.handler(request(body));
+ assert.equal(response.status,402);assert.equal((await response.json()).error,'subscription_required');
+ assert.equal(a.calls.filter(x=>x.url.startsWith('https://maps.')).length,0);
+ assert.equal(a.calls.filter(x=>x.url.endsWith('/rpc/fgi_local_claim')).length,0);
 });

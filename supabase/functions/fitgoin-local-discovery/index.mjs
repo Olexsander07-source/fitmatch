@@ -48,6 +48,10 @@ export function createLocalHandler({env=(name)=>Deno.env.get(name),fetcher=fetch
       if(!auth?.id||!/^[a-f0-9-]{36}$/i.test(auth.id))return response({error:'authentication_required'},401,headers);
       // Even authenticated users cannot trigger paid provider calls until enabled.
       if(!enabled||!mapsKey)return response({error:'geo_not_configured'},503,headers);
+      const entitlement=await resultJSON(fetcher,supabaseURL+'/rest/v1/rpc/fgi_ai_access',{
+        method:'POST',headers:{apikey:secret,Authorization:'Bearer '+secret,'Content-Type':'application/json'},
+        body:JSON.stringify({p_user:auth.id,p_live:get('AI_BILLING_MODE')!=='test'})});
+      if(!Array.isArray(entitlement?.modules)||!entitlement.modules.length)return response({error:'subscription_required'},402,headers);
       const approved=await resultJSON(fetcher,supabaseURL+'/rest/v1/rpc/fgi_local_claim',{
         method:'POST',headers:{apikey:secret,Authorization:'Bearer '+secret,'Content-Type':'application/json'},
         body:JSON.stringify({p_user:auth.id})});
