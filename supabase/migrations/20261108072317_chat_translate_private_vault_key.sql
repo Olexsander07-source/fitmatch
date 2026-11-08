@@ -1,4 +1,4 @@
-﻿-- Grant only the already-privileged Supabase service_role access to the
+-- Grant only the already-privileged Supabase service_role access to the
 -- translator API key encrypted by Supabase Vault. This is SECURITY INVOKER:
 -- it cannot bypass privilege checks for callers. No key is hardcoded here.
 CREATE OR REPLACE FUNCTION public.fgi_chat_translate_key()
