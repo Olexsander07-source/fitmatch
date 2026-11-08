@@ -121,3 +121,13 @@ test('simple Geoapify secret enables search, while explicit false disables it',a
  assert.equal(r.status,503);
  assert.equal(stopped.calls.filter(x=>x.url.startsWith('https://api.geoapify.com')).length,0);
 });
+
+test('standard secret also enables search without a separate switch',async()=>{
+ const t=fake({env:{FGI_LOCAL_GEO_ENABLED:undefined}});
+ const ready=await t.handler(new Request('https://example.com/'));
+ assert.equal((await ready.json()).configured,true);
+ assert.equal((await t.handler(request(body))).status,200);
+ const stopped=fake({env:{FGI_LOCAL_GEO_ENABLED:'false'}});
+ assert.equal((await stopped.handler(request(body))).status,503);
+ assert.equal(stopped.calls.filter(x=>x.url.startsWith('https://api.geoapify.com')).length,0);
+});

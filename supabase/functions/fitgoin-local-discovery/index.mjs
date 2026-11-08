@@ -20,8 +20,8 @@ export function createLocalHandler({env=(name)=>Deno.env.get(name),fetcher=fetch
   const simpleKey=get('Geoapify');
   const geoKey=simpleKey||get('GEOAPIFY_API_KEY');
   const geoSwitch=get('FGI_LOCAL_GEO_ENABLED');
-  // The simple key opts in; an explicit false remains a kill switch.
-  const enabled=geoSwitch==='true'||(geoSwitch!=='false'&&Boolean(simpleKey));
+  // Saving a key opts in when no switch is configured; explicit false stays a kill switch.
+  const enabled=geoSwitch==='true'||(!geoSwitch&&Boolean(geoKey));
   const allowed=String(get('AI_ALLOWED_ORIGINS')||'https://fitgoin.com,https://www.fitgoin.com').split(',').map(x=>x.trim());
   return async request=>{
     const origin=request.headers.get('origin');
