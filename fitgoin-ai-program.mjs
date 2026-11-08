@@ -25,19 +25,23 @@ export function missingProgramQuestion(data){
  return `Для программы осталось уточнить: ${labels.join(' и ')}. ${missing.includes('restrictions')&&missing.length<=2?'Есть ли важные ограничения или травмы? Если их нет, так и скажи.':'Расскажи об этом; уже сохранённые данные повторять не нужно.'}`;
 }
 const lower=s=>String(s).toLocaleLowerCase().replace(/ё/g,'е');
-const equipmentGroups=[/гантел|dumbbell/,/коврик|mat\b/,/штанг|barbell/,/скамь|bench/,/турник|pull.?up/,/резин|эспандер|band/,/гир[яьи]|kettlebell/,/тренажер|machine/];
-export function availableEquipment(required,inventory,excluded=[]){
+const equipmentGroups=[/гантел|dumbbell/,/коврик|mat\b/,/штанг|barbell/,/скамь|bench/,/турник|pull.?up/,/резин|эспандер|band/,/гир[яьи]|kettlebell/,/тренажер|machine/,/кроссовер|cable|блочн|блоков/,/смит|smith/];
+export function availableEquipment(required,inventory,excluded=[],setting='home'){
  if(/^(?:без оборудования|собственный вес|none|bodyweight|no equipment)$/i.test(required.trim()))return true;
  const wanted=lower(required),actual=lower(inventory);
  if(excluded.some(x=>equipmentGroups.some(r=>r.test(lower(x))&&r.test(wanted))||wanted.includes(lower(x))))return false;
  const groups=equipmentGroups.filter(r=>r.test(wanted));
  const amounts=required.match(/\d+(?:[.,]\d+)?/g)||[];
  if(amounts.some(n=>!(inventory.match(/\d+(?:[.,]\d+)?/g)||[]).includes(n)))return false;
+ // A regular gym offers common training equipment without an exhaustive user inventory.
+ // An explicit no-equipment statement or a named exclusion always takes priority.
+ const noEquipment=/^(?:без оборудования|нет оборудования|no equipment|none|bodyweight|sans matériel)$/i.test(actual.trim());
+ if(setting==='gym'&&!noEquipment&&groups.length)return true;
  return groups.length?groups.every(r=>r.test(actual)):actual.includes(wanted);
 }
-export function usableAlternative(exercise,inventory,level,excluded=[]){
+export function usableAlternative(exercise,inventory,level,excluded=[],setting='home'){
  const e=exercise,alternative=lower(e.alternative),primary=lower(e.required_equipment),gear=lower(e.alternative_equipment);
- if(!availableEquipment(gear,inventory,excluded)||alternative===lower(e.name))return false;
+ if(!availableEquipment(gear,inventory,excluded,setting)||alternative===lower(e.name))return false;
  if(equipmentGroups.some(r=>r.test(primary)&&r.test(gear)))return false;
  if(level==='beginner'&&/пистолет|одноног|на одной ноге|pistol|one.leg|single.leg/i.test(alternative))return false;
  if(level==='beginner'&&/отжиман|push.?up/i.test(alternative)&&!(/стен|колен|wall|knee|высок|incline/i.test(alternative)))return false;
@@ -85,8 +89,8 @@ export function validateProgram(doc,data){
    insist(e.sets>=1&&e.sets<=5,'sets');
    insist(e.rest_seconds>=0&&e.rest_seconds<=240&&(e.sets===1||e.rest_seconds>=30),'rest_seconds');
    insist(e.minutes>=.5&&e.minutes<=30,'exercise_duration');
-   insist(availableEquipment(e.required_equipment,p.equipment,data.unavailable_equipment),'equipment');
-   insist(usableAlternative(e,p.equipment,p.experience,data.unavailable_equipment),'alternative');
+   insist(availableEquipment(e.required_equipment,p.equipment||'',data.unavailable_equipment,p.setting),'equipment');
+   insist(usableAlternative(e,p.equipment||'',p.experience,data.unavailable_equipment,p.setting),'alternative');
    insist(e.minutes*60>=exerciseSeconds(e),'exercise_time',{workout:w.day,exercise:w.exercises.indexOf(e)+1,received_minutes:e.minutes,min_minutes:Math.ceil(exerciseSeconds(e)/30)/2});
    total+=e.minutes;
   }

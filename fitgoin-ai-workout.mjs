@@ -107,7 +107,7 @@ export function targetsForEdit(plan,data,message,target,pending){
   return stems.length&&stems.some(stem=>lower(x.exercise.name).includes(stem));
  });
 }
-export function equipmentTargets(plan,data){return (plan?.document.workouts||[]).flatMap(w=>w.exercises.filter(e=>!availableEquipment(e.required_equipment,data.equipment||'',data.unavailable_equipment)).map(e=>({workout:w,exercise:e})));}
+export function equipmentTargets(plan,data){return (plan?.document.workouts||[]).flatMap(w=>w.exercises.filter(e=>!availableEquipment(e.required_equipment,data.equipment||'',data.unavailable_equipment,data.setting)).map(e=>({workout:w,exercise:e})));}
 const object=properties=>({type:'object',additionalProperties:false,properties,required:Object.keys(properties)});
 export const EDIT_SCHEMA=object({explanation:{type:'string'},replacements:{type:'array',items:object({workout_id:{type:'string'},exercise_id:{type:'string'},exercise:PROGRAM_SCHEMA.properties.workouts.items.properties.exercises.items})}});
 
@@ -136,7 +136,7 @@ export function applyExerciseEdits(plan,data,targets,changes,timezone){
 }
 export function adaptationNeeded(before,after){return ['goal','target','experience','training_experience','days_per_week','minutes','setting','equipment','restrictions','weekdays','unavailable_equipment'].some(k=>JSON.stringify(before[k])!==JSON.stringify(after[k]));}
 export function scheduleOnly(before,after){return ['goal','target','experience','training_experience','days_per_week','minutes','setting','equipment','restrictions','unavailable_equipment'].every(k=>JSON.stringify(before[k])===JSON.stringify(after[k]));}
-export function equipmentOnly(before,after){return ['goal','target','experience','training_experience','days_per_week','minutes','restrictions'].every(k=>JSON.stringify(before[k])===JSON.stringify(after[k]));}
+export function equipmentOnly(before,after){return ['goal','target','experience','training_experience','days_per_week','minutes','setting','restrictions'].every(k=>JSON.stringify(before[k])===JSON.stringify(after[k]));}
 export function cursorForVersion(cursor,oldPlan,newID,doc){
  if(!cursor||!oldPlan||cursor.plan_id!==oldPlan.id)return null;
  const w=doc.workouts.find(w=>w.id===cursor.workout_id);return w?{...cursor,plan_id:newID,index:Math.min(cursor.index,w.exercises.length)}:null;
