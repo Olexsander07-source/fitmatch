@@ -173,7 +173,7 @@ function requireUser(action = '') {
 function closeDialogs() { document.querySelectorAll('dialog[open]:not(#callDialog):not(#incomingCallDialog)').forEach(d => d.close()); }
 function page(id, push = true) {
   if (!$(id)?.classList.contains('page')) id = 'home';
-  const routed=premium?.route(id)||id;
+  const routed=stage5?.isOwner()?id:(premium?.route(id)||id);
   if(routed==='login'){requireUser(id);return;}
   if(routed==='own-profile'){openProfile(user.id,push).catch(e=>notice(explain(e)));return;}
   id=routed;
