@@ -17,8 +17,11 @@ export function createLocalHandler({env=(name)=>Deno.env.get(name),fetcher=fetch
   const supabaseURL=String(get('SUPABASE_URL')||'').replace(/\/$/,'');
   const publicKey=get('SUPABASE_ANON_KEY')||firstKey(get('SUPABASE_PUBLISHABLE_KEYS'));
   const secret=get('SUPABASE_SERVICE_ROLE_KEY')||firstKey(get('SUPABASE_SECRET_KEYS'));
-  const geoKey=get('GEOAPIFY_API_KEY');
-  const enabled=get('FGI_LOCAL_GEO_ENABLED')==='true';
+  const simpleKey=get('Geoapify');
+  const geoKey=simpleKey||get('GEOAPIFY_API_KEY');
+  const geoSwitch=get('FGI_LOCAL_GEO_ENABLED');
+  // The simple key opts in; an explicit false remains a kill switch.
+  const enabled=geoSwitch==='true'||(geoSwitch!=='false'&&Boolean(simpleKey));
   const allowed=String(get('AI_ALLOWED_ORIGINS')||'https://fitgoin.com,https://www.fitgoin.com').split(',').map(x=>x.trim());
   return async request=>{
     const origin=request.headers.get('origin');

@@ -106,3 +106,18 @@ test('users without AI access do not consume provider quota',async()=>{
  assert.equal(a.calls.filter(x=>x.url.startsWith('https://api.geoapify.com')).length,0);
  assert.equal(a.calls.filter(x=>x.url.endsWith('/rpc/fgi_local_claim')).length,0);
 });
+
+test('simple Geoapify secret enables search, while explicit false disables it',async()=>{
+ const simple={GEOAPIFY_API_KEY:'',Geoapify:'simple-test-key',FGI_LOCAL_GEO_ENABLED:undefined};
+ const active=fake({env:simple});
+ const ready=await active.handler(new Request('https://example.com/'));
+ assert.equal((await ready.json()).configured,true);
+ const result=await active.handler(request(body));
+ assert.equal(result.status,200);
+ const query=new URL(active.calls.find(x=>x.url.startsWith('https://api.geoapify.com/v1/')).url);
+ assert.equal(query.searchParams.get('apiKey'),'simple-test-key');
+ const stopped=fake({env:{...simple,FGI_LOCAL_GEO_ENABLED:'false'}});
+ const r=await stopped.handler(request(body));
+ assert.equal(r.status,503);
+ assert.equal(stopped.calls.filter(x=>x.url.startsWith('https://api.geoapify.com')).length,0);
+});
