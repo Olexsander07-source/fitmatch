@@ -231,7 +231,7 @@ test('provider quota errors never trigger a plan repair',async()=>{
 });
 
 test('sports memory has no invented form defaults and distinguishes unknown restrictions from none',()=>{
- assert.deepEqual(sportsMemory({}),{});assert.equal(missingSportsMemory({}).length,7);
+ assert.deepEqual(sportsMemory({}),{});assert.equal(missingSportsMemory({}).length,6);
  assert.deepEqual(missingSportsMemory({goal:'Сила',experience:'beginner',days_per_week:3,minutes:30,setting:'home',equipment:'Коврик',restrictions:''}),['restrictions']);
  assert.deepEqual(missingSportsMemory({goal:'Сила',experience:'beginner',days_per_week:3,minutes:30,setting:'home',equipment:'Коврик',restrictions:'',memory_confirmed_fields:['restrictions']}),[]);
 });
@@ -239,7 +239,7 @@ test('explicit current updates merge once, preserve other data and invalidate ol
  const message='Мой вес сейчас 82 кг. Теперь могу тренироваться 4 раза в неделю. Я теперь тренируюсь в зале.';
  const updates=[{field:'weight_kg',value:'82',evidence:'Мой вес сейчас 82 кг'},{field:'days_per_week',value:'4',evidence:'Теперь могу тренироваться 4 раза в неделю'},{field:'setting',value:'gym',evidence:'Я теперь тренируюсь в зале'}];
  const saved=prepareMemoryPatch({...PROFILE,name:'Макс',diet:'vegan',memory_confirmed_fields:['equipment']},updates,message);
- assert.equal(saved.data.weight_kg,82);assert.equal(saved.data.days_per_week,4);assert.equal(saved.data.setting,'gym');assert.equal(saved.data.name,'Макс');assert.equal(saved.data.diet,'vegan');assert.equal(saved.data.equipment,'');assert.deepEqual(saved.data.weekdays,[]);assert(missingSportsMemory(saved.data).includes('equipment'));
+ assert.equal(saved.data.weight_kg,82);assert.equal(saved.data.days_per_week,4);assert.equal(saved.data.setting,'gym');assert.equal(saved.data.name,'Макс');assert.equal(saved.data.diet,'vegan');assert.equal(saved.data.equipment,'');assert.deepEqual(saved.data.weekdays,[]);assert(!missingSportsMemory(saved.data).includes('equipment'));
 });
 test('memory rejects unsupported evidence, inferred fields, third-party examples, duplicates and unsafe numbers',()=>{
  const good={field:'weight_kg',value:'82',evidence:'Мой вес 82 кг'};
@@ -283,6 +283,22 @@ test('rejected memory extraction cannot reach the database completion transactio
  const s=setup({response:providerResponse({answer:'Сохранил.',memory_updates:[{field:'weight_kg',value:'82',evidence:'Мой вес 82 кг'}]})});const response=await s.request({message:'Расскажи про разминку'});assert.equal(response.status,422);assert.equal((await response.json()).error,'memory_update_invalid');assert(!s.calls.some(c=>c.url.endsWith('/rpc/fgi_ai_complete')));
 });
 const program=()=>({...training(),workouts:training().workouts.map((w,i)=>({...w,day:i+1,objective:'Общее развитие силы',exercises:w.exercises.map(e=>({...e,required_equipment:'Без оборудования',alternative_equipment:'Без оборудования'}))}))});
+test('gym assumes common equipment while home without inventory defaults to bodyweight',()=>{
+ const facts={goal:'Сила',experience:'beginner',days_per_week:3,minutes:30,setting:'gym',restrictions:'',memory_confirmed_fields:['restrictions']};
+ assert.deepEqual(missingSportsMemory(facts),[]);
+ assert.deepEqual(missingSportsMemory({...facts,setting:'home'}),[]);
+ assert.equal(availableEquipment('Штанга','',[],'gym'),true);
+ assert.equal(availableEquipment('Кроссовер','',[],'gym'),true);
+ assert.equal(availableEquipment('Штанга 30 кг','',[],'gym'),false);
+ assert.equal(availableEquipment('Штанга','',['Штанга'],'gym'),false);
+ assert.equal(availableEquipment('Штанга','Без оборудования',[],'gym'),false);
+ assert.equal(availableEquipment('Штанга','',[],'home'),false);
+ assert.equal(availableEquipment('Без оборудования','',[],'home'),true);
+ const gymProgram=program();gymProgram.workouts[0].exercises[0].required_equipment='Штанга';
+ assert.doesNotThrow(()=>validateProgram(gymProgram,facts));
+ assert.throws(()=>validateProgram(gymProgram,{...facts,setting:'home'}),/invalid_plan/);
+ assert.throws(()=>validateProgram(gymProgram,{...facts,unavailable_equipment:['Штанга']}),/invalid_plan/);
+});
 test('2B recognizes creation and all saved-program queries, without treating examples as actions',()=>{
  for(const s of ['Составь мне программу','Создай программу тренировок','Что мне лучше тренировать?'])assert.equal(programIntent(s),'create');
  for(const s of ['Покажи мою программу','Какая у меня программа?'])assert.equal(programIntent(s),'show');
