@@ -37,11 +37,17 @@ within their standard function limits. Server hosting/networking may cost money.
    with a short French → Russian example and the private key (for instance
    via an interactive REST client that doesn't save credentials to shell history).
    Verify language detection and RU/FR/EN/UK conversions; review quality.
-6. In **Supabase Edge Function Secrets** set exactly:
-   `FGI_TRANSLATE_URL=https://translate.fitgoin.com`
-   and `FGI_TRANSLATE_API_KEY=<key from step 4>`.
-   Never put these into the frontend. This replaces the old chat-specific
-   OpenAI translation dependency (AI Trainer keeps its own API credentials).
+6. Store the local translator API key in **one** server-only place:
+   - Supabase Edge Function Secrets: `FGI_TRANSLATE_API_KEY=<local key>` and,
+     optionally, `FGI_TRANSLATE_URL=https://translate.fitgoin.com`; **or**
+   - Supabase Vault: apply the `chat_translate_private_vault_key` migration,
+     then create one encrypted Vault secret named
+     `fgi_chat_translate_private_api_key`. The `fgi_chat_translate_key` RPC
+     is `SECURITY INVOKER`, executable **only by `service_role`**. It is called
+     only after checking the user's JWT and chat message RLS. Never make this
+     function public for `anon` or `authenticated`.
+   Never commit the secret or send it to the frontend. OpenAI is used only
+   by the separate AI Trainer, not by chat message translation.
 7. Deploy `supabase/functions/fitgoin-chat-translate/index.mjs` together
    with `fitgoin-chat-translation-core.mjs` as dependencies. Keep
    `verify_jwt=false` because the function explicitly validates the user's

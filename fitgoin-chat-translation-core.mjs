@@ -13,6 +13,8 @@ const COUNTRIES=Object.freeze({
   HU:'hu',RO:'ro',BG:'bg',HR:'hr',TR:'tr',JP:'ja',KR:'ko',
   CN:'zh',TW:'zh',IN:'hi',SA:'ar',AE:'ar',EG:'ar',MA:'ar',DZ:'ar',
 });
+export const ACTIVE_TRANSLATION_LANGUAGES=Object.freeze(['en','fr','ru','uk','de','es','it','pt','pl']);
+const activeLanguages=new Set(ACTIVE_TRANSLATION_LANGUAGES);
 const multilingual=new Set(['BE','CH','LU','CA','IN','SG','ZA']);
 export const validChatLanguage=value=>typeof value==='string'&&Object.hasOwn(CHAT_LANGUAGE_NAMES,value)?value:null;
 export function chatLanguageForRegion({country='',browserLanguage='',siteLanguage='en',manualSite=false,chatChoice=''}={}){
@@ -31,7 +33,7 @@ export class TranslationError extends Error {
 export function validateTranslateRequest(input){
   if(!input||typeof input!=='object'||Array.isArray(input))throw new TranslationError('invalid_request');
   const language=validChatLanguage(input.target_language);
-  if(!language)throw new TranslationError('unsupported_language',422);
+  if(!language||!activeLanguages.has(language))throw new TranslationError('unsupported_language',422);
   if(!Array.isArray(input.message_ids)||!input.message_ids.length||input.message_ids.length>6)throw new TranslationError('invalid_message_ids');
   const ids=input.message_ids;
   if(ids.some(id=>!Number.isSafeInteger(id)||id<=0)||new Set(ids).size!==ids.length)throw new TranslationError('invalid_message_ids');

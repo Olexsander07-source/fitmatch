@@ -4,7 +4,7 @@ import {mountFitGoInAI} from './fitgoin-ai.js?v=20261004-premium';
 import {mountPremium} from './fitgoin-premium.js';
 import {workspaceRole,BRAND_IMAGES} from './fitgoin-premium-core.mjs';
 import {t,initLocale,getLocale,getRegionCountry,hasManualLocale} from './fitgoin-i18n.mjs';
-import {CHAT_LANGUAGE_NAMES,chatLanguageForRegion} from './fitgoin-chat-translation-core.mjs';
+import {CHAT_LANGUAGE_NAMES,ACTIVE_TRANSLATION_LANGUAGES,chatLanguageForRegion} from './fitgoin-chat-translation-core.mjs';
 import {matchSportKey,formatFits,formMatchPreferences,rankCoaches} from './fitgoin-match-core.mjs';
 let aiAssistant=null;
 let premium=null;
@@ -1376,8 +1376,9 @@ const chatTranslations=new Map(),translationFailures=new Set(),originalMessages=
 let translatingChat=false,chatLanguageOverride='';
 const chatLanguageKey='fitgoin_chat_language_v1';
 function chatLanguage(){
-  return chatLanguageForRegion({country:getRegionCountry(),browserLanguage:navigator.languages?.[0]||navigator.language,
+  const preferred=chatLanguageForRegion({country:getRegionCountry(),browserLanguage:navigator.languages?.[0]||navigator.language,
     siteLanguage:getLocale(),manualSite:hasManualLocale(),chatChoice:chatLanguageOverride});
+  return ACTIVE_TRANSLATION_LANGUAGES.includes(preferred)?preferred:'en';
 }
 function refreshChatLanguage(){
   const language=chatLanguage(),display=getLocale(),select=$('chatLanguage');
@@ -1478,7 +1479,7 @@ async function pollMessages(initial = false, older = false) {
 function bindChat() {
   try{chatLanguageOverride=localStorage.getItem(chatLanguageKey)||'';}catch{}
   if(typeof CHAT_LANGUAGE_NAMES==='object' && typeof chatLanguageForRegion==='function'){
-    $('chatLanguage').innerHTML=Object.entries(CHAT_LANGUAGE_NAMES).map(([code,label])=>'<option value="'+esc(code)+'">'+esc(label)+'</option>').join('');
+    $('chatLanguage').innerHTML=Object.entries(CHAT_LANGUAGE_NAMES).filter(([code])=>ACTIVE_TRANSLATION_LANGUAGES.includes(code)).map(([code,label])=>'<option value="'+esc(code)+'">'+esc(label)+'</option>').join('');
     refreshChatLanguage();
     $('chatLanguage').onchange=e=>{chatLanguageOverride=e.target.value;try{localStorage.setItem(chatLanguageKey,chatLanguageOverride);}catch{}drawMessages();void translateIncomingMessages();};
     $('messages').addEventListener('click',e=>{

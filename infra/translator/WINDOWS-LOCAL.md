@@ -39,11 +39,12 @@ server authentication, Supabase secrets and two-user smoke tests are complete.
   `translate.fitgoin.com`, routing only to `http://127.0.0.1:5000`.
   Never expose port 5000 directly or use a temporary trycloudflare.com address
   as a production endpoint.
-- In Supabase Edge Function Secrets create `FGI_TRANSLATE_URL` (HTTPS
-  hostname) and `FGI_TRANSLATE_API_KEY` (private local key). Their values must
-  remain server-only. Do not call OpenAI or Microsoft for chat translation.
-- Deploy the draft `fitgoin-chat-translate` Edge Function **after** both
-  secrets and HTTPS reachability are confirmed. Retain auth/RLS access checks
+- In Supabase, either use Edge Function Secrets or store the private
+  translator key in encrypted Vault with the service_role-only RPC created
+  by the `chat_translate_private_vault_key` migration. Keep all keys server-only.
+- Deploy the draft `fitgoin-chat-translate` Edge Function **after**
+  secure Vault/Edge configuration and HTTPS reachability are confirmed.
+  Retain auth/RLS access checks
   and message cache. Then smoke-test two actual user accounts in both
   directions, including cached reads and service failure fallback.
 - Windows can auto-start translator+tunnel at account logon, but it will still

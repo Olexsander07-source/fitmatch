@@ -8,15 +8,15 @@ export function createTranslationHandler({env,fetcher=fetch}={}){
   const pub=get('SUPABASE_ANON_KEY')||mapKey(get('SUPABASE_PUBLISHABLE_KEYS'));
   const secret=get('SUPABASE_SERVICE_ROLE_KEY')||mapKey(get('SUPABASE_SECRET_KEYS'));
   // Only our own LibreTranslate installation is allowed. No OpenAI, Azure or
-  // public translation mirror. The URL and API key come from Edge secrets.
-  const translatorUrl=String(get('FGI_TRANSLATE_URL')||'').trim().replace(/\/+$/,'');
-  const translatorKey=String(get('FGI_TRANSLATE_API_KEY')||'').trim();
+  // public translation mirror. The key is server-only: Edge secret or Vault RPC.
+  const translatorUrl=String(get('FGI_TRANSLATE_URL')||'https://translate.fitgoin.com').trim().replace(/\/+$/,'');
+  const configuredKey=String(get('FGI_TRANSLATE_API_KEY')||'').trim();
   let translateEndpoint='';
   try{
     const endpoint=new URL(translatorUrl+'/translate');
     if(endpoint.protocol==='https:'&&endpoint.hostname&&
-       !endpoint.username&&!endpoint.password&&!endpoint.search&&!endpoint.hash&&
-       translatorKey)translateEndpoint=endpoint.href;
+       !endpoint.username&&!endpoint.password&&!endpoint.search&&!endpoint.hash)
+       translateEndpoint=endpoint.href;
   }catch{}
 
   const allowed=(get('AI_ALLOWED_ORIGINS')||'https://fitgoin.com,https://www.fitgoin.com').split(',').map(x=>x.trim());
@@ -62,6 +62,14 @@ export function createTranslationHandler({env,fetcher=fetch}={}){
         const midnight=new Date().toISOString().slice(0,10)+'T00:00:00Z';
         const count=await rest('/rest/v1/fgi_message_translations?'+new URLSearchParams({select:'message_id',requested_by:'eq.'+actor,created_at:'gte.'+midnight,limit:'121'}),{admin:true});
         if(!Array.isArray(count)||count.length+remaining.length>120)throw new TranslationError('translation_daily_limit',429);
+        // Fetch the encrypted Vault key only for an authorized, uncached request.
+        // The service_role RPC is SECURITY INVOKER, never available to browsers.
+        let translatorKey=configuredKey;
+        if(!translatorKey){
+          const vault=await rest('/rest/v1/rpc/fgi_chat_translate_key',{admin:true,method:'POST',body:{}});
+          if(typeof vault?.api_key==='string')translatorKey=vault.api_key.trim();
+        }
+        if(!translatorKey)throw new TranslationError('translation_unavailable',503);
         const translated=new Map();
         // Process in small batches to avoid exhausting the owner's translation CPU.
         // The messages are never sent to a third-party translation service.
