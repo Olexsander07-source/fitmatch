@@ -1,12 +1,14 @@
 import { copyFile, mkdir, rm, writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
+import { EXERCISE_DEMOS } from '../fitgoin-exercise-demo.mjs';
 
 const out = new URL('../.deploy/', import.meta.url);
 const files = ['index.html', 'fitmatch.js', 'styles.css', 'fitgoin-ai.js', 'fitgoin-ai-core.mjs', 'fitgoin-ai-paid.mjs', 'fitgoin-ai-media.mjs', 'fitgoin-ai.css', 'cookie-consent.js', 'robots.txt', 'sitemap.xml', 'favicon.svg', 'site.webmanifest', 'privacy.html', 'terms.html', 'ai-pricing.html', 'legal.html', 'cookies.html', 'support.html', '_headers'];
 
-files.push('fitgoin-stage5.mjs','fitgoin-chat-translation-core.mjs','fitgoin-fr.mjs','fitgoin-ai-coach-cards.mjs','fitgoin-coach-card-core.mjs','fitgoin-match-core.mjs','fitgoin-premium.js','fitgoin-premium-core.mjs','fitgoin-i18n.mjs','fitgoin-premium.css','fitgoin-ai-memory.mjs','fitgoin-ai-program.mjs','fitgoin-ai-workout.mjs','fitgoin-ai-local.mjs');
+files.push('fitgoin-stage5.mjs','fitgoin-chat-translation-core.mjs','fitgoin-fr.mjs','fitgoin-ai-coach-cards.mjs','fitgoin-coach-card-core.mjs','fitgoin-match-core.mjs','fitgoin-premium.js','fitgoin-premium-core.mjs','fitgoin-i18n.mjs','fitgoin-premium.css','fitgoin-ai-memory.mjs','fitgoin-ai-program.mjs','fitgoin-ai-workout.mjs','fitgoin-ai-local.mjs','fitgoin-exercise-demo.mjs');
 for(const name of ['coaching','online','boxing'])for(const width of [800,1600])files.push(`assets/brand/${name}-${width}.webp`);
+for(const demo of EXERCISE_DEMOS)if(demo.provider==='ymove')files.push(`assets/exercise-demo/${demo.id}.mp4`);
 await rm(out, { recursive: true, force: true });
 await mkdir(out, { recursive: true });
 
