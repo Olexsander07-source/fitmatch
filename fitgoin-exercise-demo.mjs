@@ -90,7 +90,7 @@ export function exerciseDemoHTML(exercise, t) {
   let player;
   if (demo.provider === 'ymove') {
     const url = `./assets/exercise-demo/${demo.id}.mp4`;
-    player = `<video class="ai-exercise-video" controls playsinline preload="none" aria-label="${esc(title)}"><source src="${esc(url)}" type="video/mp4">${esc(t('exerciseVideoUnsupported'))}</video><p><a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(t('exerciseVideoOpen'))} ↗</a></p>`;
+    player = `<p class="hint" role="status" data-exercise-status data-loading-message="${esc(t('exerciseVideoLoading'))}" data-error-message="${esc(t('exerciseVideoError'))}">${esc(t('exerciseVideoLoading'))}</p><video class="ai-exercise-video" controls playsinline preload="none" hidden data-exercise-mp4="${esc(url)}" aria-label="${esc(title)}">${esc(t('exerciseVideoUnsupported'))}</video><p><a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(t('exerciseVideoOpen'))} ↗</a></p>`;
   } else {
     // The iframe is created only when a visitor opens this specific video.
     player = `<div class="ai-exercise-video-frame" data-exercise-player data-video-id="${esc(demo.id)}" data-video-title="${esc(title)}"></div><p class="hint">${esc(t('exerciseVideoEnglish'))}</p><p><a href="https://www.youtube.com/watch?v=${esc(demo.id)}" target="_blank" rel="noopener noreferrer">${esc(t('exerciseVideoOpen'))} ↗</a></p>`;
@@ -98,9 +98,58 @@ export function exerciseDemoHTML(exercise, t) {
   return `<details class="ai-exercise-demo"><summary>${heading}</summary>${player}<p class="hint">${esc(t('exerciseVideoSource'))}: ${esc(source)}</p><p>${searchLink}</p></details>`;
 }
 
-export function loadExerciseVideo(details) {
-  if (!details?.open) return;
+// Static assets return the full file for Range requests, which Safari may not
+// play. Fetch each small clip on demand and play a local blob URL instead.
+// The map also lets the UI cancel/release memory when a card is closed or
+// the app rerenders while a download is in flight.
+const activeVideos = new Map();
+function releaseVideo(video) {
+  const state = activeVideos.get(video);
+  if (!state) return;
+  activeVideos.delete(video);
+  state.controller.abort();
+  if (state.objectURL) URL.revokeObjectURL(state.objectURL);
+  video.pause();
+  video.removeAttribute('src');
+  video.hidden = true;
+  video.load();
+}
+export function releaseExerciseVideos(root) {
+  for (const video of activeVideos.keys()) if (root.contains(video)) releaseVideo(video);
+}
+
+export async function loadExerciseVideo(details) {
+  if (!details) return;
+  const video = details.querySelector('[data-exercise-mp4]');
   const player = details.querySelector('[data-exercise-player]');
+  if (!details.open) {
+    if (video) releaseVideo(video);
+    if (player) player.replaceChildren();
+    return;
+  }
+  if (video) {
+    if (activeVideos.has(video)) return;
+    const status = details.querySelector('[data-exercise-status]');
+    const state = {controller:new AbortController(),objectURL:null};
+    activeVideos.set(video,state);
+    if (status) {status.hidden=false;status.textContent=status.dataset.loadingMessage||status.textContent;}
+    try {
+      const response = await fetch(video.dataset.exerciseMp4,{signal:state.controller.signal});
+      if (!response.ok) throw new Error('video_unavailable');
+      const blob = await response.blob();
+      if (activeVideos.get(video)!==state || !details.open) return;
+      state.objectURL = URL.createObjectURL(blob);
+      video.src = state.objectURL;
+      video.hidden = false;
+      if (status) status.hidden = true;
+      video.load();
+    } catch (error) {
+      if (activeVideos.get(video)!==state) return;
+      activeVideos.delete(video);
+      if (status) {status.hidden=false;status.textContent=status.dataset.errorMessage||'Video unavailable';}
+    }
+    return;
+  }
   if (!player || player.firstElementChild) return;
   const id = player.dataset.videoId;
   if (!/^[a-zA-Z0-9_-]{11}$/.test(id || '')) return;

@@ -34,7 +34,7 @@ const server=createServer((req,res)=>{
   const file=path.resolve(repo,'.'+url.pathname);
   if(!file.startsWith(repo+path.sep)||!fs.existsSync(file)||!fs.statSync(file).isFile()){res.writeHead(404);res.end();return}
   const size=fs.statSync(file).size,headers={'Content-Type':types[path.extname(file)]||'application/octet-stream','Accept-Ranges':'bytes'};
-  if(req.headers.range){const match=/bytes=(\d+)-(\d*)/.exec(req.headers.range);if(!match){res.writeHead(416);res.end();return}const start=Number(match[1]),end=match[2]?Math.min(Number(match[2]),size-1):size-1;res.writeHead(206,{...headers,'Content-Range':`bytes ${start}-${end}/${size}`,'Content-Length':end-start+1});fs.createReadStream(file,{start,end}).pipe(res);return}
+  // Simulate Cloudflare's static assets, which ignore Range even for MP4.
   res.writeHead(200,{...headers,'Content-Length':size});fs.createReadStream(file).pipe(res);
 });
 (async()=>{
@@ -43,16 +43,21 @@ const server=createServer((req,res)=>{
  const browser=await chromium.launch({headless:true,executablePath:process.env.FGI_AI_CHROME||undefined});
  try{
   for(const width of [390,1200]){
-   const page=await browser.newPage({viewport:{width,height:860}});const errors=[];let embeds=0;
+   const page=await browser.newPage({viewport:{width,height:860}});const errors=[];let embeds=0,videoRequests=0;
    page.on('pageerror',e=>errors.push(e.message));
+   page.on('request',request=>{if(request.url().includes('/assets/exercise-demo/'))videoRequests++});
    await page.route('https://www.youtube-nocookie.com/**',route=>{embeds++;route.fulfill({status:200,contentType:'text/html',body:'<html><body>Embedded demo fixture</body></html>'})});
    await page.goto(base+'/fixture?mode=plan');
    await page.locator('details.ai-program-details > summary').click();
    const bench=page.locator('[data-program-exercise="bench"]'),squat=page.locator('[data-program-exercise="squat"]'),unknown=page.locator('[data-program-exercise="unknown"]');
+   assert.equal(videoRequests,0,'clip loaded before opening its demonstration');
    await bench.locator('.ai-exercise-demo > summary').click();
    const video=bench.locator('video');assert.equal(await video.count(),1);
+   await page.waitForFunction(()=>document.querySelector('[data-program-exercise="bench"] video')?.src.startsWith('blob:'));
    await video.evaluate(async v=>{await v.play()});
    await page.waitForFunction(()=>document.querySelector('[data-program-exercise="bench"] video')?.videoWidth>0);
+   await bench.locator('.ai-exercise-demo > summary').click();
+   await page.waitForFunction(()=>!document.querySelector('[data-program-exercise="bench"] video')?.getAttribute('src'));
    assert.equal(embeds,0,'YouTube loaded before opening its demonstration');
    await squat.locator('.ai-exercise-demo > summary').click();
    await page.waitForFunction(()=>Boolean(document.querySelector('[data-program-exercise="squat"] iframe')));

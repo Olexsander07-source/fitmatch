@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {EXERCISE_DEMOS,findExerciseDemo,exerciseDemoHTML,loadExerciseVideo} from '../fitgoin-exercise-demo.mjs';
+import {EXERCISE_DEMOS,findExerciseDemo,exerciseDemoHTML,loadExerciseVideo,releaseExerciseVideos} from '../fitgoin-exercise-demo.mjs';
 import {setLocale,t} from '../fitgoin-i18n.mjs';
 
 test('curated video names and identifiers are unique and resolve exactly', () => {
@@ -49,18 +49,52 @@ test('video and safe fallback are localized and never fabricate an embedded matc
   assert.match(injected,/%3Cscript%3E/);
 });
 
-test('YouTube player loads only after opening and never trusts arbitrary ids', () => {
+test('YouTube player loads only after opening and never trusts arbitrary ids', async () => {
   const children=[];
   const player={dataset:{videoId:'l83R5PblSMA',videoTitle:'Squat'},firstElementChild:null,
     ownerDocument:{createElement:tag=>({tag})},appendChild(frame){children.push(frame);this.firstElementChild=frame;}};
-  const details={open:false,querySelector:()=>player};
-  loadExerciseVideo(details);
+  player.replaceChildren=()=>{player.firstElementChild=null};
+  const details={open:false,querySelector:selector=>selector==='[data-exercise-player]'?player:null};
+  await loadExerciseVideo(details);
   assert.equal(children.length,0);
-  details.open=true;loadExerciseVideo(details);loadExerciseVideo(details);
+  details.open=true;await loadExerciseVideo(details);await loadExerciseVideo(details);
   assert.equal(children.length,1);
   assert.equal(children[0].src,'https://www.youtube-nocookie.com/embed/l83R5PblSMA');
   assert.equal(children[0].title,'Squat');
   const unsafe={...player,dataset:{videoId:'bad" onload="x'},firstElementChild:null};
-  loadExerciseVideo({open:true,querySelector:()=>unsafe});
+  await loadExerciseVideo({open:true,querySelector:selector=>selector==='[data-exercise-player]'?unsafe:null});
   assert.equal(children.length,1);
+});
+
+test('bundled clips load on demand as browser-local blobs and release resources', async () => {
+  const originalFetch=globalThis.fetch;
+  let requests=0,loads=0,pauses=0;
+  const video={dataset:{exerciseMp4:'./assets/exercise-demo/example.mp4'},hidden:true,
+    load(){loads++},pause(){pauses++},removeAttribute(name){if(name==='src')this.src=''}};
+  const status={hidden:false,textContent:'Loading',dataset:{loadingMessage:'Loading',errorMessage:'Failed'}};
+  const details={open:false,querySelector:selector=>selector==='[data-exercise-mp4]'?video:selector==='[data-exercise-status]'?status:null};
+  globalThis.fetch=async()=>{requests++;return new Response(new Blob(['fixture'],{type:'video/mp4'}))};
+  try {
+    await loadExerciseVideo(details);assert.equal(requests,0);
+    details.open=true;await loadExerciseVideo(details);
+    assert.equal(requests,1);assert.match(video.src,/^blob:/);assert.equal(video.hidden,false);assert.equal(status.hidden,true);
+    await loadExerciseVideo(details);assert.equal(requests,1);
+    releaseExerciseVideos({contains:item=>item===video});
+    assert.equal(video.src,'');assert.equal(video.hidden,true);assert.equal(pauses,1);assert.ok(loads>=2);
+    await loadExerciseVideo(details);assert.equal(requests,2);
+    details.open=false;await loadExerciseVideo(details);assert.equal(pauses,2);
+  } finally {globalThis.fetch=originalFetch;releaseExerciseVideos({contains:()=>true})}
+});
+
+test('a failed clip download reports an error and can be retried', async () => {
+  const originalFetch=globalThis.fetch;let requests=0;
+  const video={dataset:{exerciseMp4:'./assets/exercise-demo/example.mp4'},hidden:true,
+    load(){},pause(){},removeAttribute(){}};
+  const status={hidden:false,textContent:'Loading',dataset:{loadingMessage:'Loading',errorMessage:'Failed'}};
+  const details={open:true,querySelector:selector=>selector==='[data-exercise-mp4]'?video:selector==='[data-exercise-status]'?status:null};
+  globalThis.fetch=async()=>{requests++;return new Response('',{status:503})};
+  try {
+    await loadExerciseVideo(details);assert.equal(status.textContent,'Failed');assert.equal(video.hidden,true);
+    await loadExerciseVideo(details);assert.equal(requests,2);
+  } finally {globalThis.fetch=originalFetch;releaseExerciseVideos({contains:()=>true})}
 });

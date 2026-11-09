@@ -7,7 +7,7 @@ import {sportsMemory,MEMORY_LABELS,memoryDisplayValue} from './fitgoin-ai-memory
 import {activeProgram,programOutdated,calendarWorkout} from './fitgoin-ai-program.mjs';
 import {currentWorkout} from './fitgoin-ai-workout.mjs';
 import {localLabel,localDiscoveryHTML} from './fitgoin-ai-local.mjs';
-import {exerciseDemoHTML,loadExerciseVideo} from './fitgoin-exercise-demo.mjs';
+import {exerciseDemoHTML,loadExerciseVideo,releaseExerciseVideos} from './fitgoin-exercise-demo.mjs';
 
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -74,6 +74,7 @@ export function mountFitGoInAI(root,opts) {
     micStream?.getTracks().forEach(t=>t.stop());micStream=null;
   }
   function reset() {
+    releaseExerciseVideos(root);
     if(actor)try{sessionStorage.removeItem(chatKey());}catch{}
     epoch++;controller?.abort();controller=null;stopVoice();clearInterval(restTimer);restTimer=null;
     programExpanded=false;actor=null;loaded=false;profile=null;profileDraft=null;conversation=null;conversations=[];messages=[];plans=[];sessions=[];progress=[];shares=[];received=[];photoURLs.clear();active=null;voiceText='';draft='';busy=false;status='';statusError=false;
@@ -288,6 +289,7 @@ export function mountFitGoInAI(root,opts) {
   }
   function localView(){return localDiscoveryHTML({city:localCity||profile?.data?.city||'',language:profile?.data?.language||'fr',ready:localReady,result:localResult});}
   function render() {
+    releaseExerciseVideos(root);
     if(!actor){root.innerHTML='<div class="ai-workspace-loading"><h2>Твой спортивный помощник</h2><p>AI-тренировки и питание по подписке. Профиль, дневник и подбор тренера доступны без оплаты. Войди, чтобы сохранить свою историю.</p>'+button('login','Войти и начать',true)+'</div>';return;}
     if(!loaded){root.innerHTML='<div class="ai-workspace-loading"><p>Загружаем твоего помощника…</p><p data-ai-status role="status"></p>'+button('refresh','Повторить загрузку')+'</div>';notice(status,statusError);return;}
     const oldLog=q('.fgi-ai-messages'),oldTop=oldLog?.scrollTop||0,atBottom=!oldLog||oldLog.scrollHeight-oldLog.scrollTop-oldLog.clientHeight<80;
@@ -523,6 +525,8 @@ export function mountFitGoInAI(root,opts) {
   // Capture non-bubbling details toggles; videos load only after opening.
   root.addEventListener('toggle',event=>{
     if(event.target.matches?.('.ai-exercise-demo'))loadExerciseVideo(event.target);
+    else if(event.target.matches?.('details')&&!event.target.open)
+      event.target.querySelectorAll('.ai-exercise-demo[open]').forEach(details=>{details.open=false;});
   },true);
   root.addEventListener('click',event=>{
     const quick=event.target.closest('[data-ai-quick]');if(quick&&!busy){const action=quick.dataset.aiQuick;if(action==='nutrition'){module='nutrition';view='nutrition';persistChat();render();return;}if(action==='today'||action==='coach'){view=action==='today'?'today':'coaches';render();return;}if(action==='question'){view='ask';render();q('[name=message]')?.focus();return;}if(draft.trim()){notice('Сначала отправь или измени уже набранный вопрос.');q('[name=message]')?.focus();return;}draft=action==='training'?'Создай недельную программу тренировок по моему профилю.':'Помоги с питанием: ';searchDraft=false;module=action==='nutrition'?'nutrition':'training';persistChat();render();q('[name=message]')?.focus();return;}
