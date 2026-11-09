@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {validBooking,validSupport} from '../fitgoin-stage5.mjs';
+import {validBooking,validSupport,bookingError} from '../fitgoin-stage5.mjs';
 
 test('client appointment form rejects malformed and out-of-range inputs',()=>{
  assert.equal(validBooking('2026-11-20','18:00','60'),true);
@@ -9,7 +9,18 @@ test('client appointment form rejects malformed and out-of-range inputs',()=>{
  assert.equal(validBooking('2026-11-20','24:00','30'),false);
  assert.equal(validBooking('2026-11-20','18:00','10'),false);
  assert.equal(validBooking('whatever','18:00','60'),false);
+ assert.equal(validBooking('2026-02-31','18:00','60'),false);
+ assert.equal(validBooking('2028-02-29','18:00','60'),true);
+ assert.equal(validBooking('2027-02-29','18:00','60'),false);
+ assert.equal(validBooking('2026-11-20','18:00','60.5'),false);
 });
+test('occupied booking slots produce actionable localized errors',()=>{
+ assert.match(bookingError({message:'coach_time_unavailable'},'ru'),/занято/);
+ assert.match(bookingError({message:'coach_time_unavailable'},'fr'),/réservé/);
+ assert.match(bookingError({message:'coach_time_unavailable'},'en'),/booked/);
+ assert.equal(bookingError({message:'invalid_booking_time'},'ru'),'invalid_booking_time');
+});
+
 test('support reports have minimum and maximum lengths',()=>{
  assert(validSupport('Trainer profile bug','Messages are failing to load.'));
  assert(!validSupport('Bug','Not working'));

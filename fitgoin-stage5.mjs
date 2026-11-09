@@ -5,7 +5,17 @@ const translations={
  ru:['Бронирования','Уведомления','Поддержка','Кабинет владельца','Запросить тренировку','Подтвердить','Отклонить','Отменить','Завершить','Отправить','Обновить','Пока пусто','Сообщить о проблеме','Тема','Описание','Отправить в поддержку','Обращение сохранено','Ответ','Сохранить','Прочитано']
 };
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-export function validBooking(date,time,duration){return /^\d{4}-\d\d-\d\d$/.test(String(date))&&/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(String(time))&&Number(duration)>=15&&Number(duration)<=240;}
+export function validBooking(date,time,duration){
+ const iso=String(date),mins=Number(duration);
+ if(!/^\d{4}-\d\d-\d\d$/.test(iso)||!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(String(time))||!Number.isInteger(mins)||mins<15||mins>240)return false;
+ const parsed=new Date(iso+'T00:00:00.000Z');
+ return !Number.isNaN(parsed.getTime())&&parsed.toISOString().slice(0,10)===iso;
+}
+export function bookingError(error,locale){
+ const message=String(error?.message||'');
+ if(message.includes('coach_time_unavailable'))return ({fr:'Ce créneau est déjà réservé. Choisissez une autre heure.',ru:'Это время уже занято. Выберите другое.',en:'This time slot is already booked. Choose another time.'})[locale]||'This time slot is already booked. Choose another time.';
+ return message||'Booking failed';
+}
 export function validSupport(subject,body){return String(subject||'').trim().length>=6&&String(subject).trim().length<=140&&String(body||'').trim().length>=10&&String(body).trim().length<=6000;}
 export function mountStage5({getDB,getUser,getThread,getCoaches,getLocale,navigate}){
  const $=id=>document.getElementById(id),db=()=>getDB(),user=()=>getUser()?.id;
@@ -105,11 +115,11 @@ export function mountStage5({getDB,getUser,getThread,getCoaches,getLocale,naviga
   if(!validBooking(date,time,duration))return msg('fgiFE','Invalid date/time');
   guarded($('fgiFS'),async()=>{
    const {error}=await db().rpc('fgi_booking_create',{p_thread_id:t.id,p_date:date,p_time:time,p_duration:Number(duration),p_note:String(f.get('note')||''),p_timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||'Europe/Paris'});
-   if(error)throw error;form.hidden=true;form.reset();navigate('bookings');await bookings();await notices();
+   if(error)throw new Error(bookingError(error,getLocale()));form.hidden=true;form.reset();navigate('bookings');await bookings();await notices();
   },'fgiFE');
  });
  $('fgiBL').addEventListener('click',e=>{const b=e.target.closest('button[data-booking-action]');if(!b)return;
-  guarded(b,async()=>{const {error}=await db().rpc('fgi_booking_decide',{p_booking_id:b.closest('[data-bid]').dataset.bid,p_action:b.dataset.bookingAction});if(error)throw error;await bookings();await notices();},'fgiBE');
+  guarded(b,async()=>{const {error}=await db().rpc('fgi_booking_decide',{p_booking_id:b.closest('[data-bid]').dataset.bid,p_action:b.dataset.bookingAction});if(error)throw new Error(bookingError(error,getLocale()));await bookings();await notices();},'fgiBE');
  });
  $('fgiSupportForm').addEventListener('submit',e=>{e.preventDefault();const f=new FormData(e.currentTarget);
   const subject=String(f.get('subject')||''),body=String(f.get('body')||'');
