@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {messages,chooseLocale,setLocale,getLocale,t,translate,browserTranslationActive} from '../fitgoin-i18n.mjs';
+import {messages,chooseLocale,setLocale,getLocale,t,translate,browserTranslationActive,translateStaticLiteral} from '../fitgoin-i18n.mjs';
 import {staticFrench} from '../fitgoin-fr.mjs';
 import {approvedPlanCardsHTML} from '../fitgoin-ai.js';
 
@@ -34,6 +34,13 @@ test('locale switching preserves stable semantic data and finds static translati
   setLocale('ru');
   assert.equal(t('find'),'Найти моего тренера');
 });
+test('untagged static labels also resolve in English without modifying personal content',()=>{
+  assert.equal(translateStaticLiteral('Найти моего тренера','en'),'Find my trainer');
+  assert.equal(translateStaticLiteral('Найти моего тренера','fr'),'Trouver mon coach');
+  assert.equal(translateStaticLiteral('Найти моего тренера','ru'),'Найти моего тренера');
+  assert.equal(translateStaticLiteral('Unknown private message','en'),'Unknown private message');
+});
+
 test('localization files are included in production and user messages remain protected',()=>{
   const build=readFileSync(new URL('build.mjs',import.meta.url),'utf8');
   const src=readFileSync(new URL('../fitgoin-i18n.mjs',import.meta.url),'utf8');

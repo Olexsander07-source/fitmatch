@@ -133,6 +133,38 @@ const aiOfferTranslations={
 };
 for(const [language,catalog] of Object.entries(aiOfferTranslations)) Object.assign(messages[language],catalog);
 
+// The Russian source HTML also contains untagged, static labels. Reuse the
+// curated locale catalogs for their English translations instead of leaving
+// those labels in Russian. Conflicting translations are deliberately skipped.
+const literalCatalogs={en:new Map(),fr:new Map()};
+const ambiguousLiterals={en:new Set(),fr:new Set()};
+function registerLiteral(language,source,translation){
+  if(typeof source!=='string'||typeof translation!=='string')return;
+  const key=source.trim();
+  if(!key||key===translation||ambiguousLiterals[language].has(key))return;
+  const map=literalCatalogs[language];
+  if(map.has(key)&&map.get(key)!==translation){
+    map.delete(key);
+    ambiguousLiterals[language].add(key);
+  }else if(!map.has(key))map.set(key,translation);
+}
+for(const [key,original] of Object.entries(messages.ru)){
+  for(const language of ['fr','en']){
+    const translated=messages[language][key];
+    if(Array.isArray(original)&&Array.isArray(translated)){
+      original.forEach((value,i)=>registerLiteral(language,value,translated[i]));
+    }else registerLiteral(language,original,translated);
+  }
+}
+const englishLiterals=literalCatalogs.en;
+const frenchLiterals=literalCatalogs.fr;
+export function translateStaticLiteral(value,language){
+  const text=String(value||'').trim();
+  if(language==='fr')return staticFrench[text]||frenchLiterals.get(text)||text;
+  if(language==='en')return englishLiterals.get(text)||text;
+  return text;
+}
+
 const choiceKey='fitgoin_locale_preference_v1';
 const savedTexts=new WeakMap(),savedAttributes=new WeakMap();
 const ignoreContent='script,style,[data-i18n],[translate="no"],#messages,#threads,#profileContent,#coachesList,#rankingList,#matchResults,#fitgoinAI,#myGallery,#chatAttachmentPreview';
@@ -200,10 +232,10 @@ function applyLiteralText(root){
     let source=savedTexts.get(node);
     if(source===undefined){
       source=node.nodeValue;
-      if(!staticFrench[source.trim()])continue;
+      if(!staticFrench[source.trim()]&&!englishLiterals.has(source.trim())&&!frenchLiterals.has(source.trim()))continue;
       savedTexts.set(node,source);
     }
-    const bare=source.trim(),replacement=locale==='fr'?staticFrench[bare]:bare;
+    const bare=source.trim(),replacement=translateStaticLiteral(bare,locale);
     const transformed=source.replace(bare,replacement);
     if(node.nodeValue!==transformed)node.nodeValue=transformed;
   }
@@ -219,11 +251,11 @@ function applyAttributes(root){
       if(!el.hasAttribute(name))continue;
       if(!attrs.has(name)){
         const value=el.getAttribute(name);
-        if(!staticFrench[value])continue;
+        if(!staticFrench[value]&&!englishLiterals.has(value)&&!frenchLiterals.has(value))continue;
         attrs.set(name,value);
       }
       if(!attrs.has(name))continue;
-      const original=attrs.get(name),value=locale==='fr'?staticFrench[original]:original;
+      const original=attrs.get(name),value=translateStaticLiteral(original,locale);
       if(el.getAttribute(name)!==value)el.setAttribute(name,value);
     }
   }
