@@ -136,23 +136,31 @@ for(const [language,catalog] of Object.entries(aiOfferTranslations)) Object.assi
 // The Russian source HTML also contains untagged, static labels. Reuse the
 // curated locale catalogs for their English translations instead of leaving
 // those labels in Russian. Conflicting translations are deliberately skipped.
-const englishLiterals=new Map();
-function registerEnglish(source,translation){
+const literalCatalogs={en:new Map(),fr:new Map()};
+const ambiguousLiterals={en:new Set(),fr:new Set()};
+function registerLiteral(language,source,translation){
   if(typeof source!=='string'||typeof translation!=='string')return;
   const key=source.trim();
-  if(!key||key===translation)return;
-  if(englishLiterals.has(key)&&englishLiterals.get(key)!==translation)englishLiterals.set(key,null);
-  else if(!englishLiterals.has(key))englishLiterals.set(key,translation);
+  if(!key||key===translation||ambiguousLiterals[language].has(key))return;
+  const map=literalCatalogs[language];
+  if(map.has(key)&&map.get(key)!==translation){
+    map.delete(key);
+    ambiguousLiterals[language].add(key);
+  }else if(!map.has(key))map.set(key,translation);
 }
 for(const [key,original] of Object.entries(messages.ru)){
-  const english=messages.en[key];
-  if(Array.isArray(original)&&Array.isArray(english)){
-    original.forEach((value,i)=>registerEnglish(value,english[i]));
-  }else registerEnglish(original,english);
+  for(const language of ['fr','en']){
+    const translated=messages[language][key];
+    if(Array.isArray(original)&&Array.isArray(translated)){
+      original.forEach((value,i)=>registerLiteral(language,value,translated[i]));
+    }else registerLiteral(language,original,translated);
+  }
 }
+const englishLiterals=literalCatalogs.en;
+const frenchLiterals=literalCatalogs.fr;
 export function translateStaticLiteral(value,language){
   const text=String(value||'').trim();
-  if(language==='fr')return staticFrench[text]||text;
+  if(language==='fr')return staticFrench[text]||frenchLiterals.get(text)||text;
   if(language==='en')return englishLiterals.get(text)||text;
   return text;
 }
@@ -224,7 +232,7 @@ function applyLiteralText(root){
     let source=savedTexts.get(node);
     if(source===undefined){
       source=node.nodeValue;
-      if(!staticFrench[source.trim()]&&!englishLiterals.has(source.trim()))continue;
+      if(!staticFrench[source.trim()]&&!englishLiterals.has(source.trim())&&!frenchLiterals.has(source.trim()))continue;
       savedTexts.set(node,source);
     }
     const bare=source.trim(),replacement=translateStaticLiteral(bare,locale);
@@ -243,7 +251,7 @@ function applyAttributes(root){
       if(!el.hasAttribute(name))continue;
       if(!attrs.has(name)){
         const value=el.getAttribute(name);
-        if(!staticFrench[value]&&!englishLiterals.has(value))continue;
+        if(!staticFrench[value]&&!englishLiterals.has(value)&&!frenchLiterals.has(value))continue;
         attrs.set(name,value);
       }
       if(!attrs.has(name))continue;
