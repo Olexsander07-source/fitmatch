@@ -81,7 +81,7 @@ export function mountTrainerVerification({getDB,getUser,getCoach,getLocale}){
   busy=true;say(labels()[6]);const db=getDB(),id=crypto.randomUUID(),path=getUser().id+'/'+id+'.'+ext;
   let created=false;
   try{
-   const {error:recordError}=await db.from('fgi_trainer_documents').insert({id,coach_id:getUser().id,service_country:country,service_format:f.get('format'),document_kind:f.get('kind'),document_path:path,reference:String(f.get('reference')||'').trim()||null,valid_until:f.get('valid_until')||null});
+   const {error:recordError}=await db.from('fgi_trainer_documents').insert({id,coach_id:getUser().id,service_country:country,service_format:f.get('format'),document_kind:f.get('kind'),document_path:path,attested:true,reference:String(f.get('reference')||'').trim()||null,valid_until:f.get('valid_until')||null});
    if(recordError)throw recordError;created=true;
    const {error:fileError}=await db.storage.from(TRAINER_DOCUMENT_BUCKET).upload(path,file,{upsert:false,cacheControl:'0',contentType:file.type});
    if(fileError)throw fileError;form.reset();say(labels()[7]);await refresh();
