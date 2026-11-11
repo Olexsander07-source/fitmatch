@@ -6,10 +6,12 @@ import {workspaceRole,BRAND_IMAGES} from './fitgoin-premium-core.mjs';
 import {t,initLocale,getLocale,getRegionCountry,hasManualLocale} from './fitgoin-i18n.mjs';
 import {CHAT_LANGUAGE_NAMES,ACTIVE_TRANSLATION_LANGUAGES,chatLanguageForRegion} from './fitgoin-chat-translation-core.mjs';
 import {mountStage5} from './fitgoin-stage5.mjs?v=20261108-stage5';
+import {mountTrainerVerification} from './fitgoin-trainer-verification.mjs';
 import {matchSportKey,formatFits,formMatchPreferences,rankCoaches} from './fitgoin-match-core.mjs';
 let aiAssistant=null;
 let premium=null;
 let stage5=null;
+let trainerVerification=null;
 const CONFIG = Object.freeze({
   url: 'https://ypbhcgcwkpiujcakvaji.supabase.co',
   key: 'sb_publishable_Lsrk07A5aXJH7YypVR8QGQ_TQPwhfOV',
@@ -511,6 +513,7 @@ function authChanged(event, session) {
     setTimeout(()=>{loadCatalogue().then(()=>user?loadAccount():null).catch(e=>notice(explain(e)));},0);
   }
   authUI();
+  void trainerVerification?.refresh();
   void stage5?.sessionChanged();
   if(event==='PASSWORD_RECOVERY') {pendingAction='';closeDialogs();$('resetDialog').showModal();}
 }
@@ -571,6 +574,7 @@ async function loadAccount() {
     $('coachPayment').open=Boolean(record?.payment_url);
   }
   authUI();
+  void trainerVerification?.refresh();
   await premium?.accountLoaded();
   if(record) await loadMyGallery();
 }
@@ -1634,6 +1638,7 @@ async function init() {
   setSignupRole(query.get('signup'));
   stage5=mountStage5({getDB:()=>db,getUser:()=>user,getThread:()=>activeThread,getCoaches:()=>coaches,getLocale,navigate:page});
   bindUI();bindAuth();bindClient();bindCoach();bindMedia();bindChat();
+  trainerVerification=mountTrainerVerification({getDB:()=>db,getUser:()=>user,getCoach:()=>own,getLocale});
   premium=mountPremium({getDB:()=>db,getUser:()=>user,getProfile:()=>profileRecord,getCoach:()=>own,getPage:()=>currentPage,getAccountTab:()=>accountTab,setAccountTab,
     getMatchStep:()=>matchStep,setMatchStep:value=>{matchStep=Number(value)||0;updateMatchWizard();},signup:openSignup,navigate:page,notice,explain,
     openOwn:()=>openProfile(user.id),reload:async()=>{await loadCatalogue();await loadAccount();}});
