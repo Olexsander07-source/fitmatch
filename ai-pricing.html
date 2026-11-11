@@ -65,7 +65,18 @@ ru:{modelsTitle:'Две модели — один AI-тренер:',modelsCopy:'
 };
 const select=document.getElementById('lang');
 function apply(lang){const code=Object.hasOwn(translations,lang)?lang:'fr';document.documentElement.lang=code;select.value=code;for(const el of document.querySelectorAll('[data-t]')){const key=el.dataset.t;const value=translations[code][key]||translations.fr[key];if(key==='heading')el.innerHTML=value;else el.textContent=value;}document.title='FitGoIn AI — '+({fr:'Tarifs',en:'Pricing',ru:'Тарифы'}[code]);}
-const initial=new URLSearchParams(location.search).get('lang')||((localStorage.getItem('fgi_language')||localStorage.getItem('fgi-lang')||navigator.language||'fr').slice(0,2));
-apply(initial);select.addEventListener('change',()=>apply(select.value));
+const preference='fitgoin_locale_preference_v1';
+let selected='';try{selected=localStorage.getItem(preference)||'';}catch{}
+const fromUrl=new URLSearchParams(location.search).get('lang');
+const initial=fromUrl||selected||navigator.language?.slice(0,2)||'fr';
+apply(initial);
+select.addEventListener('change',()=>{apply(select.value);try{localStorage.setItem(preference,select.value);}catch{}});
+if(!selected&&!fromUrl){
+ const traceSignal=typeof AbortSignal?.timeout==='function'?AbortSignal.timeout(3500):undefined;
+ fetch('/cdn-cgi/trace',{cache:'no-store',signal:traceSignal})
+ .then(r=>r.ok?r.text():'')
+ .then(body=>{const country=body.match(/^loc=([A-Z]{2})$/m)?.[1];if(country)apply(country==='FR'||country==='MC'?'fr':country==='RU'||country==='BY'?'ru':'en');})
+ .catch(()=>{});
+}
 </script>
 </body></html>

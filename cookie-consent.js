@@ -1,5 +1,26 @@
 const COOKIE_NAME='fitgoin_cookie_consent_v1';
 const MAX_AGE=60*60*24*180;
+const bannerI18n={
+ en:{title:'Cookie settings',message:'FitGoIn uses essential storage for sign-in and security. Optional analytics cookies are not enabled without your consent.',details:'More about cookies and browser storage',reject:'Reject optional cookies',accept:'Accept optional cookies'},
+ fr:{title:'Paramètres des cookies',message:'FitGoIn utilise le stockage indispensable à la connexion et à la sécurité. Les cookies analytiques facultatifs ne sont pas activés sans votre consentement.',details:'En savoir plus sur les cookies et le stockage local',reject:'Refuser les cookies facultatifs',accept:'Accepter les cookies facultatifs'}
+};
+function cookieLanguage(){
+ let selected='';try{selected=localStorage.getItem('fitgoin_locale_preference_v1')||'';}catch{}
+ const fallback=(document.documentElement.lang||navigator.language||'ru').slice(0,2);
+ return ['ru','fr','en'].includes(selected)?selected:fallback;
+}
+function translateBanner(language){
+ const b=document.getElementById('cookieBanner'),t=bannerI18n[language];
+ if(!b)return;
+ const original={title:'Настройки cookie',message:'FitGoIn использует необходимые технологии хранения для входа и безопасности. Необязательные аналитические cookie не активируются без твоего согласия.',details:'Подробнее о cookie и локальном хранилище',reject:'Отклонить необязательные',accept:'Принять необязательные'};
+ const data=t||original;
+ b.querySelector('#cookieTitle').textContent=data.title;
+ b.querySelector('.cookie-card > div > p:not(.eyebrow):not(.hint)').textContent=data.message;
+ b.querySelector('.cookie-card .hint a').textContent=data.details;
+ b.querySelector('[data-cookie-choice="necessary"]').textContent=data.reject;
+ b.querySelector('[data-cookie-choice="optional"]').textContent=data.accept;
+}
+document.addEventListener('fitgoin:localechange',e=>translateBanner(e.detail?.locale));
 
 function readChoice(){
   const row=document.cookie.split('; ').find(v=>v.startsWith(COOKIE_NAME+'='));
@@ -43,6 +64,7 @@ function showBanner(force=false){
     </div>
   </div>`;
   document.body.append(wrap);
+  translateBanner(cookieLanguage());
 }
 document.addEventListener('click',event=>{
   const choice=event.target.closest('[data-cookie-choice]')?.dataset.cookieChoice;

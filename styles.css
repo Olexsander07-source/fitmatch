@@ -85,3 +85,6 @@ h1,h2,h3,.muted{overflow-wrap:anywhere}
 #fgiOL .panel textarea,#fgiOL .panel select{display:block;margin:10px 0}
 #fgiOpenBooking{margin-top:10px}
 @media(max-width:650px){#bookings .panel,#alerts .panel,#support .panel,#owner .panel{padding:15px}}
+
+/* Legal and support pages use the same language preference as the main site. */
+.header .fgi-doc-language{display:inline-flex;align-items:center;margin-left:auto;gap:.4rem}.fgi-doc-language select{min-width:82px;border:1px solid #64736c;border-radius:9px;background:#17312b;color:#f2f5f3;padding:8px 10px;font:inherit}.fgi-doc-language select:focus-visible{outline:2px solid #8bd9b4;outline-offset:2px}

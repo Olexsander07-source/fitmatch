@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import {messages,chooseLocale,setLocale,getLocale,t,translate,browserTranslationActive,translateStaticLiteral} from '../fitgoin-i18n.mjs';
 import {staticFrench} from '../fitgoin-fr.mjs';
 import {aiUiCatalog,aiUiLabel,translateAIUI} from '../fitgoin-ai-ui-i18n.mjs';
+import {docContent} from '../fitgoin-docs-content.mjs';
 import {approvedPlanCardsHTML} from '../fitgoin-ai.js';
 
 test('French covers every existing translation key and array step',()=>{
@@ -149,4 +150,26 @@ test('AI UI translator never rewrites private chat messages',()=>{
  assert.equal(label.nodeValue,'My progress');
  translateAIUI(root,'ru');
  assert.equal(label.nodeValue,'Мой прогресс');
+});
+
+test('support, legal, cookie and policy pages have complete FR/EN section translations',()=>{
+ const build=readFileSync(new URL('build.mjs',import.meta.url),'utf8');
+ assert.match(build,/fitgoin-docs-content\.mjs/);
+ assert.match(build,/fitgoin-docs-i18n\.mjs/);
+ for(const path of ['privacy','terms','legal','support','cookies']){
+  const original=readFileSync(new URL('../'+path+'.html',import.meta.url),'utf8');
+  assert.match(original,/src="\.\/fitgoin-docs-i18n\.mjs"/);
+  const headings=(original.match(/<h2(?:\s[^>]*)?>/g)||[]).length;
+  for(const language of ['en','fr']){
+   const html=docContent[path][language];
+   assert.ok(html?.length>500,path+': '+language+' has no complete translation');
+   assert.match(html,/<h1>.*<\/h1>/);
+   assert.equal((html.match(/<h2(?:\s[^>]*)?>/g)||[]).length,headings,path+': '+language+' sections differ');
+   assert.match(html,/href="\.\/"/);
+   assert.doesNotMatch(html,/<script|\bon\w+=/i);
+  }
+ }
+ for(const page of ['privacy','terms']){
+  for(const language of ['en','fr'])assert.match(docContent[page][language],/id="ai"/);
+ }
 });
