@@ -327,6 +327,9 @@ export function createAIHandler({env,fetcher=fetch}={}) {
       if(search&&(/\b\d{1,3}(?:[.,]\d+)?\b|@|https?:/i.test(message)||(p.city.length>2&&message.toLowerCase().includes(p.city.toLowerCase()))))throw new AIError('search_query_private',422);
       let payload={model:search?searchModel:input.action==='training'||input.action==='nutrition'||media?complexModel:chatModel,store:false,instructions,input:[...context,{role:'user',content:media?[{type:'input_text',text:message},...images]:message}],max_output_tokens:input.action==='chat'||search||media?2000:input.action==='training'?8000:5000,text:{format:{type:'json_schema',name:`fitgoin_${input.action}`,strict:true,schema}}};
       if(input.action==='training')payload=programPayload(saved.data);
+      // Explicit site language choice controls new AI output, without translating private history elsewhere.
+      const siteLanguage=['fr','en','ru'].includes(input.ui_language)?input.ui_language:null;
+      if(siteLanguage)payload.instructions+='\nRespond and write all natural-language output in the selected FitGoIn site language ('+siteLanguage+'), unless the user explicitly requests another language. This locale overrides the stored profile language for this response.';
       if(payload.model==='gpt-4.1')payload.temperature=.2;
       if(search){payload.tools=[{type:'web_search',filters:{allowed_domains:SOURCES}}];payload.tool_choice={type:'web_search'};payload.max_tool_calls=2;}
       let rawResult=await provider(payload,false,deadline,meter),parsed=outputText(rawResult),searched=search;

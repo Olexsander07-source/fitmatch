@@ -315,7 +315,7 @@ export function mountFitGoInAI(root,opts) {
     if(!profile)throw Error('consent_required');
     module=selected;
     await ensureConversation(e);
-    const body={action,module:selected,message,conversation_id:conversation.id,request_id:crypto.randomUUID(),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,...(target?{[workoutPayload||target.session_id?'workout_target':selected==='nutrition'?'nutrition_target':'program_target']:target}:{}),...(workoutPayload?{workout_payload:workoutPayload}:{})};
+    const body={action,module:selected,message,conversation_id:conversation.id,request_id:crypto.randomUUID(),ui_language:getLocale(),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,...(target?{[workoutPayload||target.session_id?'workout_target':selected==='nutrition'?'nutrition_target':'program_target']:target}:{}),...(workoutPayload?{workout_payload:workoutPayload}:{})};
     await deliver(body,e);
   }
   async function deliver(body,e) {

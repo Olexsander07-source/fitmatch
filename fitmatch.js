@@ -53,6 +53,7 @@ let phoneMode = 'login', pendingPhone = '', pendingPhoneName = '', phoneResendUn
 let catalogueError = '', setupReady = false, visibleProfile = '', galleryEpoch = 0, accountVersion = 0, matchStep = 0;
 const publicOnly = c => c.published !== false;
 const coachTranslations=new Map(),coachTranslationRequests=new Set();
+let latestMatchResults=[];
 const publicValue=(c,field)=>coachTranslations.get(getLocale()+':'+c.id)?.[field]??c[field]??'';
 function refreshTranslatedProfile(){
  const current=coaches.find(x=>x.id===visibleProfile);if(!current)return;
@@ -72,7 +73,7 @@ async function translatePublicCoaches(items,fields){
     const safe={};for(const f of fields)if(typeof received[f]==='string'&&received[f].length<=9000)safe[f]=received[f];
     coachTranslations.set(key,{...(coachTranslations.get(key)||{}),...safe});
    }
-   if(getLocale()===language){renderCatalogue();refreshTranslatedProfile();}
+   if(getLocale()===language){renderCatalogue();refreshTranslatedProfile();if(latestMatchResults.length)$('matchResults').innerHTML=latestMatchResults.map(x=>card(x.c,x.m)).join('');}
   }catch{/* Keep original public text if translation is unavailable. */}
  }
 }
@@ -339,11 +340,12 @@ async function findMatch(form) {
   if(epoch!==authEpoch||currentPage!=='searching')return;
   const p=Object.fromEntries(new FormData(form));notice('');
   const ranked=rankCoaches(coaches,formMatchPreferences(p),{sports,actor:user?.id}).map(({coach,match})=>({c:coach,m:match}));
+  latestMatchResults=ranked;
   const summary=$('matchSummary');summary.hidden=false;
   summary.innerHTML=`<p class="eyebrow">ТВОЙ MATCH</p><h2>${ranked.length?`Нашли ${ranked.length} ${ranked.length===1?'подходящего тренера':'лучших совпадения'}`:'Пока нет точного совпадения'}</h2><div class="tags">${matchPreferenceSummary(p)}</div><p class="muted">Процент рассчитан только по выбранным тобой параметрам. Он показывает совпадение анкет, а не гарантирует результат тренировок.</p>`;
   $('matchResults').innerHTML=ranked.map(x=>card(x.c,x.m)).join('') || `<p class="empty">${esc(catalogueError || 'Тренеров по этому спорту пока нет. Попробуй другой вид спорта или вернись позже.')}</p>`;
   page('matches');
-  void translatePublicCoaches(ranked.map(x=>x.c).slice(0,6),['goal']);
+  if(typeof translatePublicCoaches==='function')void translatePublicCoaches(ranked.map(x=>x.c).slice(0,6),['goal']);
 }
 async function openProfile(id, push = true) {
   const c=coaches.find(c=>c.id===id); if(!c) throw Error('Профиль не найден. Обнови каталог.');
@@ -1663,6 +1665,7 @@ if(typeof document.addEventListener==='function')document.addEventListener('fitg
   void translateIncomingMessages();
   updateMatchWizard();
   renderCatalogue();refreshTranslatedProfile();
+  if(latestMatchResults.length)$('matchResults').innerHTML=latestMatchResults.map(x=>card(x.c,x.m)).join('');
   void translatePublicCoaches(coaches.filter(publicOnly).slice(0,12),['goal']);
   const active=coaches.find(x=>x.id===visibleProfile);if(active&&currentPage==='profile')void translatePublicCoaches([active],['goal','bio','education','titles','achievements']);
 });

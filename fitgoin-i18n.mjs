@@ -132,6 +132,9 @@ const aiOfferTranslations={
   }
 };
 for(const [language,catalog] of Object.entries(aiOfferTranslations)) Object.assign(messages[language],catalog);
+messages.ru.rankingHow='Как работает MATCH';
+messages.en.rankingHow='How MATCH works';
+messages.fr.rankingHow='Comment fonctionne MATCH';
 
 // The Russian source HTML also contains untagged, static labels. Reuse the
 // curated locale catalogs for their English translations instead of leaving
