@@ -9,6 +9,17 @@ export function validateTrainerEvidence({country,format,kind,file,attested}){
  if(attested!==true)throw Error('attestation_required');
  return TRAINER_MIME[file.type];
 }
+// MIME declarations are not sufficient: reject obvious file-content spoofing before upload.
+export async function validateTrainerFileSignature(file,extension){
+ if(!file||typeof file.slice!=='function')return false;
+ const b=new Uint8Array(await file.slice(0,16).arrayBuffer());
+ const matches=(values,offset=0)=>values.every((v,i)=>b[offset+i]===v);
+ if(extension==='pdf')return matches([37,80,68,70,45]); // %PDF-
+ if(extension==='jpg')return matches([255,216,255]);
+ if(extension==='png')return matches([137,80,78,71,13,10,26,10]);
+ if(extension==='webp')return matches([82,73,70,70])&&matches([87,69,66,80],8);
+ return false;
+}
 const lex={
  ru:['Документы тренера','Отправь подтверждение квалификации для выбранной страны. Документы видны только тебе и владельцу FitGoIn. Загрузка не означает права работать за плату.','Ожидает проверки','Документ принят','Отклонено','Документы ещё не загружены','Загрузка…','Документ отправлен. Публичный статус не изменён.','Не удалось выполнить действие','Удалить ожидающий документ','Открыть документ (60 сек.)','Проверка владельца','Принять документ','Отклонить документ','Решение сохранено','Документ удалён','Примечание проверяющего'],
  fr:['Documents du coach','Envoie les justificatifs pour le pays concerné. Ils restent privés et leur envoi ne constitue pas une autorisation légale de travailler.','En attente','Document accepté','Refusé','Aucun document','Téléversement…','Document transmis. Aucun statut public modifié.','Une erreur est survenue','Retirer un document en attente','Ouvrir le document (60 s)','Contrôle du responsable','Accepter le document','Refuser le document','Décision enregistrée','Document supprimé','Note du responsable'],
@@ -78,6 +89,7 @@ export function mountTrainerVerification({getDB,getUser,getCoach,getLocale}){
   if(busy||!getDB()||!getUser()||!getCoach())return;
   const f=new FormData(form),file=f.get('document'),country=String(f.get('country')||'').trim().toUpperCase();
   let ext;try{ext=validateTrainerEvidence({country,format:f.get('format'),kind:f.get('kind'),file,attested:f.get('attested')==='yes'});}catch{say(labels()[8]);return;}
+  if(!await validateTrainerFileSignature(file,ext)){say(labels()[8]);return;}
   busy=true;say(labels()[6]);const db=getDB(),id=crypto.randomUUID(),path=getUser().id+'/'+id+'.'+ext;
   let created=false;
   try{
