@@ -88,7 +88,7 @@ export function createSiteTranslationHandler({env,fetcher=fetch}={}){
     }
    }
    return reply({translations:result},200,headers);
-  }catch(error){const limit=error?.message==='translation_daily_limit';console.warn('site_translate_failure',JSON.stringify({phase,reason:['backend_unavailable','translation_unavailable','translation_daily_limit'].includes(error?.message)?error.message:'unexpected'}));return reply({error:limit?'translation_daily_limit':'translation_unavailable',diagnostic_phase:phase},limit?429:503,headers);}
+  }catch(error){const limit=error?.message==='translation_daily_limit';console.warn('site_translate_failure',JSON.stringify({phase,reason:['backend_unavailable','translation_unavailable','translation_daily_limit'].includes(error?.message)?error.message:'unexpected'}));return reply({error:limit?'translation_daily_limit':'translation_unavailable'},limit?429:503,headers);}
  };
 }
 if(typeof Deno!=='undefined')Deno.serve(createSiteTranslationHandler({env:k=>Deno.env.get(k)}));
