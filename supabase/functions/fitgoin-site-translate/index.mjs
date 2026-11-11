@@ -34,6 +34,7 @@ export function createSiteTranslationHandler({env,fetcher=fetch}={}){
   if(request.method!=='POST')return reply({error:'method_not_allowed'},405,headers);
   if(!base||!secret||!endpoint)return reply({error:'translation_unavailable'},503,headers);
   if(Number(request.headers.get('content-length'))>1500)return reply({error:'invalid_request'},413,headers);
+  let phase='validate';
   try{
    if(!/^application\/json(?:\s*;|$)/i.test(request.headers.get('content-type')||''))return reply({error:'json_required'},415,headers);
    const raw=await request.text();
@@ -42,9 +43,11 @@ export function createSiteTranslationHandler({env,fetcher=fetch}={}){
    let ids,fields,language;try{({ids,fields,language}=validateSiteTranslation(input));}catch{return reply({error:'invalid_request'},400,headers);}
    // No arbitrary text: translate only server-read, published coach fields.
    const params=new URLSearchParams({select:['id','published',...fields].join(','),id:'in.('+ids.join(',')+')',published:'eq.true'});
+   phase='read_published';
    const profiles=await rest('/rest/v1/fgi_coaches?'+params);
    if(!Array.isArray(profiles)||profiles.length!==ids.length)return reply({error:'profile_not_public'},404,headers);
    const cacheParams=new URLSearchParams({select:'coach_id,field_name,source_sha256,translated_text',coach_id:'in.('+ids.join(',')+')',field_name:'in.('+fields.join(',')+')',target_language:'eq.'+language});
+   phase='read_cache';
    const cached=await rest('/rest/v1/fgi_public_profile_translations?'+cacheParams);
    if(!Array.isArray(cached))throw Error('backend_unavailable');
    const byKey=new Map(cached.map(x=>[x.coach_id+':'+x.field_name,x]));
@@ -60,11 +63,14 @@ export function createSiteTranslationHandler({env,fetcher=fetch}={}){
     }
    }
    if(pending.length){
+    phase='quota';
     const quota=await rest('/rest/v1/rpc/fgi_claim_public_translation_budget',{method:'POST',body:{p_count:pending.length}});
     if(quota!==true)return reply({error:'translation_daily_limit',translations:result},429,headers);
+    phase='secret';
     let apiKey=String(get('FGI_TRANSLATE_API_KEY')||'').trim();
     if(!apiKey){const stored=await rest('/rest/v1/rpc/fgi_chat_translate_key',{method:'POST',body:{}});apiKey=String(stored?.api_key||'').trim();}
     if(!apiKey)return reply({error:'translation_unavailable',translations:result},503,headers);
+    phase='translate';
     for(let index=0;index<pending.length;index+=2){
      const translated=await Promise.all(pending.slice(index,index+2).map(async item=>{
       let response;
@@ -75,13 +81,14 @@ export function createSiteTranslationHandler({env,fetcher=fetch}={}){
       return {...item,output};
      }));
      for(const item of translated){
+      phase='write_cache';
       await rest('/rest/v1/fgi_public_profile_translations?on_conflict=coach_id,field_name,target_language',{method:'POST',prefer:'resolution=merge-duplicates,return=minimal',body:[{coach_id:item.id,field_name:item.field,target_language:language,source_sha256:item.sourceHash,translated_text:item.output,updated_at:new Date().toISOString()}]});
       result[item.id][item.field]=item.output;
      }
     }
    }
    return reply({translations:result},200,headers);
-  }catch(error){const limit=error?.message==='translation_daily_limit';return reply({error:limit?'translation_daily_limit':'translation_unavailable'},limit?429:503,headers);}
+  }catch(error){const limit=error?.message==='translation_daily_limit';console.warn('site_translate_failure',JSON.stringify({phase,reason:['backend_unavailable','translation_unavailable','translation_daily_limit'].includes(error?.message)?error.message:'unexpected'}));return reply({error:limit?'translation_daily_limit':'translation_unavailable'},limit?429:503,headers);}
  };
 }
 if(typeof Deno!=='undefined')Deno.serve(createSiteTranslationHandler({env:k=>Deno.env.get(k)}));
