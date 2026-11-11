@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS public.fgi_trainer_documents (
  document_path text NOT NULL UNIQUE,
  reference text CHECK (reference IS NULL OR char_length(reference)<=120),
  valid_until date,
+ attested boolean NOT NULL CHECK(attested=true),
  statement_accepted_at timestamptz NOT NULL DEFAULT now(),
  status text NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','accepted','rejected')),
  review_note text CHECK(review_note IS NULL OR char_length(review_note)<=800),
@@ -26,7 +27,7 @@ CREATE INDEX IF NOT EXISTS fgi_trainer_documents_pending ON public.fgi_trainer_d
 ALTER TABLE public.fgi_trainer_documents ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.fgi_trainer_documents FROM public,anon,authenticated;
 GRANT SELECT ON public.fgi_trainer_documents TO authenticated;
-GRANT INSERT(coach_id,service_country,service_format,document_kind,document_path,reference,valid_until)
+GRANT INSERT(id,coach_id,service_country,service_format,document_kind,document_path,reference,valid_until,attested)
  ON public.fgi_trainer_documents TO authenticated;
 GRANT UPDATE(status,review_note) ON public.fgi_trainer_documents TO authenticated;
 GRANT DELETE ON public.fgi_trainer_documents TO authenticated;
@@ -35,7 +36,7 @@ CREATE POLICY fgi_trainer_documents_read ON public.fgi_trainer_documents FOR SEL
  USING (coach_id=(SELECT auth.uid()) OR (SELECT public.fgi_is_owner()));
 DROP POLICY IF EXISTS fgi_trainer_documents_submit ON public.fgi_trainer_documents;
 CREATE POLICY fgi_trainer_documents_submit ON public.fgi_trainer_documents FOR INSERT TO authenticated
- WITH CHECK (coach_id=(SELECT auth.uid()) AND status='pending' AND reviewed_by IS NULL AND reviewed_at IS NULL);
+ WITH CHECK (coach_id=(SELECT auth.uid()) AND attested=true AND status='pending' AND reviewed_by IS NULL AND reviewed_at IS NULL);
 DROP POLICY IF EXISTS fgi_trainer_documents_owner_review ON public.fgi_trainer_documents;
 CREATE POLICY fgi_trainer_documents_owner_review ON public.fgi_trainer_documents FOR UPDATE TO authenticated
  USING ((SELECT public.fgi_is_owner())) WITH CHECK ((SELECT public.fgi_is_owner()));
@@ -56,7 +57,8 @@ BEGIN
     NEW.document_kind IS DISTINCT FROM OLD.document_kind OR
     NEW.reference IS DISTINCT FROM OLD.reference OR
     NEW.valid_until IS DISTINCT FROM OLD.valid_until OR
-    NEW.statement_accepted_at IS DISTINCT FROM OLD.statement_accepted_at THEN
+    NEW.statement_accepted_at IS DISTINCT FROM OLD.statement_accepted_at OR
+    NEW.attested IS DISTINCT FROM OLD.attested THEN
    RAISE EXCEPTION 'immutable_evidence' USING ERRCODE='23514';
  END IF;
  IF NEW.status NOT IN ('accepted','rejected') THEN RAISE EXCEPTION 'invalid_review_status' USING ERRCODE='23514'; END IF;
