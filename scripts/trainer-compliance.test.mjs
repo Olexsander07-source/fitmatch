@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {TRAINER_DOCUMENT_BUCKET,TRAINER_MIME,validateTrainerEvidence} from '../fitgoin-trainer-verification.mjs';
+import {TRAINER_DOCUMENT_BUCKET,TRAINER_MIME,validateTrainerEvidence,validateTrainerFileSignature} from '../fitgoin-trainer-verification.mjs';
 
 const sql=readFileSync(new URL('../supabase/migrations/20261111120000_trainer_documents_and_launch_gate.sql',import.meta.url),'utf8');
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
@@ -46,4 +46,14 @@ test('existing coach profile and media remain intact and verification ships with
  assert.match(frontend,/mountTrainerVerification/);
  assert.match(frontend,/void trainerVerification\?\.refresh\(\)/);
  assert.match(build,/fitgoin-trainer-verification\.mjs/);
+});
+
+test('rejects spoofed PDF and image uploads even with a permitted declared MIME',async()=>{
+ const make=(values,type)=>new Blob([Uint8Array.from(values)],{type});
+ assert.equal(await validateTrainerFileSignature(make([37,80,68,70,45,49,46,55],'application/pdf'),'pdf'),true);
+ assert.equal(await validateTrainerFileSignature(make([60,104,116,109,108,62],'application/pdf'),'pdf'),false);
+ assert.equal(await validateTrainerFileSignature(make([255,216,255,224,0,16],'image/jpeg'),'jpg'),true);
+ assert.equal(await validateTrainerFileSignature(make([137,80,78,71,13,10,26,10],'image/png'),'png'),true);
+ assert.equal(await validateTrainerFileSignature(make([82,73,70,70,1,2,3,4,87,69,66,80],'image/webp'),'webp'),true);
+ assert.equal(await validateTrainerFileSignature(make([71,73,70,56,57,97],'image/webp'),'webp'),false);
 });
