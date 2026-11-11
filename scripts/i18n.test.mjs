@@ -173,3 +173,15 @@ test('support, legal, cookie and policy pages have complete FR/EN section transl
   for(const language of ['en','fr'])assert.match(docContent[page][language],/id="ai"/);
  }
 });
+
+test('public search ranking disclosures appear in all supported locales',()=>{
+ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ const main=readFileSync(new URL('../fitmatch.js',import.meta.url),'utf8');
+ for(const key of ['listingDisclosure','matchDisclosure','rankingDisclosure']){
+  assert.match(html,new RegExp('data-i18n="'+key+'"'));
+  for(const language of ['fr','en','ru'])assert.ok(messages[language][key]?.length>55,language+': '+key);
+ }
+ assert.match(html,/href="\.\/terms\.html#ranking"/);
+ assert.match(main,/const previousCoaches=new Map/);
+ assert.match(main,/coachTranslations\.delete\(language\+':'\+c\.id\)/);
+});

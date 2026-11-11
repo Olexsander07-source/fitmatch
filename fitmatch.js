@@ -75,6 +75,7 @@ async function translatePublicCoaches(items,fields){
    }
    if(getLocale()===language){renderCatalogue();refreshTranslatedProfile();if(latestMatchResults.length)$('matchResults').innerHTML=latestMatchResults.map(x=>card(x.c,x.m)).join('');}
   }catch{/* Keep original public text if translation is unavailable. */}
+  finally{coachTranslationRequests.delete(ticket);}
  }
 }
 const sportName = id => sports.find(s => String(s.id) === String(id))?.name || String(id || 'Спорт не указан');
@@ -265,7 +266,15 @@ async function loadCatalogue() {
   const data = i => result[i].status==='fulfilled' ? result[i].value : [];
   sports=data(0).map(s=>({...s,id:String(s.id)}));
   if(!sports.length) sports=directions.map(d=>({id:d[0],name:d[1]}));
+  const previousCoaches=new Map(coaches.map(c=>[c.id,c]));
   coaches=data(1).map(c=>normalizeCoach(c));
+  for(const c of coaches){
+    const previous=previousCoaches.get(c.id);
+    if(previous&&['goal','bio','education','titles','achievements'].some(field=>previous[field]!==c[field]||previous.published!==c.published)){
+      for(const language of ['fr','en','ru'])coachTranslations.delete(language+':'+c.id);
+      for(const ticket of coachTranslationRequests)if(ticket.includes(c.id))coachTranslationRequests.delete(ticket);
+    }
+  }
   catalogueError = !setupReady ? 'Каталог временно недоступен. Проверь миграции Supabase.' : '';
   if (!setupReady) {
     const failed=result.find(r=>r.status==='rejected');
@@ -285,7 +294,8 @@ function renderCatalogue() {
   const list=coaches.filter(publicOnly);
   const filtered=list.filter(c=>(!$('sportFilter').value || sportKey(c.sport)===sportKey($('sportFilter').value)) && formatFits(c,$('formatFilter').value) && norm([c.name,c.city,c.goal,c.bio,sportName(c.sport)].join(' ')).includes(norm($('search').value)));
   $('coachesList').innerHTML=filtered.map(c=>card(c)).join('') || `<p class="empty">${esc(catalogueError || 'Тренеров по этим параметрам пока нет. Измени фильтры или создай первый профиль.')}</p>`;
-  $('coachCount').textContent=`Найдено: ${filtered.length}`;
+  const countLanguage=getLocale();
+  $('coachCount').textContent=countLanguage==='fr'?`${filtered.length} coach(s) trouvé(s)`:countLanguage==='en'?`${filtered.length} trainer(s) found`:`Найдено: ${filtered.length}`;
   $('topCoaches').innerHTML=[...list].sort((a,b)=>Number(b.score||0)-Number(a.score||0)).slice(0,3).map(c=>card(c)).join('') || '<p class="empty">Здесь появятся первые тренеры FitGoIn.</p>';
   $('rankingList').innerHTML=[...list].sort((a,b)=>Number(b.rating||0)-Number(a.rating||0)).map((c,i)=>`<button class="ranking-row" data-profile="${esc(c.id)}"><strong>${i+1}</strong><span>${esc(c.name)}<br><small>${esc(sportName(c.sport))}</small></span><span>${Number(c.rating)>0?`★ ${Number(c.rating).toFixed(1)}`:'Без рейтинга'}</span></button>`).join('') || '<p class="empty">Рейтинг появится после добавления тренеров.</p>';
   const banner=$('categoryBanner'), sport=$('sportFilter').value; banner.hidden=!sport;
