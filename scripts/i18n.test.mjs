@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {messages,chooseLocale,setLocale,getLocale,t,translate,browserTranslationActive,translateStaticLiteral} from '../fitgoin-i18n.mjs';
 import {staticFrench} from '../fitgoin-fr.mjs';
+import {aiUiCatalog,aiUiLabel,translateAIUI} from '../fitgoin-ai-ui-i18n.mjs';
 import {approvedPlanCardsHTML} from '../fitgoin-ai.js';
 
 test('French covers every existing translation key and array step',()=>{
@@ -120,4 +121,32 @@ test('in-app AI access shows ONLY approved Trial, Pro and Premium in every local
    assert(html.includes('data-i18n="offerProPlans"'),locale);
  }
  setLocale('ru');
+});
+
+
+test('AI controls have explicit French and English translations without a paid API call',()=>{
+ assert.ok(aiUiCatalog.size>=150,'Expected broad AI interface label coverage');
+ for(const source of ['Мой прогресс','Сохранить измерение','Моё питание','Прослушать','Выполненных тренировок пока нет.']){
+   assert.notEqual(aiUiLabel(source,'en'),source,'English: '+source);
+   assert.notEqual(aiUiLabel(source,'fr'),source,'French: '+source);
+   assert.equal(aiUiLabel(source,'ru'),source);
+ }
+ const build=readFileSync(new URL('build.mjs',import.meta.url),'utf8');
+ const source=readFileSync(new URL('../fitgoin-ai.js',import.meta.url),'utf8');
+ assert.match(build,/fitgoin-ai-ui-i18n\.mjs/);
+ assert.match(source,/translateAIUI\(root,getLocale\(\)\)/);
+});
+
+test('AI UI translator never rewrites private chat messages',()=>{
+ const label={nodeValue:'Мой прогресс',parentElement:{closest:()=>false}};
+ const privateMessage={nodeValue:'Сообщения',parentElement:{closest:()=>true}};
+ const nodes=[label,privateMessage];
+ const root={ownerDocument:{createTreeWalker:()=>{let i=0;return{nextNode:()=>nodes[i++]||null};}},querySelectorAll:()=>[]};
+ translateAIUI(root,'fr');
+ assert.equal(label.nodeValue,'Mes progrès');
+ assert.equal(privateMessage.nodeValue,'Сообщения');
+ translateAIUI(root,'en');
+ assert.equal(label.nodeValue,'My progress');
+ translateAIUI(root,'ru');
+ assert.equal(label.nodeValue,'Мой прогресс');
 });
