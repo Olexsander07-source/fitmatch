@@ -52,6 +52,30 @@ const PRESENCE_ONLINE_MS = 75000;
 let phoneMode = 'login', pendingPhone = '', pendingPhoneName = '', phoneResendUntil = 0, phoneTimer = 0;
 let catalogueError = '', setupReady = false, visibleProfile = '', galleryEpoch = 0, accountVersion = 0, matchStep = 0;
 const publicOnly = c => c.published !== false;
+const coachTranslations=new Map(),coachTranslationRequests=new Set();
+const publicValue=(c,field)=>coachTranslations.get(getLocale()+':'+c.id)?.[field]??c[field]??'';
+function refreshTranslatedProfile(){
+ const current=coaches.find(x=>x.id===visibleProfile);if(!current)return;
+ document.querySelectorAll('#profileContent [data-public-field]').forEach(el=>{const field=el.dataset.publicField;if(['goal','bio','education','titles','achievements'].includes(field))el.textContent=publicValue(current,field)||'';});
+}
+async function translatePublicCoaches(items,fields){
+ if(!db||!items?.length)return;
+ const language=getLocale(),valid=['goal','bio','education','titles','achievements'];
+ fields=fields.filter(x=>valid.includes(x));
+ const needed=items.filter(c=>publicOnly(c)&&fields.some(f=>String(c[f]||'').trim()&&!Object.hasOwn(coachTranslations.get(language+':'+c.id)||{},f)));
+ for(let index=0;index<needed.length;index+=2){
+  const batch=needed.slice(index,index+2),ticket=language+':'+batch.map(x=>x.id).join(',')+':'+fields.join(',');
+  if(coachTranslationRequests.has(ticket))continue;coachTranslationRequests.add(ticket);
+  try{const {data,error}=await db.functions.invoke('fitgoin-site-translate',{body:{coach_ids:batch.map(x=>x.id),target_language:language,fields}});
+   if(error||!data?.translations)continue;
+   for(const coach of batch){const received=data.translations[coach.id],key=language+':'+coach.id;if(!received)continue;
+    const safe={};for(const f of fields)if(typeof received[f]==='string'&&received[f].length<=9000)safe[f]=received[f];
+    coachTranslations.set(key,{...(coachTranslations.get(key)||{}),...safe});
+   }
+   if(getLocale()===language){renderCatalogue();refreshTranslatedProfile();}
+  }catch{/* Keep original public text if translation is unavailable. */}
+ }
+}
 const sportName = id => sports.find(s => String(s.id) === String(id))?.name || String(id || 'Спорт не указан');
 const sportKey=id=>matchSportKey(id,sports);
 
@@ -248,12 +272,13 @@ async function loadCatalogue() {
   }
   if(user===null) coaches=coaches.filter(publicOnly);
   renderSports(); renderCatalogue();
+  void translatePublicCoaches(coaches.filter(publicOnly).slice(0,12),['goal']);
   const allGoals=[...new Set([...goals,...coaches.flatMap(c=>String(c.goal || '').split(/[,;\n]/).map(s=>s.trim()).filter(Boolean))])];
   opt($('matchGoal'),allGoals.map(g=>[g,g]),'Пока не решил');
   if(catalogueError) notice(catalogueError); else notice('');
 }
 function card(c, match) {
-  return `<article class="coach-card">${photoHTML(c)}${match?`<div class="match-badge">${match.percent}% MATCH</div>`:''}<div class="card-body"><h3>${esc(c.name || 'Тренер')}</h3><p>${esc(sportName(c.sport))} · ${esc(c.city || c.format || '')}</p><div class="tags">${[c.goal,c.format,c.verified?'✓ Проверен':null,Number(c.score)>0?'Баллы профиля: '+Number(c.score):null].filter(Boolean).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div><div class="card-bottom"><span>${Number(c.rating)>0?`★ ${Number(c.rating).toFixed(1)}`:'Пока без рейтинга'}</span><span>${esc(priceText(c))}</span></div>${match?`<ul class="match-reasons">${match.reasons.map(r=>`<li>${esc(r)}</li>`).join('')}</ul>`:''}<div class="match-card-actions">${match && !c.legacy?`<button class="btn primary" data-contact="${esc(c.id)}">Написать ↗</button>`:''}<button class="btn" data-profile="${esc(c.id)}">Открыть профиль ↗</button></div></div></article>`;
+  return `<article class="coach-card">${photoHTML(c)}${match?`<div class="match-badge">${match.percent}% MATCH</div>`:''}<div class="card-body"><h3>${esc(c.name || 'Тренер')}</h3><p>${esc(sportName(c.sport))} · ${esc(c.city || c.format || '')}</p><div class="tags">${[publicValue(c,'goal'),c.format,c.verified?'✓ Проверен':null,Number(c.score)>0?'Баллы профиля: '+Number(c.score):null].filter(Boolean).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div><div class="card-bottom"><span>${Number(c.rating)>0?`★ ${Number(c.rating).toFixed(1)}`:'Пока без рейтинга'}</span><span>${esc(priceText(c))}</span></div>${match?`<ul class="match-reasons">${match.reasons.map(r=>`<li>${esc(r)}</li>`).join('')}</ul>`:''}<div class="match-card-actions">${match && !c.legacy?`<button class="btn primary" data-contact="${esc(c.id)}">Написать ↗</button>`:''}<button class="btn" data-profile="${esc(c.id)}">Открыть профиль ↗</button></div></div></article>`;
 }
 function renderCatalogue() {
   const list=coaches.filter(publicOnly);
@@ -318,12 +343,14 @@ async function findMatch(form) {
   summary.innerHTML=`<p class="eyebrow">ТВОЙ MATCH</p><h2>${ranked.length?`Нашли ${ranked.length} ${ranked.length===1?'подходящего тренера':'лучших совпадения'}`:'Пока нет точного совпадения'}</h2><div class="tags">${matchPreferenceSummary(p)}</div><p class="muted">Процент рассчитан только по выбранным тобой параметрам. Он показывает совпадение анкет, а не гарантирует результат тренировок.</p>`;
   $('matchResults').innerHTML=ranked.map(x=>card(x.c,x.m)).join('') || `<p class="empty">${esc(catalogueError || 'Тренеров по этому спорту пока нет. Попробуй другой вид спорта или вернись позже.')}</p>`;
   page('matches');
+  void translatePublicCoaches(ranked.map(x=>x.c).slice(0,6),['goal']);
 }
 async function openProfile(id, push = true) {
   const c=coaches.find(c=>c.id===id); if(!c) throw Error('Профиль не найден. Обнови каталог.');
   visibleProfile=id; page('profile',false);
   if(push){const u=new URL(location.href);u.searchParams.set('trainer',id);u.hash='';history.pushState({page:'profile',profile:id},'',u.pathname+u.search);}
   const payment=safeURL(c.payment_url,true);
+  void translatePublicCoaches([c],['goal','bio','education','titles','achievements']);
   $('profileContent').innerHTML=`
     <header class="profile-cover"><div class="sport-backdrop" style="background-image:url('${esc(sportImage(c.sport))}')" aria-hidden="true"></div>
       <div class="profile-cover-content"><div class="profile-cover-toolbar"><button class="text-btn profile-back" data-page="coaches">← К тренерам</button><button type="button" class="text-btn backdrop-pause" data-background-pause>Пауза фона</button></div><p class="eyebrow">FITGOIN · ${esc(sportName(c.sport))}</p><h1>${esc(c.name)}</h1><p class="profile-location">${esc([[c.city,c.country].filter(Boolean).join(', '),c.format].filter(Boolean).join(' · '))}</p>
@@ -333,8 +360,8 @@ async function openProfile(id, push = true) {
     <article class="profile-layout profile-details"><div class="portrait">${photoHTML(c)}</div><div class="profile-info panel">
       <p class="workspace-kicker">ТРЕНИРОВКИ С ТРЕНЕРОМ</p><h2>${esc(priceText(c))}</h2><div class="actions">${c.id===user?.id?'<button class="btn primary" data-coach-edit>Редактировать профиль</button>':!c.legacy?`<button class="btn primary" data-contact="${esc(c.id)}">Написать тренеру ↗</button>`:'<p class="hint">Этот тренер ещё не подключил сообщения в новой версии.</p>'}</div>
       ${payment?`<p class="section-small"><a class="btn" href="${esc(payment)}" target="_blank" rel="noopener noreferrer">${new URL(payment).pathname.startsWith('/test_')?'Тестовая оплата Stripe':'Оплатить у тренера'} ↗</a></p><p class="hint">Ссылку добавил тренер. Проверь продавца, услугу, сумму и период на странице Stripe. Подтверждение платежа приходит от Stripe; здесь статус оплаты не отслеживается.</p>`:'<p class="hint">Онлайн-оплата пока не подключена. Обсуди стоимость с тренером.</p>'}
-      <h3 class="section-small">О тренере</h3><p class="multiline">${esc(c.bio || 'Описание пока не добавлено.')}</p><p>Опыт: ${c.experience_years==null?'не указан':esc(c.experience_years)+' лет'}</p>
-      ${[['Цели / специализация',c.goal],['Образование',c.education],['Титулы',c.titles],['Достижения',c.achievements]].map(([t,v])=>v?`<h3>${t}</h3><p class="multiline">${esc(v)}</p>`:'').join('')}
+      <h3 class="section-small">О тренере</h3><p class="multiline" data-public-field="bio">${esc(publicValue(c,'bio') || 'Описание пока не добавлено.')}</p><p>Опыт: ${c.experience_years==null?'не указан':esc(c.experience_years)+' лет'}</p>
+      ${[['Цели / специализация','goal'],['Образование','education'],['Титулы','titles'],['Достижения','achievements']].map(([t,field])=>publicValue(c,field)?`<h3>${t}</h3><p class="multiline" data-public-field="${field}">${esc(publicValue(c,field))}</p>`:'').join('')}
       ${c.availability.length?`<h3>Удобное время</h3><div class="profile-schedule">${c.availability.map(key=>`<span class="tag">${esc(availabilityLabels[key]||key)}</span>`).join('')}</div>`:''}
       <p class="hint">Достижения и титулы указаны тренером. Рейтинг: ${Number(c.rating)>0?Number(c.rating).toFixed(1):'ещё не сформирован'}.</p>
     </div></article><div id="profileGallery" class="section-small"></div>`;
@@ -1635,6 +1662,9 @@ if(typeof document.addEventListener==='function')document.addEventListener('fitg
   drawMessages();
   void translateIncomingMessages();
   updateMatchWizard();
+  renderCatalogue();refreshTranslatedProfile();
+  void translatePublicCoaches(coaches.filter(publicOnly).slice(0,12),['goal']);
+  const active=coaches.find(x=>x.id===visibleProfile);if(active&&currentPage==='profile')void translatePublicCoaches([active],['goal','bio','education','titles','achievements']);
 });
 if(typeof document.addEventListener==='function')document.addEventListener('fitgoin:regionchange',()=>{refreshChatLanguage();drawMessages();void translateIncomingMessages();});
 init();
