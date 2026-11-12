@@ -1,0 +1,62 @@
+name: FitGoIn iPhone simulator preview
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/ios-preview.yml'
+      - 'scripts/build.mjs'
+      - 'site.webmanifest'
+
+permissions:
+  contents: read
+
+jobs:
+  ios-simulator:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout existing FitGoIn project
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Verify Xcode
+        run: |
+          xcodebuild -version
+          xcodebuild -showsdks
+      - name: Verify and build existing FitGoIn web app
+        run: |
+          npm ci
+          npm run check
+          npm run build
+      - name: Install Capacitor dependencies
+        working-directory: mobile
+        run: npm install --no-audit --no-fund
+      - name: Generate iOS project from same app source
+        working-directory: mobile
+        run: |
+          npx cap add ios
+          npx cap sync ios
+      - name: Build without signing for iOS Simulator
+        working-directory: mobile
+        run: |
+          xcodebuild \
+            -workspace ios/App/App.xcworkspace \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath ios-build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+      - name: Upload simulator app (NOT installable on an iPhone)
+        uses: actions/upload-artifact@v4
+        with:
+          name: FitGoIn-iOS-Simulator-Unsigned
+          path: mobile/ios-build/Build/Products/Debug-iphonesimulator/App.app/
+          if-no-files-found: error
+          retention-days: 14
