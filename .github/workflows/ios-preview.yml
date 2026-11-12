@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Checkout existing FitGoIn project
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # historical MATCH regression test needs an older commit
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
