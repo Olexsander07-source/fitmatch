@@ -1,19 +1,9 @@
 name: FitGoIn Android preview APK
 
+# Android builds are paused while the project is iPhone-only.
+# Owners may manually run this legacy preview workflow if needed.
 on:
   workflow_dispatch:
-  pull_request:
-    paths:
-      - 'mobile/**'
-      - '.github/workflows/mobile-preview.yml'
-      - 'scripts/build.mjs'
-      - 'site.webmanifest'
-      - 'app-icons/**'
-  push:
-    branches: [main]
-    paths:
-      - 'mobile/**'
-      - '.github/workflows/mobile-preview.yml'
 
 permissions:
   contents: read
