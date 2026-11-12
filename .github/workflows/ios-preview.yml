@@ -46,8 +46,17 @@ jobs:
       - name: Build without signing for iOS Simulator
         working-directory: mobile
         run: |
-          xcodebuild \
-            -workspace ios/App/App.xcworkspace \
+          # Capacitor 8 can generate an Xcode project without a CocoaPods workspace.
+          if [ -d ios/App/App.xcworkspace ]; then
+            project_arg=(-workspace ios/App/App.xcworkspace)
+          elif [ -d ios/App/App.xcodeproj ]; then
+            project_arg=(-project ios/App/App.xcodeproj)
+          else
+            echo "No generated iOS Xcode project found"
+            find ios -maxdepth 4 -name '*.xcodeproj' -o -name '*.xcworkspace'
+            exit 1
+          fi
+          xcodebuild "${project_arg[@]}" \
             -scheme App \
             -configuration Debug \
             -sdk iphonesimulator \
