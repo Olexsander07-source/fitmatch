@@ -1,39 +1,44 @@
-# FitGoIn mobile application (Android / iOS)
+# FitGoIn for iPhone (iOS first)
 
-This is a **non-destructive Capacitor wrapper** around the existing FitGoIn source. Do not reimplement authentication, AI trainer, MATCH or bookings. The web bundle is built by the root `scripts/build.mjs`.
+This project uses the existing FitGoIn codebase at https://fitgoin.com. **Current release priority is iPhone only.** Android remains deferred; do not spend time on Android releases until requested.
 
-## Launch now on iPhone / Android (PWA)
+## Available now: Home Screen app
 
-Open https://fitgoin.com in Safari (iOS) or Chrome (Android), use Share / Add to Home Screen. This requires the PWA branch to be merged and safely deployed via the existing `npm run deploy` workflow to get the new icons and offline page. Current site may already offer a basic home-screen shortcut.
+1. Open https://fitgoin.com using **Safari on iPhone**.
+2. Tap **Share** -> **Add to Home Screen**.
+3. Leave **Open as Web App** enabled and select Add.
 
-## Build native projects later
+This is a Home Screen web app, not yet a native App Store release. The enhanced PWA manifest, icon and offline screen require a verified production deployment (use `npm run deploy` following root `AGENTS.md`).
 
-Requires Node.js 22+ and an online terminal. Android: Android Studio + SDK. iOS: macOS + Xcode 26+ (or approved cloud Mac build) and an Apple developer account for distribution.
+## Build the native iOS app
+
+The existing Capacitor 8 setup at `mobile/capacitor.config.json` packages the website's built static assets while preserving the original Supabase service, accounts, AI trainer and coach search. No app-specific credentials belong in the source.
+
+Requirements: **macOS, Xcode 26+, Node 22+, CocoaPods**.
 
 ```bash
-# from repository root
+# From repo root
 npm ci
 npm run check
 npm run build
-
 cd mobile
 npm install
-npx cap add android
-npx cap add ios         # only on macOS
-npm run sync
-npx cap open android    # use Android Studio to build/test
-npx cap open ios        # use Xcode on macOS to build/test
+npx cap add ios
+npx cap sync ios
+npx cap open ios
 ```
 
-Configuration: `mobile/capacitor.config.json`. The `webDir` points at `../.deploy`, produced by the original FitGoIn build. **Do not use a remote `server.url` for production**.
+Open `mobile/ios/App/App.xcworkspace`, select the App scheme, configure your personal/team signing and bundle ID, and test on physical iPhone. *Don't check in Apple certificates or provisioning profiles.* In a macOS GitHub runner, `.github/workflows/ios-preview.yml` compiles an **unsigned simulator-only** build to validate Xcode compatibility. Its artifact **cannot be installed on a real iPhone**, and is not an IPA for distribution.
 
-## Release checklist / blockers
+## TestFlight and App Store blockers
 
-1. Test signup/login/logout, email confirmation, password reset and deep-linking on physical devices. Supabase email/OAuth callbacks may currently return to https://fitgoin.com rather than a bundled native app; configure verified Universal/App Links or a safe in-app handoff before store submission.
-2. Test camera, microphone, audio/video calls, media upload, notifications, payment entitlements, translated chats, coach MATCH, privacy settings and offline/reconnect behaviour. WebRTC and web permissions may differ inside WKWebView/Android WebView.
-3. Configure platform-specific privacy/permission descriptions, Android manifest permissions and iOS Info.plist usage texts only after device testing; do not silently request permissions.
-4. Check Apple App Review 4.2 (minimum functionality): a thin website-only wrapper may not be accepted. Add meaningful native capabilities, reliable app navigation and polish.
-5. Register store identities and signing: Google Play Console and Apple Developer Program; build and sign AAB/IPA, provide screenshots, privacy declarations, account deletion, review accounts and comply with store billing rules.
-6. Never commit Supabase service-role keys, OpenAI keys, API secrets or signing credentials into this repo or app. The website's public config may be bundled.
+- Enrol in Apple Developer Program and confirm App Store Connect access. Obtain proper signing credentials and provisioning only through the account owner.
+- Test Apple iPhone native WebView login, logout, email verification and password reset; allow valid HTTPS auth callbacks and/or securely configure Universal Links. Do not change redirects blindly.
+- Test camera, microphone, messaging, voice/video calls, AI conversations, match, coach bookings, translations, and reconnect flows on a *physical* iPhone, not merely the simulator. Declare meaningful camera/microphone usage reasons in `Info.plist` before a signed build.
+- Audit policies for subscriptions, digital goods, privacy, consent, account deletion and App Review minimum functionality: a thin website wrapper may be rejected.
+- Prepare iPhone screenshots, native app icon, privacy declarations, release metadata and signed upload. Use TestFlight first, then submit for Apple review.
 
-Do not deploy this branch directly or replace the existing production Cloudflare Worker. Merge verified changes and use the repo's safe-deploy procedure.
+Until the real iPhone app is signed and tested, the simplest usable version is the Safari Home Screen app.
+
+**Do not deploy the site directly from this branch.** Leave Cloudflare production unchanged; after verified merge, follow `AGENTS.md` safe deployment instructions.
+
