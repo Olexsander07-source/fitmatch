@@ -1,0 +1,6 @@
+{
+  "appId": "com.fitgoin.app",
+  "appName": "FitGoIn",
+  "webDir": "../.deploy",
+  "bundledWebRuntime": false
+}

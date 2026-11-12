@@ -1,0 +1,23 @@
+{
+  "name": "fitgoin-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Capacitor mobile projects for the existing FitGoIn website",
+  "scripts": {
+    "build:web": "npm --prefix .. run build",
+    "sync": "npm run build:web && cap sync",
+    "open:android": "npm run sync && cap open android",
+    "open:ios": "npm run sync && cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/ios": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.0.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
