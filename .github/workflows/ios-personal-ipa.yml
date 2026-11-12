@@ -1,0 +1,92 @@
+name: FitGoIn personal iPhone IPA (unsigned)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/ios-personal-ipa.yml'
+      - 'mobile/**'
+      - 'scripts/build.mjs'
+
+permissions:
+  contents: read
+
+jobs:
+  unsigned-iphone:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout existing FitGoIn
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Build original website and run all checks
+        run: |
+          npm ci
+          npm run check
+          npm run build
+      - name: Generate Capacitor iOS project
+        working-directory: mobile
+        run: |
+          npm install --no-audit --no-fund
+          npx cap add ios
+          npx cap sync ios
+      - name: Configure legitimate iPhone permissions
+        working-directory: mobile
+        run: |
+          plist=ios/App/App/Info.plist
+          test -f "$plist"
+          set_key() {
+            /usr/libexec/PlistBuddy -c "Set :$1 $2" "$plist" ||
+              /usr/libexec/PlistBuddy -c "Add :$1 string $2" "$plist"
+          }
+          set_key NSCameraUsageDescription "FitGoIn uses the camera only when you choose video calls or take a profile photo."
+          set_key NSMicrophoneUsageDescription "FitGoIn uses the microphone only when you record a voice message or join a call."
+          set_key NSPhotoLibraryUsageDescription "FitGoIn accesses photos only when you choose to upload an image."
+          set_key NSPhotoLibraryAddUsageDescription "FitGoIn saves images only when you request it."
+      - name: Build unsigned arm64 app for a real iPhone
+        working-directory: mobile
+        run: |
+          if [ -d ios/App/App.xcworkspace ]; then
+            project_arg=(-workspace ios/App/App.xcworkspace)
+          elif [ -d ios/App/App.xcodeproj ]; then
+            project_arg=(-project ios/App/App.xcodeproj)
+          else
+            echo "Missing generated iOS project"
+            exit 1
+          fi
+          xcodebuild "${project_arg[@]}" \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath ios-device-build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build
+      - name: Package unsigned .ipa for personal signing on Windows or Mac
+        working-directory: mobile
+        run: |
+          set -euo pipefail
+          app="ios-device-build/Build/Products/Debug-iphoneos/App.app"
+          test -d "$app"
+          test -f "$app/App"
+          file "$app/App"
+          mkdir -p Payload
+          ditto "$app" "Payload/App.app"
+          /usr/bin/zip -qyr FitGoIn-iPhone-unsigned.ipa Payload
+          unzip -tq FitGoIn-iPhone-unsigned.ipa
+          test "$(stat -f%z FitGoIn-iPhone-unsigned.ipa)" -gt 1000000
+          shasum -a 256 FitGoIn-iPhone-unsigned.ipa
+      - name: Upload unsigned IPA for owner's private install
+        uses: actions/upload-artifact@v4
+        with:
+          name: FitGoIn-iPhone-unsigned-IPA
+          path: mobile/FitGoIn-iPhone-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 7
